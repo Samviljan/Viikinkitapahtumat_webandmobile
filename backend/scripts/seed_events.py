@@ -165,7 +165,7 @@ EVENTS = [
         "link": "https://fb.me/e/6P0tLjHeN",
         "image_url": "https://viikinkitapahtumat.fi/pics/saltvik.jpg",
         "audience": "Yleisö",
-        "fight_style": "Western Klandorf",
+        "fight_style": "Western",
     },
     {
         "title_fi": "Tarinoiden Tori",

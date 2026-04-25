@@ -11,7 +11,12 @@ export function AuthProvider({ children }) {
     try {
       const { data } = await api.get("/auth/me");
       setUser(data);
-    } catch {
+    } catch (err) {
+      // 401 = not logged in (expected on cold load); anything else is unexpected
+      if (err?.response?.status !== 401) {
+        // eslint-disable-next-line no-console
+        console.warn("/auth/me failed:", err?.message);
+      }
       setUser(false);
     } finally {
       setLoading(false);

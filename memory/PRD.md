@@ -39,6 +39,16 @@ Modernise https://viikinkitapahtumat.fi with: visually better calendar/event lis
 - ✅ Localised admin toast/confirm messages.
 - ✅ 28/28 backend tests + frontend e2e all green.
 
+## Iteration 2 — Real content imported (2026-04-25)
+- ✅ Added new pages: **Viikinkimiekkailu** (`/swordfighting`) with two long-form articles and **Yhteydenotto** (`/contact`) with mailto form + copy-email button. Both are in the main nav in all 3 languages.
+- ✅ Extended Event model with optional `audience` (Yleisö / Harrastajat) and `fight_style` (Western / Eastern / …) fields. Surfaced on EventCard + EventDetail + Admin dashboard. Added selects to the Submit form.
+- ✅ Seeded **12 real 2026 events** from viikinkitapahtumat.fi via idempotent `/app/backend/scripts/seed_events.py` (Bonk Pohjalla VII, Sleipnir, Vähänkyrön Viikinkipäivä, Hämeen Keskiaikafestivaali, Keskiajan Turku, Rautakauden Birckala, Rosalan viikinkipäivät, Saltvik Viking Market, Tarinoiden Tori, Ulvilan Hansamarkkinat, Wiipurintien markkinat, Helsingin Keskiaikapäivä).
+- ✅ Replaced placeholder Guilds list with the real **SVTL** federation section + **6 SVTL member clubs** + **15 other guilds/associations**, each with external links.
+- ✅ Replaced placeholder Shops list with **17 gear/supply shops** + **2 smiths** sections.
+- ✅ Rewrote Courses page with intro paragraphs from the original site + a dynamic listing of upcoming course-category events from the API.
+- ✅ Silenced expected 401 console noise on `/auth/me` cold-load probe.
+- ✅ 37/37 backend tests + frontend e2e all green.
+
 ## Backlog (priorities)
 - **P1** Native mobile app (React Native / Expo) syncing the same `/api/events` endpoints.
 - **P1** Curated content for Courses/Guilds/Shops pages (currently a small placeholder list for Guilds/Shops).
