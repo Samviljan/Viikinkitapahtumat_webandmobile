@@ -1,0 +1,105 @@
+{
+  "theme": "dark",
+  "archetype": "Archetype 1 (Organic & Earthy) - Dark Historical Variant",
+  "design_philosophy": "A hand-forged, visceral digital experience. Avoid SaaS sterility. We use deep textural elements (leather, wood, parchment) combined with modern PWA usability. The calendar should feel like a hand-carved almanac. High contrast between the dark environment and 'ember' glowing interactive elements.",
+  "colors": {
+    "background": "#110E0C",
+    "surface": "#1E1815",
+    "surface_glass": "rgba(30, 24, 21, 0.75)",
+    "primary": "#8A251D",
+    "primary_hover": "#A82B21",
+    "secondary": "#1A2F24",
+    "text_primary": "#E6D5B8",
+    "text_secondary": "#A89A82",
+    "border": "#352A23",
+    "accent_gold": "#C19C4D",
+    "black": "#0A0807"
+  },
+  "typography": {
+    "headings": "Cormorant Garamond, serif",
+    "body": "Outfit, sans-serif",
+    "accent": "Cinzel, serif",
+    "sizes": {
+      "h1": "text-5xl sm:text-6xl tracking-tighter font-medium",
+      "h2": "text-3xl sm:text-4xl tracking-tight",
+      "h3": "text-2xl",
+      "body": "text-base leading-relaxed tracking-wide",
+      "overline": "text-xs tracking-[0.2em] uppercase font-bold text-[#A89A82]"
+    }
+  },
+  "spacing_and_layout": {
+    "philosophy": "Generous Spacing, Asymmetrical Grids, Optical Alignment",
+    "marketing_grid": "Bento 'Tetris' Grid: grid-cols-1 md:grid-cols-12 gap-8. Hero items span 8 cols, supplementary span 4 cols.",
+    "dashboard_grid": "Control Room Grid: dense, grid-cols-1 md:grid-cols-4 gap-6.",
+    "containers": "Use generous padding: p-8 to p-12 for distinct sections to let textures breathe.",
+    "border_radius": "rounded-sm (We avoid pill-shapes or heavy rounding. Edges should feel sharp and hand-cut, max 4px radius)."
+  },
+  "ui_components_and_surfaces": {
+    "cards": "Flat background (surface color) with 1px border. NO soft modern shadows. Use subtle inset drop shadows or harsh offset shadows to simulate wood/leather carving.",
+    "buttons": "Primary buttons: Ember red background, bone white text, sharp corners, ember glow on hover (shadow-[0_0_15px_rgba(138,37,29,0.5)]). Secondary buttons: Transparent with border and accent text.",
+    "calendar": "Hand-carved almanac feel. Grid cells with border-[#352A23]. Today's date highlighted with a subtle #8A251D border and text. Event markers use #1A2F24 or #8A251D dots/accents. Must include both month view and list view.",
+    "navigation": "Glassmorphism header: backdrop-blur-xl bg-[#110E0C]/80. Bottom border 1px #352A23. Desktop navigation visible.",
+    "inputs_and_forms": "Shadcn components heavily customized: square borders, surface color backgrounds, text_primary for input, border color for outline. Focus ring uses #8A251D."
+  },
+  "animations_and_motion": {
+    "hover_states": "Crisp and visceral. Opacity shifts and subtle glows. Avoid bouncy spring animations.",
+    "page_transitions": "Fade and slight blur, resembling smoke or fog clearing.",
+    "scroll": "Use smooth scrolling. Parallax on hero images to give depth to forests/markets."
+  },
+  "icons_and_assets": {
+    "libraries": [
+      "lucide-react",
+      "react-icons/gi"
+    ],
+    "installation_commands": [
+      "yarn add react-icons lucide-react"
+    ]
+  },
+  "image_urls": [
+    {
+      "category": "hero_background",
+      "description": "Cinematic wide photograph of a misty early medieval viking market in a dark nordic forest.",
+      "url": "https://static.prod-images.emergentagent.com/jobs/9db1bc32-1d96-4d4f-a2bf-f91179d2c155/images/7eebeca219eadb6c48f34c1dfc7f391e2a2ce01fed4411957643c26771754a21.png"
+    },
+    {
+      "category": "battle_reenactment",
+      "description": "Cinematic photograph of a viking battle reenactment, warriors with round wooden shields.",
+      "url": "https://static.prod-images.emergentagent.com/jobs/9db1bc32-1d96-4d4f-a2bf-f91179d2c155/images/32f719ff9757bf24f0ccc3220a92544457b3bfd340892f9bb88bec44fffb459b.png"
+    },
+    {
+      "category": "texture_leather_parchment",
+      "description": "High quality dark aged leather texture with subtle parchment edges.",
+      "url": "https://static.prod-images.emergentagent.com/jobs/9db1bc32-1d96-4d4f-a2bf-f91179d2c155/images/68ce43b1bc1817393ed06022b080b0e16923f63a6670f93ceccfad5190085a71.png"
+    },
+    {
+      "category": "texture_forged_iron",
+      "description": "Close up of rough hand-forged dark iron metal texture.",
+      "url": "https://static.prod-images.emergentagent.com/jobs/9db1bc32-1d96-4d4f-a2bf-f91179d2c155/images/a778e5f60afebda3a739744425cfb62c7dc1f383b886496e99fff822f66050db.png"
+    },
+    {
+      "category": "runestone",
+      "description": "Ancient runestone standing tall in a verdant Swedish landscape.",
+      "url": "https://images.pexels.com/photos/34000911/pexels-photo-34000911.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    },
+    {
+      "category": "blacksmith",
+      "description": "The blacksmith is working with fire and metal.",
+      "url": "https://images.unsplash.com/photo-1751826391831-b04cb16024bf?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzN8MHwxfHNlYXJjaHwzfHxtZWRpZXZhbCUyMGJsYWNrc21pdGglMjBpcm9ufGVufDB8fHx8MTc3NzExNjQ4OHww&ixlib=rb-4.1.0&q=85"
+    }
+  ],
+  "accessibility_and_testing": {
+    "testing_attributes": "All interactive elements, forms, and key informational elements MUST include a data-testid attribute.",
+    "contrast": "Ensure Bone/Parchment text meets APCA/WCAG standards against Dark Charred Wood background."
+  },
+  "instructions_to_main_agent": [
+    "1. Setup Tailwind config with colors, fonts (Cormorant Garamond, Cinzel, Outfit).",
+    "2. Implement multi-language switcher (FI/EN/SV).",
+    "3. Build event calendar UI (month + list views) with hand-carved almanac aesthetics using pure HTML/Tailwind grid.",
+    "4. Implement public event submission form with customized Shadcn Form.",
+    "5. Setup Admin Dashboard using JWT authentication to approve/reject events.",
+    "6. Build site pages: About, Courses, Guilds/Associations, Shops/Merchants.",
+    "7. Implement PWA (manifest, service worker) for mobile installability.",
+    "8. Use the provided textures and background images to give depth to hero sections and cards.",
+    "9. Use `data-testid` on all buttons, forms, and interactive items."
+  ]
+}
