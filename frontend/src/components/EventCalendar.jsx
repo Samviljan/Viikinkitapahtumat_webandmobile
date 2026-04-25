@@ -106,9 +106,10 @@ export default function EventCalendar({ events }) {
         {grid.map((day, idx) => {
           const dayEvents = day ? eventsByDay.get(isoDay(day)) || [] : [];
           const isToday = day && sameDay(day, today);
+          const cellKey = day ? isoDay(day) : `empty-${idx}`;
           return (
             <div
-              key={idx}
+              key={cellKey}
               className={`min-h-[92px] sm:min-h-[120px] border-r border-b border-viking-edge p-2 last:border-r-0 ${
                 day ? "bg-viking-surface" : "bg-viking-bg/40"
               }`}

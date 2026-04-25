@@ -1,0 +1,39 @@
+{
+  "summary": "Iter 7 verifies iter-6 security hardening + CORS fix. Backend: 79/79 pytest pass. Cookie-only auth: localStorage stays empty (no vk_token) before+after login, document.cookie does NOT expose access_token (httpOnly Secure SameSite=none confirmed via Set-Cookie inspection on POST /api/auth/login). DOMPurify XSS sanitization: both newsletter (3253 chars) and weekly-report (2910 chars) previews render via DOMPurify.sanitize(); inspected DOM has 0 <script> tags and 0 onerror= / onclick= attributes; 0 dialog alerts triggered. Logout: button click clears session, redirects to /admin/login, no console.warn appears (API succeeds path). Stable keys: zero React 'index as key' warnings observed across /, /events (calendar w/ ISO date keys), /swordfighting (sword.factN keys). DOMPurify import scoped only to AdminDashboard.jsx (verified via grep). CORS middleware: backend at localhost:8001 correctly echoes the request Origin and sets access-control-allow-credentials:true (not '*'). NOTE: Kubernetes ingress in this preview env REWRITES the public response to access-control-allow-origin:'*' even when credentials are required — this could only matter for genuine cross-origin browser POSTs; the actual frontend (events-refresh-1.preview.emergentagent.com) is same-origin with the backend so the ingress rewrite is a no-op in practice. Backwards-compat: the JWT is still returned in the JSON body of /api/auth/login (per-spec OK; frontend ignores it).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_backend_api.py",
+    "/app/backend/tests/test_iteration4_past_filter.py",
+    "/app/backend/tests/test_iteration5_weekly_and_decision_emails.py",
+    "/app/backend/tests/test_newsletter_and_ical.py",
+    "/app/backend/tests/test_seeded_and_new_fields.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "auth.js login() no longer writes any token to localStorage — verified via grep: only 'vk_lang' (language preference) remains in localStorage usage. Good.",
+    "api.js axios instance uses withCredentials:true and no Authorization-header request interceptor — clean cookie-only flow.",
+    "DOMPurify is imported only at /app/frontend/src/pages/AdminDashboard.jsx:3 — single ~90KB import, not pulled into public bundles. Good.",
+    "AdminDashboard.jsx wraps both preview innerHTML mounts with DOMPurify.sanitize() (lines 207 and 283). Verified at runtime: no <script>, no onerror= attributes survived in DOM after rendering real previews.",
+    "Stable keys correctly applied: Swordfighting fact cards use sword.fact1/2/3 (line 72), Home steps use translated title (line 110), EventCalendar cells use cellKey ISO-date (line 112) and event rows use ev.id+isoDay() (line 142).",
+    "logout() in auth.js wraps the logout API call in try/catch and only console.warn()s on failure — does not block setUser(false). Matches the specified behavior.",
+    "CORS middleware in server.py:585-602 chooses allow_origin_regex='.*' branch only when CORS_ORIGINS is unset/'*', else falls back to explicit allowlist. Sound design.",
+    "Public-URL response carries access-control-allow-origin:'*' AND access-control-allow-credentials:true together — this comes from the K8s ingress (verified by comparing to localhost:8001 response which correctly echoes the origin). Not a server bug; flagging for awareness in case any future cross-origin embedding is required."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (79/79)", "frontend": "100% (cookie-only auth, DOMPurify XSS-safe previews, stable keys, clean logout)"},
+  "test_credentials": "admin@viikinkitapahtumat.fi / ***REDACTED*** — verified working, login still returns 200 + Set-Cookie httpOnly Secure SameSite=none; JSON body still contains 'token' (backwards-compat, frontend does not read it).",
+  "seed_data_creation": "None this iteration; pytest tests self-clean any TEST_iter5_* events.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Public URL: https://events-refresh-1.preview.emergentagent.com (same-origin frontend+backend through ingress). Admin login: /admin/login → fill email + password → press Enter (form submit). Login button label is 'KIRJAUDU' (FI). Pre-login 401s on /api/auth/me are EXPECTED noise (AuthProvider cold load). For DOMPurify XSS regression test, query 'div.bg-viking-bg' (preview container class on AdminDashboard.jsx) and assert 0 querySelector('script') matches. CORS: when testing CORS via curl through the public URL note the K8s ingress overrides headers; for true backend CORS test hit http://localhost:8001 directly which returns the FastAPI middleware-correct echoed origin.",
+  "rca of the issue": "No issues found. All iter-6 hardening items work end-to-end."
+}

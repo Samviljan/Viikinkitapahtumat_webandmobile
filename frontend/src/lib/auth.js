@@ -28,8 +28,9 @@ export function AuthProvider({ children }) {
   }, [refresh]);
 
   const login = useCallback(async (email, password) => {
+    // Auth token is set as an httpOnly cookie by the backend; we never read it
+    // in JS. We only keep the user profile in component state.
     const { data } = await api.post("/auth/login", { email, password });
-    if (data.token) localStorage.setItem("vk_token", data.token);
     setUser({ id: data.id, email: data.email, name: data.name, role: data.role });
     return data;
   }, []);
@@ -37,8 +38,10 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     try {
       await api.post("/auth/logout");
-    } catch {}
-    localStorage.removeItem("vk_token");
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("logout call failed:", err?.message);
+    }
     setUser(false);
   }, []);
 

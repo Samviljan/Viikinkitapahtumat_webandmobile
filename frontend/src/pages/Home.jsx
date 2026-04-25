@@ -107,7 +107,7 @@ export default function Home() {
               { Icon: Send, t: t("home.step2_t"), d: t("home.step2_d") },
               { Icon: ShieldCheck, t: t("home.step3_t"), d: t("home.step3_d") },
             ].map(({ Icon, t: title, d }, i) => (
-              <div key={i} className="flex gap-5">
+              <div key={title} className="flex gap-5">
                 <div className="flex-shrink-0 h-11 w-11 rounded-sm border border-viking-edge bg-viking-surface2 flex items-center justify-center text-viking-gold">
                   <Icon size={18} />
                 </div>

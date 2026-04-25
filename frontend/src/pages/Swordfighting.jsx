@@ -68,8 +68,8 @@ export default function Swordfighting() {
             { Icon: Users, k: "sword.fact1" },
             { Icon: Shield, k: "sword.fact2" },
             { Icon: Swords, k: "sword.fact3" },
-          ].map(({ Icon, k }, i) => (
-            <div key={i} className="carved-card rounded-sm p-6">
+          ].map(({ Icon, k }) => (
+            <div key={k} className="carved-card rounded-sm p-6">
               <Icon size={20} className="text-viking-ember mb-3" />
               <p className="text-sm text-viking-bone leading-relaxed">{t(k)}</p>
             </div>

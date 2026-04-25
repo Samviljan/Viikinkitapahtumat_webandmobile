@@ -582,13 +582,27 @@ async def shutdown_db_client():
 # Include router
 app.include_router(api_router)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS: when credentials are required (cookies), browsers reject `Access-Control-Allow-Origin: *`.
+# Therefore we configure the middleware to echo the request origin via allow_origin_regex
+# whenever CORS_ORIGINS is unset or "*". For production, set CORS_ORIGINS to a comma-separated
+# list of exact origins.
+_cors_origins_raw = os.environ.get("CORS_ORIGINS", "*").strip()
+if _cors_origins_raw in ("", "*"):
+    app.add_middleware(
+        CORSMiddleware,
+        allow_credentials=True,
+        allow_origin_regex=".*",
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_credentials=True,
+        allow_origins=[o.strip() for o in _cors_origins_raw.split(",") if o.strip()],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 logging.basicConfig(
     level=logging.INFO,

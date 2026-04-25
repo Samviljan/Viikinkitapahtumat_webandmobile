@@ -3,19 +3,11 @@ import axios from "axios";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API_BASE = `${BACKEND_URL}/api`;
 
+// Auth uses httpOnly cookies set by the backend (samesite=none + secure).
+// We DO NOT store the JWT in localStorage to avoid XSS token theft.
 export const api = axios.create({
   baseURL: API_BASE,
   withCredentials: true,
-});
-
-// Attach bearer token from localStorage as fallback (in addition to httpOnly cookie)
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("vk_token");
-  if (token) {
-    config.headers = config.headers || {};
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
 });
 
 export function formatApiErrorDetail(detail) {

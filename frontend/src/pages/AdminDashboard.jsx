@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Navigate, Link } from "react-router-dom";
+import DOMPurify from "dompurify";
 import { useAuth } from "@/lib/auth";
 import { useI18n, pickLocalized } from "@/lib/i18n";
 import { api } from "@/lib/api";
@@ -203,7 +204,7 @@ function NewsletterPanel() {
           </div>
           <div
             className="bg-viking-bg rounded-sm p-2 max-h-[420px] overflow-auto border border-viking-edge"
-            dangerouslySetInnerHTML={{ __html: preview.html }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(preview.html) }}
           />
         </div>
       )}
@@ -279,7 +280,7 @@ function WeeklyReportPanel() {
           <div className="text-overline mb-2">{preview.subject}</div>
           <div
             className="bg-viking-bg rounded-sm p-2 max-h-[420px] overflow-auto border border-viking-edge"
-            dangerouslySetInnerHTML={{ __html: preview.html }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(preview.html) }}
           />
         </div>
       )}
