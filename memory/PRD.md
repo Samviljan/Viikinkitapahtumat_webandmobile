@@ -70,6 +70,16 @@ Modernise https://viikinkitapahtumat.fi with: visually better calendar/event lis
 - ✅ **Past-event filter**: `GET /api/events` and `/api/events.ics` now exclude events whose end_date (or start_date if no end_date) is before today, by default. Pass `?include_past=true` to override (admin moderation paths use `/api/admin/events` which is unaffected).
 - ✅ 66/66 backend tests + frontend e2e green.
 
+## Iteration 5 — Weekly admin report, decision emails, sword copy fix (2026-04-25)
+- ✅ **Weekly admin summary report**:
+  - `POST /api/admin/weekly-report/send` + `GET /api/admin/weekly-report/preview` — admin endpoints with stats (pending / approved / rejected / subscribers / new_subs in last 7 days), pending event list, top 5 upcoming events.
+  - APScheduler cron: every Monday at 09:00 Europe/Helsinki.
+  - Admin UI: `<WeeklyReportPanel>` below NewsletterPanel with Esikatsele + "Lähetä viikkokatsaus nyt" buttons; preview HTML rendered inline.
+- ✅ **Submitter decision email**: PATCH `/api/admin/events/{id}` now schedules `notify_submitter_decision` as a FastAPI BackgroundTask. Sends a Finnish "hyväksytty" or "Tapahtumailmoituksesi" email (with link to the published event when approved) to organizer_email if set; silently no-ops when missing. Endpoint latency stays well under 500 ms.
+- ✅ Removed "haarniskat" / "armour" / "rustningar" from `sword.p3` in FI / EN / SV.
+- ✅ APScheduler now registers TWO jobs at startup: `monthly_digest` + `weekly_admin_report`.
+- ✅ 79/79 backend tests + frontend e2e green.
+
 ## Deferred — Native mobile app
 - Native React Native / Expo app is its own separate codebase + iteration. PWA already covers installability + offline shell on mobile, so this is on hold until the user is ready to invest in a proper native project.
 
