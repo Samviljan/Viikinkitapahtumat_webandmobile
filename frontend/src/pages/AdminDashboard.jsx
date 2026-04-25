@@ -6,8 +6,11 @@ import { useI18n, pickLocalized } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Check, X, Trash2, Calendar, MapPin, User, ExternalLink, Mail, Send, Eye } from "lucide-react";
+import { Check, X, Trash2, Calendar, MapPin, User, ExternalLink, Mail, Send, Eye, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import AdminEventEditDialog from "@/components/AdminEventEditDialog";
+import AdminMerchantsPanel from "@/components/AdminMerchantsPanel";
+import AdminGuildsPanel from "@/components/AdminGuildsPanel";
 
 const STATUSES = ["pending", "approved", "rejected", "all"];
 
@@ -18,6 +21,7 @@ export default function AdminDashboard() {
   const [items, setItems] = useState([]);
   const [stats, setStats] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
 
   const load = useCallback(
     async (s = status) => {
@@ -120,6 +124,7 @@ export default function AdminDashboard() {
                     onApprove={() => setEventStatus(ev.id, "approved")}
                     onReject={() => setEventStatus(ev.id, "rejected")}
                     onDelete={() => remove(ev.id)}
+                    onEdit={() => setEditingEvent(ev)}
                   />
                 ))}
               </div>
@@ -127,6 +132,18 @@ export default function AdminDashboard() {
           </TabsContent>
         ))}
       </Tabs>
+
+      <div className="mt-12">
+        <AdminMerchantsPanel />
+        <AdminGuildsPanel />
+      </div>
+
+      <AdminEventEditDialog
+        event={editingEvent}
+        open={!!editingEvent}
+        onOpenChange={(o) => !o && setEditingEvent(null)}
+        onSaved={() => load()}
+      />
     </section>
   );
 }
@@ -301,7 +318,7 @@ function StatCard({ label, value, accent }) {  const accentColor = {
   );
 }
 
-function AdminEventRow({ ev, lang, t, onApprove, onReject, onDelete }) {
+function AdminEventRow({ ev, lang, t, onApprove, onReject, onDelete, onEdit }) {
   return (
     <div
       data-testid={`admin-row-${ev.id}`}
@@ -350,6 +367,16 @@ function AdminEventRow({ ev, lang, t, onApprove, onReject, onDelete }) {
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          data-testid={`edit-${ev.id}`}
+          onClick={onEdit}
+          variant="outline"
+          className="border-viking-edge text-viking-bone hover:border-viking-gold hover:text-viking-gold rounded-sm font-rune text-[10px]"
+        >
+          <Pencil size={12} className="mr-1" />
+          {t("admin.edit")}
+        </Button>
         {ev.status !== "approved" && (
           <Button
             size="sm"

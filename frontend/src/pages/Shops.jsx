@@ -1,38 +1,14 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import PageHero from "@/components/PageHero";
 import { useI18n } from "@/lib/i18n";
+import { api } from "@/lib/api";
 import { ExternalLink, Hammer } from "lucide-react";
-
-const GENERAL = [
-  { name: "Rautaportti", url: "https://www.rautaportti.fi/" },
-  { name: "Oulun Miekkailutarvike", url: "https://www.miekkailutarvike.fi/" },
-  { name: "LotgarVikingCrafts", url: "https://www.etsy.com/shop/LotgarVikingCrafts/" },
-  { name: "Perkele Clothing", url: "https://www.facebook.com/perkele.shop" },
-  { name: "Wojmir", url: "https://wojmir.pl/en/shop/" },
-  { name: "Kram Goch", url: "https://www.kramgoch.pl/eng/" },
-  { name: "VikingMarket.eu", url: "https://vikingmarket.eu/" },
-  { name: "Ruslana", url: "https://www.ruslana.com.pl/" },
-  { name: "Ruslav Leatherworks", url: "https://ryslav-leatherwork.com/en/" },
-  { name: "HÅKON, viking helmet", url: "https://wulflund.com/" },
-  { name: "Grimfrost Webshop", url: "https://grimfrost.com/" },
-  { name: "Weapon and Armour by Viktor Berbekucz", url: "https://www.swordsviktor.com/" },
-  { name: "Living History Market", url: "https://living-history-market.com/" },
-  { name: "Battle Merchant", url: "https://battlemerchant.com/" },
-  { name: "Kaksi kanaa ja pässi", desc: "Käsinommeltuja vaatteita", url: "https://kierratysmuotia.fi/" },
-  { name: "Keskiaikapuoti", url: "https://keskiaikapuoti.fi/" },
-  { name: "Torkel Design", desc: "Laadukkaita metalli- ja puusepäntuotteita", url: "https://torkel.fi/" },
-];
-
-const SMITHS = [
-  { name: "Takomo Hukkarauta", url: "https://hukkarauta.fi/" },
-  { name: "Smithefix", url: "https://www.facebook.com/Smithefix" },
-];
 
 function ShopRow({ s, testid }) {
   return (
     <a
-      href={s.url}
-      target="_blank"
+      href={s.url || "#"}
+      target={s.url ? "_blank" : undefined}
       rel="noopener noreferrer"
       data-testid={testid}
       className="carved-card rounded-sm p-5 hover:border-viking-gold/40 transition-colors group flex items-start justify-between gap-4"
@@ -41,15 +17,24 @@ function ShopRow({ s, testid }) {
         <h3 className="font-serif text-lg text-viking-bone group-hover:text-viking-gold leading-tight">
           {s.name}
         </h3>
-        {s.desc && <p className="text-xs text-viking-stone mt-1.5">{s.desc}</p>}
+        {s.description && <p className="text-xs text-viking-stone mt-1.5">{s.description}</p>}
       </div>
-      <ExternalLink size={14} className="text-viking-gold flex-shrink-0 mt-1" />
+      {s.url && <ExternalLink size={14} className="text-viking-gold flex-shrink-0 mt-1" />}
     </a>
   );
 }
 
 export default function Shops() {
   const { t } = useI18n();
+  const [items, setItems] = useState([]);
+
+  useEffect(() => {
+    api.get("/merchants").then((r) => setItems(r.data || [])).catch(() => setItems([]));
+  }, []);
+
+  const gear = items.filter((m) => m.category === "gear");
+  const smiths = items.filter((m) => m.category === "smith");
+
   return (
     <>
       <PageHero eyebrow="ᚲᚨᚢᛈᛈᚨ" title={t("shops.title")} sub={t("shops.sub")} />
@@ -58,8 +43,8 @@ export default function Shops() {
         <div>
           <h3 className="font-serif text-2xl text-viking-bone mb-5">{t("shops.gear_title")}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {GENERAL.map((s) => (
-              <ShopRow key={s.name} s={s} testid={`shop-${s.name}`} />
+            {gear.map((s) => (
+              <ShopRow key={s.id} s={s} testid={`shop-${s.id}`} />
             ))}
           </div>
         </div>
@@ -70,8 +55,8 @@ export default function Shops() {
             <h3 className="font-serif text-2xl text-viking-bone">{t("shops.smiths_title")}</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {SMITHS.map((s) => (
-              <ShopRow key={s.name} s={s} testid={`smith-${s.name}`} />
+            {smiths.map((s) => (
+              <ShopRow key={s.id} s={s} testid={`smith-${s.id}`} />
             ))}
           </div>
         </div>

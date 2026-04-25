@@ -163,6 +163,67 @@ class EventStatusUpdate(BaseModel):
     status: EventStatus
 
 
+class EventEdit(BaseModel):
+    """Full editable event payload for admin update (status not editable here)."""
+    model_config = ConfigDict(extra="ignore")
+    title_fi: str
+    title_en: Optional[str] = ""
+    title_sv: Optional[str] = ""
+    description_fi: str
+    description_en: Optional[str] = ""
+    description_sv: Optional[str] = ""
+    category: EventCategory = "other"
+    location: str
+    start_date: str
+    end_date: Optional[str] = None
+    organizer: str
+    organizer_email: Optional[EmailStr] = None
+    link: Optional[str] = ""
+    image_url: Optional[str] = ""
+    audience: Optional[str] = ""
+    fight_style: Optional[str] = ""
+
+
+MerchantCategory = Literal["gear", "smith"]
+GuildCategory = Literal["svtl_member", "other"]
+
+
+class MerchantIn(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    name: str
+    description: Optional[str] = ""
+    url: Optional[str] = ""
+    category: MerchantCategory = "gear"
+    order_index: Optional[int] = 0
+
+
+class MerchantOut(BaseModel):
+    id: str
+    name: str
+    description: str
+    url: str
+    category: str
+    order_index: int
+
+
+class GuildIn(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    name: str
+    region: Optional[str] = ""
+    url: Optional[str] = ""
+    category: GuildCategory = "other"
+    order_index: Optional[int] = 0
+
+
+class GuildOut(BaseModel):
+    id: str
+    name: str
+    region: str
+    url: str
+    category: str
+    order_index: int
+
+
 class SubscribeRequest(BaseModel):
     email: EmailStr
     lang: Optional[str] = "fi"
@@ -428,6 +489,129 @@ async def admin_delete_event(event_id: str, _admin: dict = Depends(get_admin_use
     res = await db.events.delete_one({"id": event_id})
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Event not found")
+    return {"ok": True}
+
+
+@api_router.put("/admin/events/{event_id}", response_model=EventOut)
+async def admin_edit_event(
+    event_id: str,
+    payload: EventEdit,
+    _admin: dict = Depends(get_admin_user),
+):
+    update_doc = payload.model_dump()
+    # Normalise empty string-or-null defaults
+    for k in ("title_en", "title_sv", "description_en", "description_sv", "link", "image_url", "audience", "fight_style"):
+        update_doc[k] = update_doc.get(k) or ""
+    update_doc["updated_at"] = datetime.now(timezone.utc).isoformat()
+    res = await db.events.find_one_and_update(
+        {"id": event_id},
+        {"$set": update_doc},
+        return_document=True,
+        projection={"_id": 0},
+    )
+    if not res:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return EventOut(**res)
+
+
+# -----------------------------------------------------------------------------
+# Merchants & Guilds (public read + admin write)
+# -----------------------------------------------------------------------------
+def _strip(doc: dict) -> dict:
+    return {k: v for k, v in doc.items() if k != "_id"}
+
+
+@api_router.get("/merchants", response_model=List[MerchantOut])
+async def list_merchants():
+    docs = await db.merchants.find({}, {"_id": 0}).sort([("category", 1), ("order_index", 1), ("name", 1)]).to_list(2000)
+    return [MerchantOut(**_normalize_merchant(d)) for d in docs]
+
+
+def _normalize_merchant(d: dict) -> dict:
+    return {
+        "id": d.get("id"),
+        "name": d.get("name") or "",
+        "description": d.get("description") or "",
+        "url": d.get("url") or "",
+        "category": d.get("category") or "gear",
+        "order_index": d.get("order_index") or 0,
+    }
+
+
+def _normalize_guild(d: dict) -> dict:
+    return {
+        "id": d.get("id"),
+        "name": d.get("name") or "",
+        "region": d.get("region") or "",
+        "url": d.get("url") or "",
+        "category": d.get("category") or "other",
+        "order_index": d.get("order_index") or 0,
+    }
+
+
+@api_router.get("/guilds", response_model=List[GuildOut])
+async def list_guilds():
+    docs = await db.guilds.find({}, {"_id": 0}).sort([("category", 1), ("order_index", 1), ("name", 1)]).to_list(2000)
+    return [GuildOut(**_normalize_guild(d)) for d in docs]
+
+
+@api_router.post("/admin/merchants", response_model=MerchantOut, status_code=201)
+async def admin_create_merchant(payload: MerchantIn, _admin: dict = Depends(get_admin_user)):
+    doc = payload.model_dump()
+    doc["id"] = str(uuid.uuid4())
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.merchants.insert_one(doc)
+    return MerchantOut(**_normalize_merchant(doc))
+
+
+@api_router.put("/admin/merchants/{mid}", response_model=MerchantOut)
+async def admin_update_merchant(mid: str, payload: MerchantIn, _admin: dict = Depends(get_admin_user)):
+    res = await db.merchants.find_one_and_update(
+        {"id": mid},
+        {"$set": {**payload.model_dump(), "updated_at": datetime.now(timezone.utc).isoformat()}},
+        return_document=True,
+        projection={"_id": 0},
+    )
+    if not res:
+        raise HTTPException(status_code=404, detail="Merchant not found")
+    return MerchantOut(**_normalize_merchant(res))
+
+
+@api_router.delete("/admin/merchants/{mid}")
+async def admin_delete_merchant(mid: str, _admin: dict = Depends(get_admin_user)):
+    res = await db.merchants.delete_one({"id": mid})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Merchant not found")
+    return {"ok": True}
+
+
+@api_router.post("/admin/guilds", response_model=GuildOut, status_code=201)
+async def admin_create_guild(payload: GuildIn, _admin: dict = Depends(get_admin_user)):
+    doc = payload.model_dump()
+    doc["id"] = str(uuid.uuid4())
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.guilds.insert_one(doc)
+    return GuildOut(**_normalize_guild(doc))
+
+
+@api_router.put("/admin/guilds/{gid}", response_model=GuildOut)
+async def admin_update_guild(gid: str, payload: GuildIn, _admin: dict = Depends(get_admin_user)):
+    res = await db.guilds.find_one_and_update(
+        {"id": gid},
+        {"$set": {**payload.model_dump(), "updated_at": datetime.now(timezone.utc).isoformat()}},
+        return_document=True,
+        projection={"_id": 0},
+    )
+    if not res:
+        raise HTTPException(status_code=404, detail="Guild not found")
+    return GuildOut(**_normalize_guild(res))
+
+
+@api_router.delete("/admin/guilds/{gid}")
+async def admin_delete_guild(gid: str, _admin: dict = Depends(get_admin_user)):
+    res = await db.guilds.delete_one({"id": gid})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Guild not found")
     return {"ok": True}
 
 

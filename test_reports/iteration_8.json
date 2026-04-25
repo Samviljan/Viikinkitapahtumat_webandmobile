@@ -1,0 +1,51 @@
+{
+  "summary": "Iter 7 review: 92/92 backend tests pass (79 prior + 13 new) and full frontend e2e flows verified for the admin event-edit + merchants + guilds CRUD features. New endpoints PUT /api/admin/events/{id}, GET /api/merchants, GET /api/guilds, plus admin POST/PUT/DELETE for /api/admin/merchants and /api/admin/guilds all behave per spec, including 401/403 enforcement, 404 on missing IDs, null->'' normalisation on optional event fields, status preservation on PUT, and coexistence with the existing PATCH (status-only) handler. Public /shops shows 17 gear shops + 2 smiths from API; /guilds shows 6 SVTL members + 15 other guilds from API. Admin dashboard renders Merchants and Guilds panels; Edit button on event rows opens AdminEventEditDialog with all fields prefilled. Live UI flow verified end-to-end: created TEST_ merchant + guild via dialogs, saw them in panel + DB, deleted them, success toast 'Toiminto onnistui' fired. FI/EN/SV i18n keys for admin.edit/edit_event/cancel/save/merchants_title/guilds_title/field_name/confirm_delete_simple all defined; no raw keys leaked in FI render.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Admin dialogs (event edit, merchant, guild)", "issues": ["A11y console warning: 'Missing Description or aria-describedby={undefined} for {DialogContent}' from Radix Dialog. Non-blocking but should add a hidden DialogDescription or pass aria-describedby to silence the warning."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration7_admin_edit_merchants_guilds.py",
+    "/app/backend/tests/test_backend_api.py",
+    "/app/backend/tests/test_iteration4_past_filter.py",
+    "/app/backend/tests/test_iteration5_weekly_and_decision_emails.py",
+    "/app/backend/tests/test_newsletter_and_ical.py",
+    "/app/backend/tests/test_seeded_and_new_fields.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Optional) Add <DialogDescription> (or aria-describedby) to AdminEventEditDialog, AdminMerchantsPanel and AdminGuildsPanel Radix DialogContent to silence the a11y console warning."
+  ],
+  "critical_code_review_comments": [
+    "PUT /api/admin/events/{id} correctly normalises null/undefined optional fields to '' before $set, so EventOut response & DB document stay schema-consistent (server.py:495-514).",
+    "PUT path leaves status untouched (no $set on status), so an approved event stays approved after edit — verified end-to-end.",
+    "MerchantOut/GuildOut response models exclude _id implicitly via _normalize_* helpers — clean handling.",
+    "Seed (seed_taxonomy.py) is idempotent: matches by unique 'name' index and updates existing rows, inserts only new — safe to re-run; correct counts (17 gear + 2 smith + 6 svtl + 15 other = 19 merchants, 21 guilds).",
+    "GET /api/merchants & /api/guilds are public (no auth dep) per spec — verified by anonymous request.",
+    "All 5 new admin write endpoints depend on get_admin_user, which 401s on no token and 403s on non-admin — verified.",
+    "Frontend Shops.jsx & Guilds.jsx now fetch from /api/merchants & /api/guilds and group by category — confirmed live rendering 17+2 and 6+15.",
+    "AdminDashboard.jsx adds [data-testid=\"edit-{eventId}\"] (line 372), AdminEventEditDialog opens with all event fields prefilled — verified at runtime.",
+    "AdminMerchantsPanel + AdminGuildsPanel: add/edit/delete dialogs all wired with proper data-testids; create→list reload→delete cycle works end-to-end via UI.",
+    "i18n keys admin.edit/edit_event/cancel/save/merchants_title/guilds_title/field_name/confirm_delete_simple resolved in FI/EN/SV (i18n.js lines 126-143 FI, 350-367 EN, 570-587 SV).",
+    "Existing PATCH /api/admin/events/{id} (status-only) regression test added — still works alongside new PUT.",
+    "Pre-login 401s on /api/auth/me are expected AuthProvider cold-load noise (carried over from iter 6/7 reports).",
+    "Minor: a11y warning 'Missing Description or aria-describedby for DialogContent' fires on every dialog open — purely a console warning, no functional impact."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration7_admin_edit_merchants_guilds.py (new, 13 tests)"
+  ],
+  "success_rate": {"backend": "100% (92/92)", "frontend": "100% (shops/guilds public read, admin merchants & guilds CRUD via dialogs, event edit dialog prefill+save, no i18n leaks)"},
+  "test_credentials": "admin@viikinkitapahtumat.fi / ***REDACTED*** — verified working.",
+  "seed_data_creation": "Tests create TEST_ prefixed merchants/guilds/events and self-clean via DELETE within the same test. No residual TEST_ data left in DB.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Public URL: https://events-refresh-1.preview.emergentagent.com. Admin login: /admin/login → email + password → Enter. Admin dashboard at /admin shows: status tabs, event rows (each with [data-testid='edit-{id}'], approve, reject, delete), Newsletter panel, Weekly report panel, AdminMerchantsPanel ([data-testid='admin-merchants-panel'] + 'merchant-add-btn'), AdminGuildsPanel ([data-testid='admin-guilds-panel'] + 'guild-add-btn'). Dialogs: 'event-edit-dialog' / 'merchant-dialog' / 'guild-dialog' with field testids prefixed edit-* / merchant-field-* / guild-field-*, save buttons 'edit-save-btn' / 'merchant-save-btn' / 'guild-save-btn'. Public /shops and /guilds are SSR-empty until JS fetches /api/merchants & /api/guilds — wait for networkidle before asserting content. The seeded merchant 'Rautaportti' and guild 'Birckalan Soturit' are good canary names.",
+  "rca of the issue": "No issues. All iter 7 features (admin event full edit + merchants/guilds CRUD with idempotent seed and public-read split from admin-write) work end-to-end."
+}
