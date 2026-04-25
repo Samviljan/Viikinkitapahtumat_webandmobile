@@ -233,31 +233,34 @@ EXPECTED_TITLES = {
 
 class TestSeededEventImages:
     def test_all_seeded_events_have_image_url(self, api_client, base_url):
-        r = api_client.get(f"{base_url}/api/events")
+        # Iter 4: image_urls reverted to viikinkitapahtumat.fi. Rosala has empty image.
+        r = api_client.get(f"{base_url}/api/events?include_past=true")
         assert r.status_code == 200
         events = r.json()
         seeded = [e for e in events if e.get("title_fi") in EXPECTED_TITLES]
         assert len(seeded) == 12, f"Expected 12 seeded events, got {len(seeded)}"
+        with_image = 0
         for ev in seeded:
             url = ev.get("image_url") or ""
-            assert url.startswith("/event-images/"), f"{ev['title_fi']} -> {url!r}"
-            assert url.endswith(".png"), url
+            # MUST NOT use /event-images/ path anymore
+            assert "/event-images/" not in url, f"{ev['title_fi']} still uses /event-images/: {url}"
+            if url:
+                assert url.startswith("https://viikinkitapahtumat.fi/pics/"), (
+                    f"{ev['title_fi']} -> {url!r}"
+                )
+                with_image += 1
+        # 11 of 12 have an image url; Rosala intentionally empty
+        assert with_image == 11, f"Expected 11 events with image_url, got {with_image}"
 
-    def test_event_images_served_by_frontend(self, api_client, base_url):
-        # use one known image
-        domain = FRONTEND_DOMAIN or base_url
-        r = requests.get(f"{domain}/event-images/sleipnir.png", timeout=30)
-        assert r.status_code == 200, f"{r.status_code} for sleipnir.png on {domain}"
-        # Content-type must be png
-        assert "image" in r.headers.get("content-type", ""), r.headers.get("content-type")
-        # NOTE: although the file is named .png, the underlying bytes were saved
-        # as JPEG by the image generator. Browsers still render fine because the
-        # server returns image/png. Accept both signatures here.
-        sig = r.content[:4]
-        is_png = sig[:4] == b"\x89PNG"
-        is_jpg = sig[:3] == b"\xff\xd8\xff"
-        assert is_png or is_jpg, f"Not a valid PNG/JPEG, sig={sig.hex()}"
-        assert len(r.content) > 10000, "Image suspiciously small"
+    def test_sleipnir_image_specifics(self, api_client, base_url):
+        r = api_client.get(f"{base_url}/api/events?include_past=true")
+        events = {e["title_fi"]: e for e in r.json()}
+        s = events["Sleipnir fighting camp, Ulvila"]
+        assert s["image_url"] == "https://viikinkitapahtumat.fi/pics/sleipnir.jpg"
+        v = events["Vähänkyrön Viikinkipäivä"]
+        assert v["image_url"] == "https://viikinkitapahtumat.fi/pics/vahakyro.jpg"
+        rosala = events["Rosalan viikinkipäivät"]
+        assert rosala["image_url"] == ""
 
 
 # ---------- Cleanup ----------

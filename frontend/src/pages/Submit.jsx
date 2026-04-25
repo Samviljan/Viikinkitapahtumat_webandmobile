@@ -17,7 +17,7 @@ import PageHero from "@/components/PageHero";
 import { toast } from "sonner";
 import { CheckCircle2 } from "lucide-react";
 
-const CATS = ["market", "battle", "course", "festival", "meetup", "other"];
+const CATS = ["market", "training_camp", "course", "festival", "meetup", "other"];
 const fieldClass =
   "bg-viking-surface border-viking-edge rounded-sm text-viking-bone placeholder:text-viking-stone focus:border-viking-ember focus:ring-viking-ember";
 

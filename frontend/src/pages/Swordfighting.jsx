@@ -3,8 +3,8 @@ import PageHero from "@/components/PageHero";
 import { useI18n } from "@/lib/i18n";
 import { Swords, Users, BookOpen, Shield } from "lucide-react";
 
-const HERO_IMG = "https://viikinkitapahtumat.fi/pics/miekkailu.jpg";
-const REENACT_IMG = "https://viikinkitapahtumat.fi/pics/viikinki.jpg";
+const HERO_IMG = "/sword-images/miekkailu-hero.png";
+const REENACT_IMG = "/sword-images/miekkailu-reenact.png";
 
 export default function Swordfighting() {
   const { t } = useI18n();

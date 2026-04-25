@@ -202,13 +202,13 @@ class TestAdminEvents:
         assert submitted_event["id"] in ids
 
     def test_filter_by_category(self, admin_client, api_client, base_url):
-        # Submit and approve a battle event
+        # Submit and approve a training_camp event (future date so it appears in default list)
         payload = {
-            "title_fi": "TEST_Taistelu",
+            "title_fi": "TEST_TrainingCamp",
             "description_fi": "kuvaus",
-            "category": "battle",
+            "category": "training_camp",
             "location": "Turku",
-            "start_date": "2026-07-01",
+            "start_date": "2027-07-01",
             "organizer": "TEST_Org",
         }
         r = api_client.post(f"{base_url}/api/events", json=payload)
@@ -218,12 +218,27 @@ class TestAdminEvents:
             f"{base_url}/api/admin/events/{ev_id}", json={"status": "approved"}
         )
         # Filter
-        r2 = api_client.get(f"{base_url}/api/events?category=battle")
+        r2 = api_client.get(f"{base_url}/api/events?category=training_camp")
         assert r2.status_code == 200
         cats = {e["category"] for e in r2.json()}
-        assert cats == {"battle"} or "battle" in cats and len(cats) == 1
+        assert cats == {"training_camp"}
         # cleanup
         admin_client.delete(f"{base_url}/api/admin/events/{ev_id}")
+
+    def test_battle_category_rejected(self, api_client, base_url):
+        # 'battle' is removed from EventCategory Literal -> 422
+        r = api_client.post(
+            f"{base_url}/api/events",
+            json={
+                "title_fi": "TEST_OldBattle",
+                "description_fi": "x",
+                "category": "battle",
+                "location": "L",
+                "start_date": "2027-06-01",
+                "organizer": "TEST_Org",
+            },
+        )
+        assert r.status_code == 422
 
     def test_admin_reject(self, admin_client, base_url, api_client):
         r = api_client.post(

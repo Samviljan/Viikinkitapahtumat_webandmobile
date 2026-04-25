@@ -111,7 +111,7 @@ class UserOut(BaseModel):
     role: str
 
 
-EventCategory = Literal["market", "battle", "course", "festival", "meetup", "other"]
+EventCategory = Literal["market", "training_camp", "course", "festival", "meetup", "other"]
 EventStatus = Literal["pending", "approved", "rejected"]
 
 
@@ -240,6 +240,7 @@ async def list_events(
     category: Optional[EventCategory] = None,
     from_date: Optional[str] = Query(None, alias="from"),
     to_date: Optional[str] = Query(None, alias="to"),
+    include_past: bool = False,
 ):
     q: dict = {"status": "approved"}
     if category:
@@ -251,7 +252,10 @@ async def list_events(
         if to_date:
             date_q["$lte"] = to_date
         q["start_date"] = date_q
-    docs = await db.events.find(q, {"_id": 0}).sort("start_date", 1).to_list(1000)
+    docs = await db.events.find(q, {"_id": 0}).sort("start_date", 1).to_list(2000)
+    if not include_past:
+        today = datetime.now(timezone.utc).date().isoformat()
+        docs = [d for d in docs if (d.get("end_date") or d.get("start_date") or "") >= today]
     return [EventOut(**d) for d in docs]
 
 
@@ -283,6 +287,8 @@ def _to_ical_date(iso_date: str) -> str:
 @api_router.get("/events.ics")
 async def events_ical():
     docs = await db.events.find({"status": "approved"}, {"_id": 0}).sort("start_date", 1).to_list(2000)
+    today = datetime.now(timezone.utc).date().isoformat()
+    docs = [d for d in docs if (d.get("end_date") or d.get("start_date") or "") >= today]
     site = os.environ.get("PUBLIC_SITE_URL", "").rstrip("/")
     lines = [
         "BEGIN:VCALENDAR",

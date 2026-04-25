@@ -18,7 +18,7 @@ function sameDay(a, b) {
 
 const CAT_DOT = {
   market: "bg-viking-gold",
-  battle: "bg-viking-ember",
+  training_camp: "bg-viking-ember",
   course: "bg-emerald-500/80",
   festival: "bg-amber-400",
   meetup: "bg-viking-stone",

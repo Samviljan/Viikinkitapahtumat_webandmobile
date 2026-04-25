@@ -1,0 +1,48 @@
+{
+  "summary": "Iteration 4 verification — past-event filter, category rename battle->training_camp, viikinkitapahtumat.fi image URLs restored, sword-images PNGs. Found+fixed ONE critical backend miss: server.py EventCategory Literal still listed 'battle' instead of 'training_camp', causing GET /api/events?category=training_camp and POST events with category='training_camp' to return 422. Fixed in /app/backend/server.py line 114. After fix: 66/66 pytest cases pass (added 11 new iter-4 tests; updated 6 prior tests for battle->training_camp + image_url path change + include_past expectations). Frontend verified: /events default LIST view shows 11 cards (Bonk Pohjalla VII filtered out as past), Sleipnir present; calendar default view (April 2026) shows NO event dots; navigating to May 2026 shows Sleipnir; category filter dropdown options = ['Kaikki','Markkinat','Harjoitusleiri','Kurssi','Juhla','Kokoontuminen','Muu'] — no 'Taistelunäytös'; /swordfighting hero (/sword-images/miekkailu-hero.png) and reenactment (/sword-images/miekkailu-reenact.png) both load with naturalWidth=1376; old viikinkitapahtumat.fi/pics/miekkailu.jpg + pics/viikinki.jpg references gone. iCal feed excludes Bonk and Sleipnir is present (11 VEVENTs). Newsletter preview HTML excludes Bonk Pohjalla VII (uses select_upcoming_events).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/events list", "issues": ["Sleipnir EventCard category badge text 'Harjoitusleiri' was not detected via document.body.innerText scrape — likely because badge is absolutely positioned on top of card image. Visual badge tinting (CAT_TINT) is mapped correctly in code; dropdown filter rendering of 'Harjoitusleiri' verified via Radix select. NOT a functional bug."]},
+      {"screen": "Global", "issues": ["Carry-over from iter 2/3: 401 errors logged on every page load from GET /api/auth/me before login. Functionally harmless."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_backend_api.py",
+    "/app/backend/tests/test_seeded_and_new_fields.py",
+    "/app/backend/tests/test_newsletter_and_ical.py",
+    "/app/backend/tests/test_iteration4_past_filter.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Already fixed by testing agent) server.py EventCategory Literal: replaced 'battle' with 'training_camp'. Main agent should be aware this small change was not in iter-4 commit and was applied during testing.",
+    "(Optional, low priority) Consider whether Sleipnir card category badge needs improved visibility on top of the dark/red sleipnir.jpg image — tint may blend in.",
+    "(Optional) Suppress console.error for the cold-load 401 from /api/auth/me probe."
+  ],
+  "critical_code_review_comments": [
+    "CRITICAL FIX APPLIED: server.py EventCategory Literal was missed in iter-4 changes; still contained 'battle' literal. This caused 422 on GET /api/events?category=training_camp and on POST /api/events with category='training_camp'. The DB had been migrated to training_camp via seed script, so any user trying to submit a training_camp event from the form would have hit 422. Now fixed to Literal['market','training_camp','course','festival','meetup','other'].",
+    "Past-event filter is correctly implemented: list_events filters when include_past=False using (end_date OR start_date) >= today.isoformat(). events_ical applies the same logic. Newsletter uses select_upcoming_events which already enforces upcoming-only.",
+    "_serialize_event continues to strip _id correctly; no MongoDB ObjectId leakage observed.",
+    "/event-images/ orphan PNGs in /app/frontend/public/event-images/ are no longer referenced by any DB row but remain on disk — acceptable per problem statement.",
+    "Frontend i18n keys (cats.training_camp), CATS arrays, CAT_TINT, CAT_DOT all correctly migrated; no 'battle' references remain in the React source."
+  ],
+  "updated_files": [
+    "/app/backend/server.py (EventCategory Literal: battle -> training_camp)",
+    "/app/backend/tests/test_backend_api.py (battle -> training_camp; added test_battle_category_rejected)",
+    "/app/backend/tests/test_seeded_and_new_fields.py (use include_past=true for seeded asserts; bonk category training_camp; submit test uses training_camp + 2027 date)",
+    "/app/backend/tests/test_newsletter_and_ical.py (image_url assertions: viikinkitapahtumat.fi/pics/* not /event-images/; rosala image empty; include_past=true)",
+    "/app/backend/tests/test_iteration4_past_filter.py (NEW: 11 tests covering past-filter, training_camp, image URLs, newsletter exclusion)"
+  ],
+  "success_rate": {"backend": "100% (66/66)", "frontend": "100% (all iter-4 flows verified)"},
+  "test_credentials": "admin@viikinkitapahtumat.fi / ***REDACTED*** (verified working)",
+  "seed_data_creation": "Existing TEST_-prefix cleanup tests still operational. New tests use start_date 2027-* to keep TEST events in the future-default list.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter-4 green after one trivial backend fix. Today's date used in past-filter tests is read from datetime.now(timezone.utc) — tests assert today > 2026-04-05; if you re-run before 2026-04-06 the past-filter tests will skip-assert. Test files are now: test_backend_api.py (29), test_seeded_and_new_fields.py (9), test_newsletter_and_ical.py (16, was 17 — removed test_event_images_served_by_frontend since /event-images/ no longer authoritative), test_iteration4_past_filter.py (11). The frontend Tabs (Kalenteri/Lista) is a Radix Tabs primitive; click via button:has-text('Lista'). The Kategoria filter is a Radix Select via [role='combobox'].",
+  "rca of the issue": "ROOT CAUSE: E1 updated EventCategory references in seed scripts, frontend, and the runtime filter logic but missed updating the Pydantic Literal type alias in server.py line 114. Because EventOut uses category: str (not EventCategory), GETs returning training_camp events still serialized fine — masking the bug. The bug only surfaced when (a) a query parameter category=training_camp was passed (Pydantic validates query against Literal -> 422) or (b) a POST submitted category=training_camp (Pydantic validates body -> 422). REPRODUCTION: curl '$BASE/api/events?category=training_camp' -> {detail:[{type:literal_error,...expected: 'market', 'battle', 'course', 'festival', 'meetup' or 'other'}]} HTTP 422. MITIGATION: changed Literal to ['market','training_camp','course','festival','meetup','other']. RETEST: 66/66 pass."
+}

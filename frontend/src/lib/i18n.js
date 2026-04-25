@@ -80,7 +80,7 @@ const TRANSLATIONS = {
     },
     cats: {
       market: "Markkinat",
-      battle: "Taistelunäytös",
+      training_camp: "Harjoitusleiri",
       course: "Kurssi",
       festival: "Juhla",
       meetup: "Kokoontuminen",
@@ -285,7 +285,7 @@ const TRANSLATIONS = {
       success: "Thank you! Your event was submitted for review.",
       error: "Submission failed",
     },
-    cats: { market: "Markets", battle: "Battle reenactment", course: "Course", festival: "Festival", meetup: "Meetup", other: "Other" },
+    cats: { market: "Markets", training_camp: "Training camp", course: "Course", festival: "Festival", meetup: "Meetup", other: "Other" },
     months: ["January","February","March","April","May","June","July","August","September","October","November","December"],
     weekdays_short: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
     admin: {
@@ -481,7 +481,7 @@ const TRANSLATIONS = {
       success: "Tack! Ditt evenemang har skickats för granskning.",
       error: "Det gick inte att skicka",
     },
-    cats: { market: "Marknad", battle: "Slaguppvisning", course: "Kurs", festival: "Fest", meetup: "Träff", other: "Annat" },
+    cats: { market: "Marknad", training_camp: "Träningsläger", course: "Kurs", festival: "Fest", meetup: "Träff", other: "Annat" },
     months: ["Januari","Februari","Mars","April","Maj","Juni","Juli","Augusti","September","Oktober","November","December"],
     weekdays_short: ["Mån","Tis","Ons","Tor","Fre","Lör","Sön"],
     admin: {

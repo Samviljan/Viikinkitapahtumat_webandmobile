@@ -21,7 +21,7 @@ EXPECTED_TITLES = [
 
 class TestSeededEvents:
     def test_all_12_seeded_titles_present_and_approved(self, api_client, base_url):
-        r = api_client.get(f"{base_url}/api/events")
+        r = api_client.get(f"{base_url}/api/events?include_past=true")
         assert r.status_code == 200, r.text
         events = r.json()
         titles = [e["title_fi"] for e in events]
@@ -32,17 +32,17 @@ class TestSeededEvents:
             assert e["status"] == "approved"
 
     def test_bonk_audience_and_fight_style(self, api_client, base_url):
-        r = api_client.get(f"{base_url}/api/events")
+        r = api_client.get(f"{base_url}/api/events?include_past=true")
         events = {e["title_fi"]: e for e in r.json()}
         bonk = events.get("Bonk Pohjalla VII")
         assert bonk is not None
         assert bonk["audience"] == "Harrastajat"
         assert bonk["fight_style"] == "Eastern"
-        assert bonk["category"] == "battle"
+        assert bonk["category"] == "training_camp"
         assert bonk["start_date"] == "2026-04-03"
 
     def test_vahakyro_audience_and_fight_style(self, api_client, base_url):
-        r = api_client.get(f"{base_url}/api/events")
+        r = api_client.get(f"{base_url}/api/events?include_past=true")
         events = {e["title_fi"]: e for e in r.json()}
         v = events.get("Vähänkyrön Viikinkipäivä")
         assert v is not None
@@ -50,7 +50,7 @@ class TestSeededEvents:
         assert v["fight_style"] == "Western"
 
     def test_seeded_events_have_audience_and_fight_style_fields(self, api_client, base_url):
-        r = api_client.get(f"{base_url}/api/events")
+        r = api_client.get(f"{base_url}/api/events?include_past=true")
         events = {e["title_fi"]: e for e in r.json()}
         for title in EXPECTED_TITLES:
             ev = events.get(title)
@@ -60,14 +60,14 @@ class TestSeededEvents:
             assert "fight_style" in ev
 
     def test_seed_no_internal_seed_slug_leaked(self, api_client, base_url):
-        r = api_client.get(f"{base_url}/api/events")
+        r = api_client.get(f"{base_url}/api/events?include_past=true")
         for e in r.json():
             assert "seed_slug" not in e
             assert "_id" not in e
 
     def test_calendar_range_april_to_august_2026(self, api_client, base_url):
         r = api_client.get(
-            f"{base_url}/api/events?from=2026-04-01&to=2026-08-31"
+            f"{base_url}/api/events?from=2026-04-01&to=2026-08-31&include_past=true"
         )
         assert r.status_code == 200
         titles = [e["title_fi"] for e in r.json()]
@@ -81,9 +81,9 @@ class TestSubmitNewFields:
         payload = {
             "title_fi": "TEST_AudienceFightStyle",
             "description_fi": "kuvaus",
-            "category": "battle",
+            "category": "training_camp",
             "location": "Tampere",
-            "start_date": "2026-09-15",
+            "start_date": "2027-09-15",
             "organizer": "TEST_Org_AF",
             "audience": "Harrastajat",
             "fight_style": "Eastern",

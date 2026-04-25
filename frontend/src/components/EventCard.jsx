@@ -5,7 +5,7 @@ import { useI18n, pickLocalized } from "@/lib/i18n";
 
 const CAT_TINT = {
   market: "bg-viking-gold/15 text-viking-gold border-viking-gold/30",
-  battle: "bg-viking-ember/15 text-viking-ember border-viking-ember/40",
+  training_camp: "bg-viking-ember/15 text-viking-ember border-viking-ember/40",
   course: "bg-viking-forest/40 text-viking-bone border-viking-forest",
   festival: "bg-viking-gold/15 text-viking-gold border-viking-gold/30",
   meetup: "bg-viking-surface2 text-viking-stone border-viking-edge",

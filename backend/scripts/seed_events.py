@@ -20,7 +20,7 @@ EVENTS = [
         "title_fi": "Bonk Pohjalla VII",
         "description_fi": "Eastern style viking fighting training weekend and BONK tournament. Harrastajille suunnattu viikonloppu, joka huipentuu BONK-turnaukseen.",
         "description_en": "Eastern style viking fighting training weekend and BONK tournament.",
-        "category": "battle",
+        "category": "training_camp",
         "location": "Oulu",
         "start_date": "2026-04-03",
         "end_date": "2026-04-05",
@@ -38,7 +38,7 @@ EVENTS = [
             "Sleipnir-leirin. Voittoa tavoittelematon tapahtuma elävöittäjille, jotka elävöittävät "
             "Suomen rautakautta, viikinkiaikaa ja Suomen keskiaikaa."
         ),
-        "category": "battle",
+        "category": "training_camp",
         "location": "Ulvila",
         "start_date": "2026-05-21",
         "end_date": "2026-05-24",

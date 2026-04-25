@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 
 const ICAL_PATH = "/api/events.ics";
 
-const CATS = ["all", "market", "battle", "course", "festival", "meetup", "other"];
+const CATS = ["all", "market", "training_camp", "course", "festival", "meetup", "other"];
 
 export default function Events() {
   const { t } = useI18n();
