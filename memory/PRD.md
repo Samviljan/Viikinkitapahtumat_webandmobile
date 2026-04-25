@@ -80,6 +80,14 @@ Modernise https://viikinkitapahtumat.fi with: visually better calendar/event lis
 - ✅ APScheduler now registers TWO jobs at startup: `monthly_digest` + `weekly_admin_report`.
 - ✅ 79/79 backend tests + frontend e2e green.
 
+## Iteration 6 — Code review security hardening (2026-04-25)
+- ✅ **DOMPurify XSS sanitization** wrapped around both `dangerouslySetInnerHTML` mounts in AdminDashboard (newsletter preview + weekly report preview). Verified at runtime: no `<script>` / `on*=` attributes survive in DOM.
+- ✅ **Removed JWT from localStorage**. Frontend now relies solely on the httpOnly Secure SameSite=none cookie set by the backend. `api.js` no longer has the Bearer interceptor; `auth.js` no longer reads/writes `vk_token` in localStorage. Only language preference (`vk_lang`) remains in localStorage.
+- ✅ **CORS fix for credentialed cookies**: when `CORS_ORIGINS` is `*`/empty, middleware now uses `allow_origin_regex=".*"` so the response echoes the request Origin (browsers reject `*` + `Access-Control-Allow-Credentials: true`). Explicit allow-list path preserved for production.
+- ✅ Logout silent catch now logs `console.warn` instead of swallowing errors.
+- ✅ Stable React keys in Swordfighting fact cards, Home steps, EventCalendar cells.
+- ✅ 79/79 backend + frontend e2e green.
+
 ## Deferred — Native mobile app
 - Native React Native / Expo app is its own separate codebase + iteration. PWA already covers installability + offline shell on mobile, so this is on hold until the user is ready to invest in a proper native project.
 
