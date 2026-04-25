@@ -1,0 +1,36 @@
+{
+  "summary": "Iter 6 retest after E1 fixed the two HIGH-priority issues from iter 5: (a) FI translations for admin.weekly_title/sub/preview/send_now/confirm — VERIFIED PRESENT at i18n.js lines 120-125, (b) EN sword.p3 'armour' — VERIFIED REMOVED, line 369 now reads 'Period weapons — viking swords and shields — create as authentic an experience as possible.' Backend: 79/79 pytest still pass (incl. 13 iter5 tests). Frontend: admin login works (cookie-based, /api/auth/login returns 200), default-FI WeeklyReportPanel renders REAL Finnish text — heading 'Viikkokatsaus adminille', sub 'Saat sähköpostiisi…', button 'LÄHETÄ VIIKKOKATSAUS NYT' (CSS uppercase of 'Lähetä viikkokatsaus nyt'). NO raw i18n keys visible. Preview button click hits /api/admin/weekly-report/preview returning 200, inline HTML with 'Viikkokatsaus' rendered. EN /swordfighting third paragraph confirmed clean (no armour/armor; phrase 'viking swords and shields' present). FI /swordfighting clean (no haarniska). SV /swordfighting clean (initial substring match for 'rustning' was a false positive — line 583 contains 'utrustning' = 'equipment' and line 582 'träningsutrustning' = 'training equipment'; the actual word 'rustningar' is NOT present anywhere). i18n.js compiles without errors — no webpack overlay seen.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration5_weekly_and_decision_emails.py",
+    "/app/backend/tests/test_backend_api.py",
+    "/app/backend/tests/test_iteration4_past_filter.py",
+    "/app/backend/tests/test_newsletter_and_ical.py",
+    "/app/backend/tests/test_seeded_and_new_fields.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Both HIGH-priority issues from iter 5 are resolved correctly. FI admin.weekly_* keys present (i18n.js lines 120-125) and EN sword.p3 (line 369) no longer mentions armour.",
+    "Iter 5 testing agent's stray 'rustning' alert was a false positive caused by substring matching against 'utrustning'/'träningsutrustning' (Swedish for 'equipment'). SV sword.p3 is genuinely clean.",
+    "i18n.js is now ~667 lines with three hardcoded TRANSLATIONS dicts; approaching the 700-line threshold. Consider splitting per-language files (locales/fi.js, locales/en.js, locales/sv.js) when next adding translation keys.",
+    "Backend PATCH /api/admin/events/{id} latency well under 500ms; BackgroundTasks pattern continues to work as expected.",
+    "APScheduler still registers both jobs (monthly_digest + weekly_admin_report) at startup — confirmed in backend logs."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (79/79)", "frontend": "100% (admin panel FI text correct, sword pages clean in all 3 langs, no compile errors)"},
+  "test_credentials": "admin@viikinkitapahtumat.fi / ***REDACTED*** (verified working — POST /api/auth/login returns 200 with httpOnly access_token cookie)",
+  "seed_data_creation": "No new test data created in this iteration; iter5 tests still self-clean their TEST_iter5_* events.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter 6 retest confirmed all iter 5 HIGH-priority fixes. Both backend (79/79 pytest) and frontend (admin FI translations + EN sword.p3 cleanup) pass. Public frontend URL: https://events-refresh-1.preview.emergentagent.com. Admin login flow: fill email + password inputs, press Enter (form submit) — clicking the submit button works too but my .first selector was unreliable in iter5 first run. The login button label is 'KIRJAUDU' in FI. The 401 errors logged on initial /admin/login page-load are expected (GET /api/auth/me before login). For SV i18n checks, search for the exact word 'rustningar' (not substring 'rustning'), since 'utrustning' = equipment is a normal Swedish word.",
+  "rca of the issue": "No issues remaining. Iter 5 root cause was: (1) E1 added admin.weekly_* keys only to EN+SV, missed FI block — fixed by adding lines 120-125 in fi.admin. (2) E1 cleaned haarniskat (FI) and rustningar (SV) from sword.p3 but missed armour (EN) — fixed by rewriting EN p3 to 'viking swords and shields'. Both verified via grep + DOM inspection + screenshot."
+}

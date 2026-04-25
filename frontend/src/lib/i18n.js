@@ -117,6 +117,12 @@ const TRANSLATIONS = {
       newsletter_confirm: "Lähetetäänkö uutiskirje kaikille aktiivisille tilaajille?",
       newsletter_sent: "Lähetetty",
       newsletter_count: "Tapahtumia kirjeessä",
+      weekly_title: "Viikkokatsaus adminille",
+      weekly_sub:
+        "Saat sähköpostiisi lyhyen yhteenvedon (odottavat tapahtumat, tulevat 30 pv:n tapahtumat, uudet tilaajat). Lähtee automaattisesti joka maanantai klo 09:00 Suomen aikaa.",
+      weekly_send_now: "Lähetä viikkokatsaus nyt",
+      weekly_preview: "Esikatsele",
+      weekly_confirm: "Lähetetäänkö viikkokatsaus omaan sähköpostiisi?",
     },
     about: undefined,
     courses: {
@@ -360,7 +366,7 @@ const TRANSLATIONS = {
       p2:
         "It's not just physical activity — it's a deep study of viking warfare and culture. Practitioners dive into historical sources, archaeological finds and combat methods to understand and apply period-correct strategies.",
       p3:
-        "Practical training focuses on basic sword technique, shield work, footwork and combat skills. Period weapons — viking swords, shields and armour — create as authentic an experience as possible. Many groups follow strict safety rules.",
+        "Practical training focuses on basic sword technique, shield work, footwork and combat skills. Period weapons — viking swords and shields — create as authentic an experience as possible. Many groups follow strict safety rules.",
       h_reenactment: "Reenactment",
       r1:
         "Historical reenactment lets you experience and study past eras as living events. The viking era comes vividly and authentically to life.",
