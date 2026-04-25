@@ -46,6 +46,7 @@ const TRANSLATIONS = {
       location: "Paikka",
       website: "Sivusto",
       back: "Takaisin",
+      ical_subscribe: "Tilaa kalenteri",
     },
     submit: {
       title: "Ilmoita tapahtuma",
@@ -107,12 +108,17 @@ const TRANSLATIONS = {
       load_error: "Tapahtumien lataus epäonnistui",
       action_ok: "Toiminto onnistui",
       action_error: "Toiminto epäonnistui",
+      subscribers: "Tilaajat",
+      newsletter_title: "Kuukausi-uutiskirje",
+      newsletter_sub:
+        "Lähetä manuaalisesti yhteenveto tulevista 60 päivän tapahtumista, tai jätä ajastuksen hoitavaksi (joka kuukauden 1. päivä klo 09:00 Suomen aikaa).",
+      newsletter_preview: "Esikatsele",
+      newsletter_send_now: "Lähetä nyt",
+      newsletter_confirm: "Lähetetäänkö uutiskirje kaikille aktiivisille tilaajille?",
+      newsletter_sent: "Lähetetty",
+      newsletter_count: "Tapahtumia kirjeessä",
     },
-    about: {
-      title: "Tietoa sivustosta",
-      body:
-        "Viikinkitapahtumat.fi on yhteisövetoinen sivusto Suomen viikinki-, rauta-aika- ja varhaiskeskiaikaharrastajille. Tarjoamme yhteisen kalenterin tapahtumille, kurssitietoa, listauksen kaarteista ja yhdistyksistä sekä kauppoja ja käsityöläisiä, joilta saat tarvikkeita.",
-    },
+    about: undefined,
     courses: {
       title: "Kurssit ja työpajat",
       sub: "Pitkä lista käsityö-, miekkailu- ja muista historiallisista taitokursseista.",
@@ -183,6 +189,22 @@ const TRANSLATIONS = {
     },
     fight_label: "Taistelutyyli",
     audience_label: "Luokittelu",
+    newsletter: {
+      eyebrow: "Kuukausikatsaus",
+      title: "Tilaa viikinkikalenteri sähköpostiisi",
+      body:
+        "Lähetämme kerran kuukaudessa lyhyen yhteenvedon tulevista viikinki-, rauta-aika- ja varhaiskeskiaikatapahtumista Suomessa. Ei spammia, voit perua tilauksen koska tahansa.",
+      placeholder: "sahkoposti@osoite.fi",
+      cta: "Tilaa",
+      privacy:
+        "Tallennamme vain sähköpostiosoitteesi ja kielesi. Emme jaa osoitteita kolmansille osapuolille.",
+      success_title: "Kiitos tilauksesta!",
+      success_body: "Lähetimme vahvistuksen sähköpostiisi.",
+      unsub_title: "Tilaus peruttu",
+      unsub_body: "Et saa enää uutiskirjeitämme. Voit aina tilata uudelleen sivustoltamme.",
+      unsub_invalid_title: "Linkki ei kelpaa",
+      unsub_invalid_body: "Tämä peruutuslinkki on vanhentunut tai virheellinen.",
+    },
     footer: {
       contact: "admin@viikinkitapahtumat.fi",
       rights: "Kaikki oikeudet pidätetään.",
@@ -198,7 +220,6 @@ const TRANSLATIONS = {
       courses: "Courses",
       guilds: "Guilds & associations",
       shops: "Shops",
-      about: "About",
       contact: "Contact",
       admin: "Admin",
     },
@@ -287,12 +308,17 @@ const TRANSLATIONS = {
       load_error: "Failed to load events",
       action_ok: "Done",
       action_error: "Action failed",
+      subscribers: "Subscribers",
+      newsletter_title: "Monthly newsletter",
+      newsletter_sub:
+        "Send a digest of the next 60 days of events to all active subscribers manually, or let the scheduler send it on the 1st of each month at 09:00 Helsinki time.",
+      newsletter_preview: "Preview",
+      newsletter_send_now: "Send now",
+      newsletter_confirm: "Send the newsletter to all active subscribers?",
+      newsletter_sent: "Sent",
+      newsletter_count: "Events in digest",
     },
-    about: {
-      title: "About",
-      body:
-        "Viikinkitapahtumat.fi is a community-driven hub for Finnish Viking, Iron Age and early medieval reenactors — a shared calendar for events, courses, guilds and craftspeople.",
-    },
+    about: undefined,
     courses: {
       title: "Courses & workshops",
       sub: "Crafts, swordsmanship, and other historical skill courses.",
@@ -361,6 +387,22 @@ const TRANSLATIONS = {
     },
     fight_label: "Fighting style",
     audience_label: "Audience",
+    newsletter: {
+      eyebrow: "Monthly digest",
+      title: "Get the viking calendar in your inbox",
+      body:
+        "Once a month we send a short summary of upcoming viking, iron-age and early-medieval events in Finland. No spam, unsubscribe any time.",
+      placeholder: "your@email.com",
+      cta: "Subscribe",
+      privacy:
+        "We only store your email address and language. We don't share emails with third parties.",
+      success_title: "Thanks for subscribing!",
+      success_body: "We've sent a confirmation to your email.",
+      unsub_title: "You've been unsubscribed",
+      unsub_body: "You will no longer receive our newsletter. You can resubscribe any time from our site.",
+      unsub_invalid_title: "Invalid link",
+      unsub_invalid_body: "This unsubscribe link has expired or is invalid.",
+    },
     footer: { contact: "admin@viikinkitapahtumat.fi", rights: "All rights reserved." },
   },
   sv: {
@@ -373,7 +415,6 @@ const TRANSLATIONS = {
       courses: "Kurser",
       guilds: "Gillen & föreningar",
       shops: "Butiker",
-      about: "Om sidan",
       contact: "Kontakt",
       admin: "Admin",
     },
@@ -408,6 +449,7 @@ const TRANSLATIONS = {
       location: "Plats",
       website: "Webbplats",
       back: "Tillbaka",
+      ical_subscribe: "Prenumerera kalender",
     },
     submit: {
       title: "Anmäl evenemang",
@@ -462,12 +504,17 @@ const TRANSLATIONS = {
       load_error: "Det gick inte att ladda evenemangen",
       action_ok: "Klart",
       action_error: "Åtgärden misslyckades",
+      subscribers: "Prenumeranter",
+      newsletter_title: "Månatligt nyhetsbrev",
+      newsletter_sub:
+        "Skicka en sammanfattning av de kommande 60 dagarnas evenemang manuellt, eller låt schemaläggaren skicka den den 1:a varje månad kl. 09:00 finsk tid.",
+      newsletter_preview: "Förhandsgranska",
+      newsletter_send_now: "Skicka nu",
+      newsletter_confirm: "Skicka nyhetsbrevet till alla aktiva prenumeranter?",
+      newsletter_sent: "Skickat",
+      newsletter_count: "Evenemang i utskicket",
     },
-    about: {
-      title: "Om sidan",
-      body:
-        "Viikinkitapahtumat.fi är en gemenskapsdriven plats för finska vikinga-, järnålders- och tidigmedeltida re-enactors — en gemensam kalender för evenemang, kurser, gillen och hantverkare.",
-    },
+    about: undefined,
     courses: {
       title: "Kurser & verkstäder",
       sub: "Hantverk, svärdsfäktning och andra historiska färdigheter.",
@@ -535,6 +582,22 @@ const TRANSLATIONS = {
     },
     fight_label: "Stridsstil",
     audience_label: "Klassificering",
+    newsletter: {
+      eyebrow: "Månadsbrev",
+      title: "Få vikingakalendern i din inkorg",
+      body:
+        "En gång i månaden skickar vi en kort sammanfattning av kommande vikinga-, järnålders- och tidigmedeltida evenemang i Finland. Ingen spam, avsluta när som helst.",
+      placeholder: "din@epost.se",
+      cta: "Prenumerera",
+      privacy:
+        "Vi lagrar bara din e-postadress och språk. Vi delar inte e-postadresser med tredje part.",
+      success_title: "Tack för att du prenumererar!",
+      success_body: "Vi har skickat en bekräftelse till din e-post.",
+      unsub_title: "Du har avregistrerats",
+      unsub_body: "Du kommer inte längre att få vårt nyhetsbrev. Du kan prenumerera igen när som helst.",
+      unsub_invalid_title: "Ogiltig länk",
+      unsub_invalid_body: "Denna avregistreringslänk har gått ut eller är ogiltig.",
+    },
     footer: { contact: "admin@viikinkitapahtumat.fi", rights: "Alla rättigheter förbehållna." },
   },
 };

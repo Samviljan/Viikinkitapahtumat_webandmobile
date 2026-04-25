@@ -4,6 +4,7 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { Menu, X, Globe2, Shield, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import NewsletterSignup from "@/components/NewsletterSignup";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +18,6 @@ const NAV_ITEMS = [
   { to: "/courses", key: "nav.courses" },
   { to: "/guilds", key: "nav.guilds" },
   { to: "/shops", key: "nav.shops" },
-  { to: "/about", key: "nav.about" },
   { to: "/contact", key: "nav.contact" },
 ];
 
@@ -204,23 +204,31 @@ export default function Layout({ children }) {
 
       {/* Footer */}
       <footer className="border-t border-viking-edge mt-20 py-12 bg-viking-surface/40">
-        <div className="mx-auto max-w-7xl px-4 sm:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto max-w-7xl px-4 sm:px-8 grid grid-cols-1 lg:grid-cols-3 gap-10">
+          <div className="flex items-start gap-3">
             <span className="text-viking-gold font-accent text-xl">ᚠ</span>
             <div>
               <p className="font-accent tracking-[0.2em] text-sm text-viking-bone">
                 {t("site.name").toUpperCase()}
               </p>
-              <p className="text-xs text-viking-stone mt-1">{t("footer.contact")}</p>
+              <p className="text-xs text-viking-stone mt-1">{t("site.tagline")}</p>
+              <p className="text-xs text-viking-stone mt-2">{t("footer.contact")}</p>
             </div>
           </div>
-          <div className="text-xs text-viking-stone">
-            © {new Date().getFullYear()} {t("site.name")} · {t("footer.rights")}
+
+          <div className="lg:col-span-2">
+            <NewsletterSignup variant="footer" />
           </div>
+        </div>
+
+        <div className="mx-auto max-w-7xl px-4 sm:px-8 mt-10 pt-6 border-t border-viking-edge/60 flex flex-col sm:flex-row justify-between gap-4 text-xs text-viking-stone">
+          <span>
+            © {new Date().getFullYear()} {t("site.name")} · {t("footer.rights")}
+          </span>
           <Link
             to="/admin/login"
             data-testid="admin-login-link"
-            className="text-[10px] font-rune text-viking-stone hover:text-viking-gold transition-colors"
+            className="text-[10px] font-rune hover:text-viking-gold transition-colors"
           >
             {t("nav.admin")}
           </Link>

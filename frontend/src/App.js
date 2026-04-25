@@ -8,13 +8,12 @@ import Layout from "@/components/Layout";
 import Home from "@/pages/Home";
 import Events from "@/pages/Events";
 import EventDetail from "@/pages/EventDetail";
-import Submit from "@/pages/Submit";
-import About from "@/pages/About";
-import Courses from "@/pages/Courses";
+import Submit from "@/pages/Submit";import Courses from "@/pages/Courses";
 import Guilds from "@/pages/Guilds";
 import Shops from "@/pages/Shops";
 import Swordfighting from "@/pages/Swordfighting";
 import Contact from "@/pages/Contact";
+import Unsubscribe from "@/pages/Unsubscribe";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 
@@ -29,12 +28,12 @@ function App() {
               <Route path="/events" element={<Events />} />
               <Route path="/events/:id" element={<EventDetail />} />
               <Route path="/submit" element={<Submit />} />
-              <Route path="/about" element={<About />} />
               <Route path="/courses" element={<Courses />} />
               <Route path="/guilds" element={<Guilds />} />
               <Route path="/shops" element={<Shops />} />
               <Route path="/swordfighting" element={<Swordfighting />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/unsubscribe" element={<Unsubscribe />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route

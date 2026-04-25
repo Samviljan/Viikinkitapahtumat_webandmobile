@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import EventCard from "@/components/EventCard";
 import PageHero from "@/components/PageHero";
+import NewsletterSignup from "@/components/NewsletterSignup";
 import { Compass, Send, ShieldCheck } from "lucide-react";
 
 const HERO_IMG =
@@ -120,6 +121,11 @@ export default function Home() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Newsletter */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-8 py-12" data-testid="newsletter-section">
+        <NewsletterSignup variant="card" />
       </section>
     </>
   );

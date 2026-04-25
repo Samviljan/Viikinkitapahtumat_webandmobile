@@ -12,6 +12,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { CalendarPlus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const ICAL_PATH = "/api/events.ics";
 
 const CATS = ["all", "market", "battle", "course", "festival", "meetup", "other"];
 
@@ -61,6 +65,18 @@ export default function Events() {
               </SelectContent>
             </Select>
           </div>
+          <a
+            href={`${process.env.REACT_APP_BACKEND_URL}${ICAL_PATH}`}
+            data-testid="ical-subscribe"
+          >
+            <Button
+              variant="outline"
+              className="border-viking-gold/50 text-viking-gold hover:bg-viking-gold/10 hover:text-viking-gold rounded-sm font-rune text-xs h-10"
+            >
+              <CalendarPlus size={14} className="mr-2" />
+              {t("events.ical_subscribe")}
+            </Button>
+          </a>
         </div>
 
         <Tabs defaultValue="calendar" className="w-full">
