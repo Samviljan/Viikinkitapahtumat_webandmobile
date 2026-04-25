@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -195,6 +196,9 @@ function MerchantDialog({ item, busy, onCancel, onSave }) {
           <DialogTitle className="font-serif text-xl">
             {form.id ? t("admin.edit_merchant") : t("admin.add_merchant")}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            {form.id ? t("admin.edit_merchant") : t("admin.add_merchant")}
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 mt-2">
           <div>

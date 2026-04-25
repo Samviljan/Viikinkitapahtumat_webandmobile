@@ -3,21 +3,13 @@ import { Link } from "react-router-dom";
 import { Calendar, MapPin, ArrowUpRight } from "lucide-react";
 import { useI18n, pickLocalized } from "@/lib/i18n";
 
-const CAT_TINT = {
-  market: "bg-viking-gold/15 text-viking-gold border-viking-gold/30",
-  training_camp: "bg-viking-ember/15 text-viking-ember border-viking-ember/40",
-  course: "bg-viking-forest/40 text-viking-bone border-viking-forest",
-  festival: "bg-viking-gold/15 text-viking-gold border-viking-gold/30",
-  meetup: "bg-viking-surface2 text-viking-stone border-viking-edge",
-  other: "bg-viking-surface2 text-viking-stone border-viking-edge",
-};
-
 export default function EventCard({ event, compact = false }) {
   const { lang, t } = useI18n();
   const title = pickLocalized(event, lang, "title");
   const desc = pickLocalized(event, lang, "description");
 
   const dateLabel = formatDateRange(event.start_date, event.end_date, lang);
+  const categoryLabel = t(`cats.${event.category}`);
 
   return (
     <Link
@@ -34,25 +26,24 @@ export default function EventCard({ event, compact = false }) {
             className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-viking-surface via-viking-surface/40 to-transparent" />
-          <span
-            className={`absolute top-3 left-3 font-rune text-[10px] px-2.5 py-1 rounded-sm border ${
-              CAT_TINT[event.category] || CAT_TINT.other
-            }`}
+          {/* Single-color category bar across the image */}
+          <div
+            data-testid={`event-card-cat-${event.id}`}
+            className="absolute top-0 left-0 right-0 bg-viking-ember/95 text-viking-bone font-rune uppercase tracking-[0.2em] text-[10px] sm:text-[11px] px-4 py-2 text-center border-b border-viking-gold/40 ember-glow shadow-[0_2px_0_rgba(0,0,0,0.35)]"
           >
-            {t(`cats.${event.category}`)}
-          </span>
+            {categoryLabel}
+          </div>
         </div>
       ) : null}
 
       <div className="p-5 sm:p-6 space-y-3">
         {(compact || !event.image_url) && (
-          <span
-            className={`inline-block font-rune text-[10px] px-2.5 py-1 rounded-sm border ${
-              CAT_TINT[event.category] || CAT_TINT.other
-            }`}
+          <div
+            data-testid={`event-card-cat-${event.id}`}
+            className="-mx-5 sm:-mx-6 -mt-5 sm:-mt-6 mb-1 bg-viking-ember/95 text-viking-bone font-rune uppercase tracking-[0.2em] text-[10px] sm:text-[11px] px-5 sm:px-6 py-2 text-center border-b border-viking-gold/40 ember-glow"
           >
-            {t(`cats.${event.category}`)}
-          </span>
+            {categoryLabel}
+          </div>
         )}
         <h3 className="font-serif text-2xl text-viking-bone leading-tight group-hover:text-viking-gold transition-colors">
           {title}

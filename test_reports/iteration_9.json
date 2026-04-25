@@ -1,0 +1,32 @@
+{
+  "summary": "Frontend-only e2e for iter 9 changes (month grouping in /events list view, single-color category bar on EventCard, Radix DialogDescription a11y fix, structural refactor of EventCalendar.jsx + AdminDashboard.jsx into calendar/* and admin/* sub-components). All four asks verified live on the public preview URL with admin login. NO regressions on existing data-testids; all new testids (events-list-by-month, month-{year}-{monthIndex}, event-card-cat-{id}) work. NO Radix 'Missing Description or aria-describedby' console warning observed on AdminEventEditDialog, MerchantDialog, or GuildDialog open. FI->EN->SV month-name translation confirmed (Toukokuu->May->Maj). Calendar prev/next navigation and cal-event-{id} -> /events/{id} links still work after the calendar refactor. Admin /admin still renders 4 stat cards, newsletter-panel, weekly-report-panel, admin-merchants-panel, admin-guilds-panel, admin-status-tabs with pending/approved/rejected/all switching, and 12 admin-row-{id} entries each exposing edit-{id}/reject-{id}/delete-{id}. Backend smoke skipped per request (testing_type=frontend only).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_9.json",
+    "/app/test_reports/iteration_8.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Events.jsx EventsByMonth: bucketing key uses month index 0-11 padded to 2 digits, but data-testid is emitted as month-{year}-{g.month} (raw 0..11) which matches the spec exactly. Sorting by start_date string before bucketing correctly preserves chronological order across years.",
+    "EventCard.jsx: viking-ember/95 background + bone uppercase tracked text for the category bar with ember-glow + border-viking-gold/40 reads cleanly over both image and non-image variants. The image-variant absolutely-positioned bar (top-0 left-0 right-0) sits above the bottom gradient overlay correctly.",
+    "EventCalendar.jsx now a thin orchestrator (~60 LoC) delegating to CalendarHeader/CalendarDayCell/calendarUtils — clean separation. Memoization of grid + eventsByDay is preserved. Refactor did NOT break event-calendar / cal-prev / cal-next / cal-event-{id} testids — all observed in DOM.",
+    "AdminDashboard.jsx now ~145 LoC down from prior monolith, delegating to AdminStatCard/AdminNewsletterPanel/AdminWeeklyReportPanel/AdminEventRow + existing AdminMerchantsPanel/AdminGuildsPanel/AdminEventEditDialog. All required testids preserved: admin-status-tabs, admin-tab-{pending|approved|rejected|all}, admin-empty, admin-row-{id} (verified 12 rows), edit-{id}/reject-{id}/delete-{id}, newsletter-panel, weekly-report-panel.",
+    "AdminEventEditDialog/AdminMerchantsPanel.MerchantDialog/AdminGuildsPanel.GuildDialog all now include <DialogDescription className='sr-only'> right after <DialogTitle> — Radix accessibility warning silenced (verified: 0 'Description'/aria-describedby warnings across all three dialog opens). Visible title still rendered via DialogTitle, hidden description provides aria-describedby target without visual change.",
+    "i18n months arrays for fi/en/sv all length-12 — month index is safe to use directly for t('months')[g.month].",
+    "Note: EventCalendar still uses lang prop forwarded to CalendarDayCell for date formatting — kept implicit dependency. calendarUtils.buildEventsByDay handles multi-day events via inclusive span between start_date and end_date (not re-verified visually here but the iter 7/8 baseline already passed this).",
+    "Pre-login 401 on /api/auth/me at AuthProvider cold-load is expected noise (carried over from prior iterations), unrelated to this iteration."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "skipped (no backend changes)", "frontend": "100% (all iter 9 asks verified)"},
+  "test_credentials": "admin@viikinkitapahtumat.fi / ***REDACTED*** — verified working.",
+  "seed_data_creation": "None. No TEST_ data created or left behind.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Public URL: https://events-refresh-1.preview.emergentagent.com. Iter 9 frontend changes verified end-to-end: (1) /events ?tab=list groups events under data-testid='events-list-by-month' with each section data-testid='month-{year}-{monthIndex}' and an h2 displaying t('months')[monthIndex] localized. Switch language via [data-testid='lang-switcher'] then [data-testid='lang-option-{fi|en|sv}']. (2) Each EventCard has data-testid='event-card-cat-{id}' bar with viking-ember bg + bone uppercase text showing t(`cats.${event.category}`). (3) Calendar tab still wired (event-calendar, cal-prev, cal-next, cal-event-{id}) after EventCalendar.jsx split into components/calendar/CalendarHeader.jsx + CalendarDayCell.jsx + calendarUtils.js. (4) AdminDashboard.jsx split into components/admin/AdminStatCard.jsx + AdminNewsletterPanel.jsx + AdminWeeklyReportPanel.jsx + AdminEventRow.jsx — all existing admin testids preserved. (5) DialogDescription sr-only added to AdminEventEditDialog.jsx, AdminMerchantsPanel.jsx (MerchantDialog), AdminGuildsPanel.jsx (GuildDialog) — Radix a11y warning gone. Approved tab has 12 events to test edit-{id} flow against; pending/rejected currently empty.",
+  "rca of the issue": "No issues. All four iter 9 asks (month grouping, category bar redesign, DialogDescription a11y fix, EventCalendar+AdminDashboard refactor) work end-to-end with no regressions to existing testids or flows."
+}

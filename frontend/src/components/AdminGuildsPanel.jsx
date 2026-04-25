@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -146,6 +147,9 @@ function GuildDialog({ item, busy, onCancel, onSave }) {
           <DialogTitle className="font-serif text-xl">
             {form.id ? t("admin.edit_guild") : t("admin.add_guild")}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            {form.id ? t("admin.edit_guild") : t("admin.add_guild")}
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 mt-2">
           <div>

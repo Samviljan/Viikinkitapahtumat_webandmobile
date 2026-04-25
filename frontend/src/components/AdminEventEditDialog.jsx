@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -86,6 +87,9 @@ export default function AdminEventEditDialog({ event, open, onOpenChange, onSave
           <DialogTitle className="font-serif text-2xl text-viking-bone">
             {t("admin.edit_event")}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            {t("admin.edit_event")}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mt-2">

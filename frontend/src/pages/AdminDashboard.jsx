@@ -1,16 +1,17 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Navigate, Link } from "react-router-dom";
-import DOMPurify from "dompurify";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
-import { useI18n, pickLocalized } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Check, X, Trash2, Calendar, MapPin, User, ExternalLink, Mail, Send, Eye, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import AdminEventEditDialog from "@/components/AdminEventEditDialog";
 import AdminMerchantsPanel from "@/components/AdminMerchantsPanel";
 import AdminGuildsPanel from "@/components/AdminGuildsPanel";
+import AdminStatCard from "@/components/admin/AdminStatCard";
+import AdminNewsletterPanel from "@/components/admin/AdminNewsletterPanel";
+import AdminWeeklyReportPanel from "@/components/admin/AdminWeeklyReportPanel";
+import AdminEventRow from "@/components/admin/AdminEventRow";
 
 const STATUSES = ["pending", "approved", "rejected", "all"];
 
@@ -20,12 +21,10 @@ export default function AdminDashboard() {
   const [status, setStatus] = useState("pending");
   const [items, setItems] = useState([]);
   const [stats, setStats] = useState(null);
-  const [busy, setBusy] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
 
   const load = useCallback(
     async (s = status) => {
-      setBusy(true);
       try {
         const [list, st] = await Promise.all([
           api.get("/admin/events", { params: { status: s } }),
@@ -35,11 +34,9 @@ export default function AdminDashboard() {
         setStats(st.data);
       } catch (e) {
         toast.error(t("admin.load_error"));
-      } finally {
-        setBusy(false);
       }
     },
-    [status]
+    [status, t]
   );
 
   useEffect(() => {
@@ -80,15 +77,15 @@ export default function AdminDashboard() {
 
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
-          <StatCard label={t("admin.pending")} value={stats.pending} accent="ember" />
-          <StatCard label={t("admin.approved")} value={stats.approved} accent="gold" />
-          <StatCard label={t("admin.rejected")} value={stats.rejected} accent="stone" />
-          <StatCard label={t("admin.subscribers")} value={stats.subscribers || 0} accent="gold" />
+          <AdminStatCard label={t("admin.pending")} value={stats.pending} accent="ember" />
+          <AdminStatCard label={t("admin.approved")} value={stats.approved} accent="gold" />
+          <AdminStatCard label={t("admin.rejected")} value={stats.rejected} accent="stone" />
+          <AdminStatCard label={t("admin.subscribers")} value={stats.subscribers || 0} accent="gold" />
         </div>
       )}
 
-      <NewsletterPanel />
-      <WeeklyReportPanel />
+      <AdminNewsletterPanel />
+      <AdminWeeklyReportPanel />
 
       <Tabs value={status} onValueChange={setStatus} className="w-full">
         <TabsList
@@ -145,278 +142,5 @@ export default function AdminDashboard() {
         onSaved={() => load()}
       />
     </section>
-  );
-}
-
-function NewsletterPanel() {
-  const { t } = useI18n();
-  const [sending, setSending] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [preview, setPreview] = useState(null);
-
-  async function loadPreview() {
-    try {
-      const { data } = await api.get("/admin/newsletter/preview");
-      setPreview(data);
-      setPreviewOpen(true);
-    } catch {
-      toast.error(t("admin.action_error"));
-    }
-  }
-
-  async function sendNow() {
-    if (!window.confirm(t("admin.newsletter_confirm"))) return;
-    setSending(true);
-    try {
-      const { data } = await api.post("/admin/newsletter/send");
-      toast.success(`${t("admin.newsletter_sent")}: ${data.sent}/${data.recipients}`);
-    } catch {
-      toast.error(t("admin.action_error"));
-    } finally {
-      setSending(false);
-    }
-  }
-
-  return (
-    <div className="carved-card rounded-sm p-6 sm:p-8 mb-10" data-testid="newsletter-panel">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-start gap-4">
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-sm border border-viking-gold/50 text-viking-gold flex-shrink-0">
-            <Mail size={18} />
-          </span>
-          <div>
-            <h3 className="font-serif text-2xl text-viking-bone">{t("admin.newsletter_title")}</h3>
-            <p className="text-sm text-viking-stone mt-1 max-w-2xl">
-              {t("admin.newsletter_sub")}
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <Button
-            variant="outline"
-            data-testid="newsletter-preview-btn"
-            onClick={loadPreview}
-            className="border-viking-edge text-viking-bone hover:border-viking-gold hover:text-viking-gold rounded-sm font-rune text-[10px]"
-          >
-            <Eye size={12} className="mr-2" />
-            {t("admin.newsletter_preview")}
-          </Button>
-          <Button
-            data-testid="newsletter-send-btn"
-            disabled={sending}
-            onClick={sendNow}
-            className="bg-viking-ember hover:bg-viking-emberHover text-viking-bone rounded-sm font-rune text-[10px] ember-glow"
-          >
-            <Send size={12} className="mr-2" />
-            {sending ? "..." : t("admin.newsletter_send_now")}
-          </Button>
-        </div>
-      </div>
-
-      {previewOpen && preview && (
-        <div className="mt-6 border-t border-viking-edge pt-5">
-          <div className="text-overline mb-2">{preview.subject}</div>
-          <div className="text-xs text-viking-stone mb-3">
-            {t("admin.newsletter_count")}: {preview.count}
-          </div>
-          <div
-            className="bg-viking-bg rounded-sm p-2 max-h-[420px] overflow-auto border border-viking-edge"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(preview.html) }}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function WeeklyReportPanel() {
-  const { t } = useI18n();
-  const [sending, setSending] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [preview, setPreview] = useState(null);
-
-  async function loadPreview() {
-    try {
-      const { data } = await api.get("/admin/weekly-report/preview");
-      setPreview(data);
-      setPreviewOpen(true);
-    } catch {
-      toast.error(t("admin.action_error"));
-    }
-  }
-
-  async function sendNow() {
-    if (!window.confirm(t("admin.weekly_confirm"))) return;
-    setSending(true);
-    try {
-      const { data } = await api.post("/admin/weekly-report/send");
-      toast.success(`${t("admin.action_ok")}: ${data.to}`);
-    } catch {
-      toast.error(t("admin.action_error"));
-    } finally {
-      setSending(false);
-    }
-  }
-
-  return (
-    <div className="carved-card rounded-sm p-6 sm:p-8 mb-10" data-testid="weekly-report-panel">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-start gap-4">
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-sm border border-viking-gold/50 text-viking-gold flex-shrink-0">
-            <Mail size={18} />
-          </span>
-          <div>
-            <h3 className="font-serif text-2xl text-viking-bone">{t("admin.weekly_title")}</h3>
-            <p className="text-sm text-viking-stone mt-1 max-w-2xl">{t("admin.weekly_sub")}</p>
-          </div>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <Button
-            variant="outline"
-            data-testid="weekly-preview-btn"
-            onClick={loadPreview}
-            className="border-viking-edge text-viking-bone hover:border-viking-gold hover:text-viking-gold rounded-sm font-rune text-[10px]"
-          >
-            <Eye size={12} className="mr-2" />
-            {t("admin.weekly_preview")}
-          </Button>
-          <Button
-            data-testid="weekly-send-btn"
-            disabled={sending}
-            onClick={sendNow}
-            className="bg-viking-ember hover:bg-viking-emberHover text-viking-bone rounded-sm font-rune text-[10px] ember-glow"
-          >
-            <Send size={12} className="mr-2" />
-            {sending ? "..." : t("admin.weekly_send_now")}
-          </Button>
-        </div>
-      </div>
-
-      {previewOpen && preview && (
-        <div className="mt-6 border-t border-viking-edge pt-5">
-          <div className="text-overline mb-2">{preview.subject}</div>
-          <div
-            className="bg-viking-bg rounded-sm p-2 max-h-[420px] overflow-auto border border-viking-edge"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(preview.html) }}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function StatCard({ label, value, accent }) {  const accentColor = {
-    ember: "text-viking-ember",
-    gold: "text-viking-gold",
-    stone: "text-viking-stone",
-  }[accent];
-  return (
-    <div className="carved-card rounded-sm p-5">
-      <div className="text-overline mb-1">{label}</div>
-      <div className={`font-serif text-4xl ${accentColor}`}>{value}</div>
-    </div>
-  );
-}
-
-function AdminEventRow({ ev, lang, t, onApprove, onReject, onDelete, onEdit }) {
-  return (
-    <div
-      data-testid={`admin-row-${ev.id}`}
-      className="carved-card rounded-sm p-5 flex flex-col lg:flex-row gap-4 lg:items-center"
-    >
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span
-            className={`font-rune text-[9px] px-2 py-0.5 rounded-sm border ${
-              ev.status === "pending"
-                ? "border-viking-ember/50 text-viking-ember"
-                : ev.status === "approved"
-                ? "border-viking-gold/50 text-viking-gold"
-                : "border-viking-edge text-viking-stone"
-            }`}
-          >
-            {t(`admin.${ev.status}`)}
-          </span>
-          <span className="font-rune text-[9px] text-viking-stone">{t(`cats.${ev.category}`)}</span>
-        </div>
-        <h3 className="font-serif text-xl text-viking-bone">{pickLocalized(ev, lang, "title")}</h3>
-        <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2 text-xs text-viking-stone">
-          <span className="flex items-center gap-1.5">
-            <Calendar size={12} className="text-viking-gold" />
-            {ev.start_date}
-            {ev.end_date && ` – ${ev.end_date}`}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <MapPin size={12} className="text-viking-gold" />
-            {ev.location}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <User size={12} className="text-viking-gold" />
-            {ev.organizer}
-          </span>
-          {ev.link && (
-            <a
-              href={ev.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-viking-gold hover:underline"
-            >
-              <ExternalLink size={12} /> link
-            </a>
-          )}
-        </div>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          data-testid={`edit-${ev.id}`}
-          onClick={onEdit}
-          variant="outline"
-          className="border-viking-edge text-viking-bone hover:border-viking-gold hover:text-viking-gold rounded-sm font-rune text-[10px]"
-        >
-          <Pencil size={12} className="mr-1" />
-          {t("admin.edit")}
-        </Button>
-        {ev.status !== "approved" && (
-          <Button
-            size="sm"
-            data-testid={`approve-${ev.id}`}
-            onClick={onApprove}
-            className="bg-viking-forest hover:bg-emerald-900 text-viking-bone rounded-sm font-rune text-[10px]"
-          >
-            <Check size={12} className="mr-1" />
-            {t("admin.approve")}
-          </Button>
-        )}
-        {ev.status !== "rejected" && (
-          <Button
-            size="sm"
-            data-testid={`reject-${ev.id}`}
-            onClick={onReject}
-            variant="outline"
-            className="border-viking-edge text-viking-stone hover:text-viking-ember hover:border-viking-ember rounded-sm font-rune text-[10px]"
-          >
-            <X size={12} className="mr-1" />
-            {t("admin.reject")}
-          </Button>
-        )}
-        <Button
-          size="sm"
-          data-testid={`delete-${ev.id}`}
-          onClick={onDelete}
-          variant="outline"
-          className="border-viking-edge text-viking-ember hover:bg-viking-ember hover:text-viking-bone rounded-sm font-rune text-[10px]"
-        >
-          <Trash2 size={12} />
-        </Button>
-        <Link
-          to={`/events/${ev.id}`}
-          target="_blank"
-          className="font-rune text-[10px] text-viking-stone hover:text-viking-gold self-center pl-1"
-        >
-          ↗
-        </Link>
-      </div>
-    </div>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import EventCard from "@/components/EventCard";
@@ -115,15 +115,61 @@ export default function Events() {
                 {t("events.empty")}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {events.map((e) => (
-                  <EventCard key={e.id} event={e} />
-                ))}
-              </div>
+              <EventsByMonth events={events} />
             )}
           </TabsContent>
         </Tabs>
       </section>
     </>
+  );
+}
+
+function EventsByMonth({ events }) {
+  const { t } = useI18n();
+  const groups = useMemo(() => {
+    const buckets = new Map();
+    const sorted = [...(events || [])].sort((a, b) => {
+      const ax = a.start_date || "";
+      const bx = b.start_date || "";
+      return ax.localeCompare(bx);
+    });
+    for (const ev of sorted) {
+      if (!ev.start_date) continue;
+      const d = new Date(ev.start_date);
+      if (isNaN(d.getTime())) continue;
+      const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, "0")}`;
+      if (!buckets.has(key)) {
+        buckets.set(key, { year: d.getFullYear(), month: d.getMonth(), items: [] });
+      }
+      buckets.get(key).items.push(ev);
+    }
+    return Array.from(buckets.values());
+  }, [events]);
+
+  if (groups.length === 0) return null;
+
+  return (
+    <div className="space-y-12" data-testid="events-list-by-month">
+      {groups.map((g) => (
+        <section key={`${g.year}-${g.month}`} data-testid={`month-${g.year}-${g.month}`}>
+          <header className="mb-5 flex items-end gap-4 border-b border-viking-edge/70 pb-3">
+            <h2 className="font-serif text-3xl sm:text-4xl text-viking-bone leading-none">
+              {t("months")[g.month]}
+            </h2>
+            <span className="font-rune text-xs text-viking-gold tracking-[0.3em]">
+              {g.year}
+            </span>
+            <span className="ml-auto font-rune text-[10px] text-viking-stone">
+              {g.items.length}
+            </span>
+          </header>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {g.items.map((e) => (
+              <EventCard key={e.id} event={e} />
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
   );
 }
