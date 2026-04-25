@@ -92,6 +92,10 @@ const TRANSLATIONS = {
       logout: "Kirjaudu ulos",
       no_events: "Ei tapahtumia tässä näkymässä.",
       bad_login: "Virheellinen sähköposti tai salasana",
+      confirm_delete: "Haluatko varmasti poistaa tämän tapahtuman?",
+      load_error: "Tapahtumien lataus epäonnistui",
+      action_ok: "Toiminto onnistui",
+      action_error: "Toiminto epäonnistui",
     },
     about: {
       title: "Tietoa sivustosta",
@@ -193,6 +197,10 @@ const TRANSLATIONS = {
       logout: "Sign out",
       no_events: "No events in this view.",
       bad_login: "Invalid email or password",
+      confirm_delete: "Are you sure you want to delete this event?",
+      load_error: "Failed to load events",
+      action_ok: "Done",
+      action_error: "Action failed",
     },
     about: {
       title: "About",
@@ -288,6 +296,10 @@ const TRANSLATIONS = {
       logout: "Logga ut",
       no_events: "Inga evenemang i denna vy.",
       bad_login: "Felaktig e-post eller lösenord",
+      confirm_delete: "Är du säker på att du vill radera detta evenemang?",
+      load_error: "Det gick inte att ladda evenemangen",
+      action_ok: "Klart",
+      action_error: "Åtgärden misslyckades",
     },
     about: {
       title: "Om sidan",

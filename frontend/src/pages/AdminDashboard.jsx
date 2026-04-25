@@ -29,7 +29,7 @@ export default function AdminDashboard() {
         setItems(list.data || []);
         setStats(st.data);
       } catch (e) {
-        toast.error("Failed to load");
+        toast.error(t("admin.load_error"));
       } finally {
         setBusy(false);
       }
@@ -47,20 +47,20 @@ export default function AdminDashboard() {
   async function setEventStatus(id, newStatus) {
     try {
       await api.patch(`/admin/events/${id}`, { status: newStatus });
-      toast.success("OK");
+      toast.success(t("admin.action_ok"));
       load();
     } catch {
-      toast.error("Error");
+      toast.error(t("admin.action_error"));
     }
   }
   async function remove(id) {
-    if (!window.confirm("?")) return;
+    if (!window.confirm(t("admin.confirm_delete"))) return;
     try {
       await api.delete(`/admin/events/${id}`);
-      toast.success("OK");
+      toast.success(t("admin.action_ok"));
       load();
     } catch {
-      toast.error("Error");
+      toast.error(t("admin.action_error"));
     }
   }
 
