@@ -1,53 +1,62 @@
-import { useEffect } from "react";
-import "@/App.css";
+import React from "react";
+import "@/index.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
-
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
-
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
-  return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
-};
+import { Toaster } from "sonner";
+import { I18nProvider } from "@/lib/i18n";
+import { AuthProvider } from "@/lib/auth";
+import Layout from "@/components/Layout";
+import Home from "@/pages/Home";
+import Events from "@/pages/Events";
+import EventDetail from "@/pages/EventDetail";
+import Submit from "@/pages/Submit";
+import About from "@/pages/About";
+import Courses from "@/pages/Courses";
+import Guilds from "@/pages/Guilds";
+import Shops from "@/pages/Shops";
+import AdminLogin from "@/pages/AdminLogin";
+import AdminDashboard from "@/pages/AdminDashboard";
 
 function App() {
   return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </div>
+    <I18nProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/events" element={<Events />} />
+              <Route path="/events/:id" element={<EventDetail />} />
+              <Route path="/submit" element={<Submit />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/courses" element={<Courses />} />
+              <Route path="/guilds" element={<Guilds />} />
+              <Route path="/shops" element={<Shops />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route
+                path="*"
+                element={
+                  <div className="text-center py-32 text-viking-stone">404</div>
+                }
+              />
+            </Routes>
+          </Layout>
+          <Toaster
+            theme="dark"
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: "#1E1815",
+                border: "1px solid #352A23",
+                color: "#E6D5B8",
+                fontFamily: "Outfit, sans-serif",
+                borderRadius: "4px",
+              },
+            }}
+          />
+        </BrowserRouter>
+      </AuthProvider>
+    </I18nProvider>
   );
 }
 

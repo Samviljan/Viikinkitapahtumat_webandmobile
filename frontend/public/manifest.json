@@ -1,0 +1,18 @@
+{
+  "short_name": "Viikinki",
+  "name": "Viikinkitapahtumat",
+  "description": "Suomen viikinkitapahtumat — kalenteri ja yhteisö viikinki- ja rauta-aikaharrastajille.",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "start_url": "./",
+  "display": "standalone",
+  "theme_color": "#110E0C",
+  "background_color": "#110E0C",
+  "lang": "fi",
+  "scope": "./"
+}
