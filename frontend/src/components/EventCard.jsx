@@ -90,15 +90,52 @@ export default function EventCard({ event, compact = false }) {
 }
 
 export function formatDateRange(start, end, lang) {
-  if (!start) return "";
-  const opts = { day: "numeric", month: "long", year: "numeric" };
-  const localeMap = { fi: "fi-FI", en: "en-GB", sv: "sv-SE" };
-  const locale = localeMap[lang] || "fi-FI";
-  const s = new Date(start);
-  if (!end || end === start) return s.toLocaleDateString(locale, opts);
-  const e = new Date(end);
-  return `${s.toLocaleDateString(locale, { day: "numeric", month: "short" })} – ${e.toLocaleDateString(
-    locale,
-    opts
-  )}`;
+  const s = parseDate(start);
+  if (!s) return "";
+  const e = parseDate(end) || s;
+
+  const sameDay =
+    s.getFullYear() === e.getFullYear() &&
+    s.getMonth() === e.getMonth() &&
+    s.getDate() === e.getDate();
+  const sameMonth =
+    s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth();
+  const sameYear = s.getFullYear() === e.getFullYear();
+
+  if (lang === "fi") {
+    // Finnish numeric: 5.6.2026, 5.–7.6.2026, 5.6.–7.7.2026, 5.6.2026 – 7.7.2027
+    if (sameDay) return `${s.getDate()}.${s.getMonth() + 1}.${s.getFullYear()}`;
+    if (sameMonth)
+      return `${s.getDate()}.–${e.getDate()}.${e.getMonth() + 1}.${e.getFullYear()}`;
+    if (sameYear)
+      return `${s.getDate()}.${s.getMonth() + 1}.–${e.getDate()}.${e.getMonth() + 1}.${e.getFullYear()}`;
+    return `${s.getDate()}.${s.getMonth() + 1}.${s.getFullYear()} – ${e.getDate()}.${e.getMonth() + 1}.${e.getFullYear()}`;
+  }
+
+  // English / Swedish: long month name, single year/month when shared
+  const locale = lang === "sv" ? "sv-SE" : "en-GB";
+  const longMonth = (d) => d.toLocaleDateString(locale, { month: "long" });
+  const sDay = s.getDate();
+  const eDay = e.getDate();
+  const sMonth = longMonth(s);
+  const eMonth = longMonth(e);
+  const sYear = s.getFullYear();
+  const eYear = e.getFullYear();
+
+  if (sameDay) return `${sDay} ${sMonth} ${sYear}`;
+  if (sameMonth) return `${sDay}–${eDay} ${eMonth} ${eYear}`;
+  if (sameYear) return `${sDay} ${sMonth} – ${eDay} ${eMonth} ${eYear}`;
+  return `${sDay} ${sMonth} ${sYear} – ${eDay} ${eMonth} ${eYear}`;
+}
+
+/**
+ * Parse a `YYYY-MM-DD` event date string as a LOCAL Date (not UTC), avoiding
+ * the timezone drift that `new Date("YYYY-MM-DD")` introduces in non-UTC zones.
+ */
+function parseDate(s) {
+  if (!s) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
 }
