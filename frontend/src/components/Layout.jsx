@@ -13,11 +13,12 @@ import {
 
 const NAV_ITEMS = [
   { to: "/events", key: "nav.events" },
-  { to: "/submit", key: "nav.submit" },
+  { to: "/swordfighting", key: "nav.swordfighting" },
   { to: "/courses", key: "nav.courses" },
   { to: "/guilds", key: "nav.guilds" },
   { to: "/shops", key: "nav.shops" },
   { to: "/about", key: "nav.about" },
+  { to: "/contact", key: "nav.contact" },
 ];
 
 const LANGS = [

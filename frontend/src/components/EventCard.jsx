@@ -70,6 +70,16 @@ export default function EventCard({ event, compact = false }) {
             <MapPin size={13} className="text-viking-gold" />
             {event.location}
           </span>
+          {event.audience && (
+            <span className="mt-2 font-rune text-[10px] text-viking-gold/80">
+              {event.audience}
+            </span>
+          )}
+          {event.fight_style && (
+            <span className="mt-2 font-rune text-[10px] text-viking-ember/80">
+              {event.fight_style}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2 pt-1 text-xs font-rune text-viking-ember opacity-0 group-hover:opacity-100 transition-opacity">

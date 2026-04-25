@@ -7,10 +7,12 @@ const TRANSLATIONS = {
       home: "Etusivu",
       events: "Tapahtumat",
       submit: "Ilmoita tapahtuma",
+      swordfighting: "Viikinkimiekkailu",
       courses: "Kurssit",
       guilds: "Kaartit & yhdistykset",
       shops: "Kaupat",
       about: "Tietoa",
+      contact: "Yhteydenotto",
       admin: "Ylläpito",
     },
     home: {
@@ -62,6 +64,15 @@ const TRANSLATIONS = {
       organizer_email: "Järjestäjän sähköposti",
       link: "Lisätietolinkki",
       image: "Kuvan URL (valinnainen)",
+      audience: "Luokittelu",
+      audience_public: "Yleisö",
+      audience_hobby: "Harrastajat",
+      audience_none: "Ei valittu",
+      fight_style: "Taistelutyyli",
+      fight_western: "Western",
+      fight_eastern: "Eastern",
+      fight_other: "Muu",
+      fight_none: "Ei valittu",
       submit_btn: "Lähetä tarkastettavaksi",
       success: "Kiitos! Tapahtumasi on lähetetty hyväksyttäväksi.",
       error: "Lähettäminen epäonnistui",
@@ -105,9 +116,73 @@ const TRANSLATIONS = {
     courses: {
       title: "Kurssit ja työpajat",
       sub: "Pitkä lista käsityö-, miekkailu- ja muista historiallisista taitokursseista.",
+      p1: "Suomessa järjestetään lukuisilla paikkakunnilla sekä syys- että kevätkaudella alkeiskursseja, joilla pääset mukaan hienoon harrastukseen ja opit viikinkimiekkailun perusteet ja perussäännöt — jotta voit jatkaa harjoittelua muiden harrastajien kanssa sekä osallistua erilaisiin tapahtumiin ja yleisönäytöksiin turvallisesti.",
+      p2: "Viikinkimiekkailun alkeiskurssien lisäksi yleensä samat yhdistykset järjestävät myös muita rauta-aikaan ja keskiaikaan liittyviä käsityö- ja koulutuskursseja.",
+      list_title: "Lisää oma kurssisi",
+      list_body:
+        "Mikäli haluat yhdistyksesi kurssin listaukseen, ota yhteyttä yhteydenottolomakkeella tai lähetä postia osoitteeseen admin@viikinkitapahtumat.fi.",
+      upcoming: "Tulevat kurssit",
     },
-    guilds: { title: "Kaartit ja yhdistykset", sub: "Suomen viikinkiajan harrastusyhteisöt." },
-    shops: { title: "Kaupat ja käsityöläiset", sub: "Materiaalit, vaatteet, aseet, korut." },
+    guilds: {
+      title: "Kaartit ja yhdistykset",
+      sub: "Suomalaisia viikinkikaarteja ja yhteisöjä.",
+      svtl_title: "Suomen Viikinkitaistelijoiden Liitto",
+      svtl_body:
+        "SVTL on vuonna 2025 perustettu viikinkiajan taistelutaitojen harrastajien valtakunnallinen lajiliitto. Liiton jäseniä ovat viikinkiaikaisia, rautakautisia tai niihin rinnastettavia taistelulajeja harjoittavat yhteisöt.",
+      svtl_link: "SVTL:n verkkosivut",
+      members_title: "SVTL:n jäsenseurat",
+      others_title: "Muut seurat, kaartit ja yhdistykset",
+    },
+    shops: {
+      title: "Kaupat ja käsityöläiset",
+      sub: "Materiaalit, vaatteet, aseet, korut.",
+      gear_title: "Varuste- ja tarvikekauppoja",
+      smiths_title: "Seppiä",
+    },
+    sword: {
+      title: "Viikinkimiekkailu ja historianelävöittäminen",
+      lead:
+        "Voimakkaasti kasvava harrastus, joka yhdistää historian, liikunnan ja yhteisöllisyyden.",
+      h_practice: "Viikinkimiekkailu",
+      p1:
+        "Viikinkimiekkailu pyrkii rekonstruoimaan ja elävöittämään viikinkiajan taistelutaitoja autenttisesti, samalla tarjoten osallistujille mahdollisuuden kokea menneisyyden ajan henki.",
+      p2:
+        "Viikinkimiekkailu ei ole pelkästään fyysinen aktiviteetti vaan myös syvällinen tutkimus viikinkien sotataidoista ja kulttuurista. Harrastajat paneutuvat tarkasti historiallisiin lähteisiin, arkeologisiin löytöihin ja taistelumenetelmiin.",
+      p3:
+        "Käytännön harjoitukset keskittyvät miekkailun perustekniikoihin, kilvenkäyttöön, liikkuvuuteen ja taistelutaitoon. Käytössä ovat aikakautiset aseet — viikinkimiekat, kilvet ja haarniskat — ja monet ryhmät noudattavat tiukkoja sääntöjä osallistujien turvallisuuden varmistamiseksi.",
+      h_reenactment: "Historianelävöittäminen",
+      r1:
+        "Historianelävöittäminen, eli reenactment, on harrastus, joka mahdollistaa menneiden aikakausien kokemisen ja tutkimisen elävänä. Viikinkiaika herää henkiin värikkäästi ja autenttisesti.",
+      r2:
+        "Viikinkiajan historianelävöittäjät paneutuvat tarkasti ajanmukaiseen vaatetukseen, aseisiin, ruokailutapoihin ja elämäntapaan. He kokoontuvat tapahtumiin ja festivaaleille esittämään roolejaan viikinkien aikana.",
+      r3:
+        "Tämä sisältää ruoanlaittoa perinteisin menetelmin, käsitöitä, musiikin esittämistä ja taitojen näyttämistä — kuten taistelutaitoja ja käsityötaitoja.",
+      r4:
+        "Historianelävöittäminen yhdistää ihmisiä intohimonsa kautta ja luo eläväisen, vuorovaikutteisen tavan kokea historiaa, samalla kunnioittaen kulttuuriperintöä.",
+      fact1: "Yhteisöllistä — säännölliset harjoitukset ja tapahtumat ympäri Suomea.",
+      fact2: "Turvallista — selkeät säännöt, harjoitusvarusteet ja kokeneet ohjaajat.",
+      fact3: "Historiallista — autenttisia tekniikoita, aseita ja varusteita.",
+    },
+    contact: {
+      title: "Yhteydenotto",
+      sub:
+        "Puuttuuko tapahtumasi listauksesta tai haluatko täydentää tai korjata tietoja? Otathan yhteyttä.",
+      email_label: "Sähköposti",
+      copy: "Kopioi",
+      copied: "Kopioitu!",
+      form_title: "Nopea ilmoitus",
+      form_sub:
+        "Tämä lomake avaa sähköpostiohjelmasi valmiiksi täytetyllä viestillä. Tarkemmat ilmoitukset: käytä sivun \"Ilmoita tapahtuma\" -lomaketta.",
+      event_name: "Tapahtuman nimi",
+      event_date: "Päivämäärä",
+      info: "Lisätietoja",
+      send: "Avaa sähköposti",
+      subject_default: "Tapahtumailmoitus",
+      tip:
+        "Vinkki: jos haluat, että tapahtumasi näkyy kalenterissa heti hyväksynnän jälkeen, lisää myös linkki ja kuva.",
+    },
+    fight_label: "Taistelutyyli",
+    audience_label: "Luokittelu",
     footer: {
       contact: "admin@viikinkitapahtumat.fi",
       rights: "Kaikki oikeudet pidätetään.",
@@ -119,10 +194,12 @@ const TRANSLATIONS = {
       home: "Home",
       events: "Events",
       submit: "Submit event",
+      swordfighting: "Viking sword fighting",
       courses: "Courses",
       guilds: "Guilds & associations",
       shops: "Shops",
       about: "About",
+      contact: "Contact",
       admin: "Admin",
     },
     home: {
@@ -174,6 +251,15 @@ const TRANSLATIONS = {
       organizer_email: "Organizer email",
       link: "More info link",
       image: "Image URL (optional)",
+      audience: "Audience",
+      audience_public: "Public",
+      audience_hobby: "Hobbyists only",
+      audience_none: "Not selected",
+      fight_style: "Fighting style",
+      fight_western: "Western",
+      fight_eastern: "Eastern",
+      fight_other: "Other",
+      fight_none: "Not selected",
       submit_btn: "Send for review",
       success: "Thank you! Your event was submitted for review.",
       error: "Submission failed",
@@ -207,9 +293,74 @@ const TRANSLATIONS = {
       body:
         "Viikinkitapahtumat.fi is a community-driven hub for Finnish Viking, Iron Age and early medieval reenactors — a shared calendar for events, courses, guilds and craftspeople.",
     },
-    courses: { title: "Courses & workshops", sub: "Crafts, swordsmanship, and other historical skill courses." },
-    guilds: { title: "Guilds & associations", sub: "Reenactment communities across Finland." },
-    shops: { title: "Shops & craftspeople", sub: "Materials, garments, weapons, jewellery." },
+    courses: {
+      title: "Courses & workshops",
+      sub: "Crafts, swordsmanship, and other historical skill courses.",
+      p1: "Beginner courses are organised across Finland in autumn and spring — join the hobby, learn the basics and rules of viking sword fighting, then continue training with other enthusiasts and participate safely in events and public demonstrations.",
+      p2: "Besides beginner sword courses, the same associations usually organise other Iron Age and medieval crafts and skill workshops.",
+      list_title: "Add your course",
+      list_body:
+        "If you'd like your association's course listed here, contact us via the form or email admin@viikinkitapahtumat.fi.",
+      upcoming: "Upcoming courses",
+    },
+    guilds: {
+      title: "Guilds & associations",
+      sub: "Finnish viking-age reenactment communities.",
+      svtl_title: "Finnish Viking Fighters' Federation",
+      svtl_body:
+        "SVTL, founded in 2025, is the national federation for viking-age combat enthusiasts in Finland. Its members are communities practising viking-age, iron-age or comparable combat disciplines.",
+      svtl_link: "SVTL website",
+      members_title: "SVTL member clubs",
+      others_title: "Other clubs, guilds and associations",
+    },
+    shops: {
+      title: "Shops & craftspeople",
+      sub: "Materials, garments, weapons, jewellery.",
+      gear_title: "Gear & supplies",
+      smiths_title: "Smiths",
+    },
+    sword: {
+      title: "Viking sword fighting & reenactment",
+      lead: "A rapidly growing hobby blending history, exercise and community.",
+      h_practice: "Viking sword fighting",
+      p1:
+        "Viking sword fighting reconstructs and brings to life the combat skills of the viking age authentically, while letting participants experience the spirit of the past.",
+      p2:
+        "It's not just physical activity — it's a deep study of viking warfare and culture. Practitioners dive into historical sources, archaeological finds and combat methods to understand and apply period-correct strategies.",
+      p3:
+        "Practical training focuses on basic sword technique, shield work, footwork and combat skills. Period weapons — viking swords, shields and armour — create as authentic an experience as possible. Many groups follow strict safety rules.",
+      h_reenactment: "Reenactment",
+      r1:
+        "Historical reenactment lets you experience and study past eras as living events. The viking era comes vividly and authentically to life.",
+      r2:
+        "Viking-era reenactors carefully study period clothing, weapons, food and lifestyle. They gather at events and festivals around the world to perform their roles.",
+      r3:
+        "This includes traditional cooking, crafts, period music and skill demonstrations — combat as well as crafts.",
+      r4:
+        "Reenactment connects people through shared passion and offers a vivid, interactive way to experience history while respecting cultural heritage.",
+      fact1: "Communal — regular trainings and events around Finland.",
+      fact2: "Safe — clear rules, training gear and experienced instructors.",
+      fact3: "Historical — authentic techniques, weapons and equipment.",
+    },
+    contact: {
+      title: "Contact",
+      sub:
+        "Is your event missing from the listing, or do you want to update or correct information? Get in touch.",
+      email_label: "Email",
+      copy: "Copy",
+      copied: "Copied!",
+      form_title: "Quick message",
+      form_sub:
+        "This form opens your email client with a pre-filled message. For full event submissions, use the \"Submit event\" page.",
+      event_name: "Event name",
+      event_date: "Date",
+      info: "More info",
+      send: "Open email",
+      subject_default: "Event submission",
+      tip: "Tip: include a link and an image so your event looks great once approved.",
+    },
+    fight_label: "Fighting style",
+    audience_label: "Audience",
     footer: { contact: "admin@viikinkitapahtumat.fi", rights: "All rights reserved." },
   },
   sv: {
@@ -218,10 +369,12 @@ const TRANSLATIONS = {
       home: "Hem",
       events: "Evenemang",
       submit: "Anmäl evenemang",
+      swordfighting: "Vikingasvärdsfäktning",
       courses: "Kurser",
       guilds: "Gillen & föreningar",
       shops: "Butiker",
       about: "Om sidan",
+      contact: "Kontakt",
       admin: "Admin",
     },
     home: {
@@ -273,6 +426,15 @@ const TRANSLATIONS = {
       organizer_email: "Arrangörens e-post",
       link: "Mer info-länk",
       image: "Bild-URL (valfritt)",
+      audience: "Klassificering",
+      audience_public: "Publik",
+      audience_hobby: "Endast utövare",
+      audience_none: "Ej valt",
+      fight_style: "Stridsstil",
+      fight_western: "Western",
+      fight_eastern: "Eastern",
+      fight_other: "Annat",
+      fight_none: "Ej valt",
       submit_btn: "Skicka för granskning",
       success: "Tack! Ditt evenemang har skickats för granskning.",
       error: "Det gick inte att skicka",
@@ -306,9 +468,73 @@ const TRANSLATIONS = {
       body:
         "Viikinkitapahtumat.fi är en gemenskapsdriven plats för finska vikinga-, järnålders- och tidigmedeltida re-enactors — en gemensam kalender för evenemang, kurser, gillen och hantverkare.",
     },
-    courses: { title: "Kurser & verkstäder", sub: "Hantverk, svärdsfäktning och andra historiska färdigheter." },
-    guilds: { title: "Gillen & föreningar", sub: "Re-enactment-gemenskaper i Finland." },
-    shops: { title: "Butiker & hantverkare", sub: "Material, kläder, vapen, smycken." },
+    courses: {
+      title: "Kurser & verkstäder",
+      sub: "Hantverk, svärdsfäktning och andra historiska färdigheter.",
+      p1: "Nybörjarkurser ordnas runt om i Finland både höst och vår — kom med i hobbyn, lär dig grunderna och reglerna i vikingasvärdsfäktning för att kunna träna säkert med andra och delta i evenemang och uppvisningar.",
+      p2: "Förutom nybörjarkurser i svärdsfäktning ordnar samma föreningar ofta andra hantverks- och färdighetskurser från järnåldern och medeltiden.",
+      list_title: "Lägg till din kurs",
+      list_body:
+        "Vill du att din förenings kurs syns här? Kontakta oss via formuläret eller via e-post admin@viikinkitapahtumat.fi.",
+      upcoming: "Kommande kurser",
+    },
+    guilds: {
+      title: "Gillen & föreningar",
+      sub: "Finlands vikingatida re-enactment-gemenskaper.",
+      svtl_title: "Finlands Vikingakämpars Förbund",
+      svtl_body:
+        "SVTL, grundat 2025, är det nationella förbundet för utövare av vikingatida stridskonst i Finland. Medlemmar är samfund som tränar vikingatida, järnålders eller motsvarande stridsdiscipliner.",
+      svtl_link: "SVTL webbplats",
+      members_title: "SVTL:s medlemsföreningar",
+      others_title: "Övriga föreningar, gillen och sällskap",
+    },
+    shops: {
+      title: "Butiker & hantverkare",
+      sub: "Material, kläder, vapen, smycken.",
+      gear_title: "Utrustning & material",
+      smiths_title: "Smeder",
+    },
+    sword: {
+      title: "Vikingasvärdsfäktning & historisk re-enactment",
+      lead: "En snabbt växande hobby som förenar historia, motion och gemenskap.",
+      h_practice: "Vikingasvärdsfäktning",
+      p1:
+        "Vikingasvärdsfäktning rekonstruerar och levandegör vikingatidens stridskonst autentiskt, samtidigt som deltagarna får uppleva andan från det förflutna.",
+      p2:
+        "Det är inte bara fysisk aktivitet utan också en djupgående studie av vikingarnas krigföring och kultur. Utövarna fördjupar sig i historiska källor, arkeologiska fynd och stridsmetoder.",
+      p3:
+        "Den praktiska träningen fokuserar på grundläggande svärdsteknik, sköldarbete, fotarbete och stridsfärdigheter. Tidens vapen — vikingasvärd, sköldar och rustningar — skapar en så autentisk upplevelse som möjligt.",
+      h_reenactment: "Re-enactment",
+      r1:
+        "Historisk re-enactment låter dig uppleva och studera tidigare epoker som levande händelser. Vikingatiden kommer fram färgstarkt och autentiskt.",
+      r2:
+        "Vikingatida re-enactors studerar noggrant tidens klädsel, vapen, mat och livsstil. De samlas på evenemang och festivaler för att framträda i sina roller.",
+      r3:
+        "Detta inkluderar traditionell matlagning, hantverk, tidens musik och uppvisningar av färdigheter.",
+      r4:
+        "Re-enactment förenar människor genom delad passion och erbjuder ett levande och interaktivt sätt att uppleva historia.",
+      fact1: "Gemenskap — regelbundna träningar och evenemang runtom i Finland.",
+      fact2: "Säkert — tydliga regler, träningsutrustning och erfarna instruktörer.",
+      fact3: "Historiskt — autentiska tekniker, vapen och utrustning.",
+    },
+    contact: {
+      title: "Kontakt",
+      sub: "Saknas ditt evenemang i listningen, eller vill du komplettera eller rätta uppgifterna? Hör av dig.",
+      email_label: "E-post",
+      copy: "Kopiera",
+      copied: "Kopierat!",
+      form_title: "Snabbt meddelande",
+      form_sub:
+        "Det här formuläret öppnar din e-postklient med ett förifyllt meddelande. För fullständiga evenemangsanmälningar, använd sidan \"Anmäl evenemang\".",
+      event_name: "Evenemangets namn",
+      event_date: "Datum",
+      info: "Mer information",
+      send: "Öppna e-post",
+      subject_default: "Evenemangsanmälan",
+      tip: "Tips: bifoga länk och bild så ser ditt evenemang fint ut när det godkänts.",
+    },
+    fight_label: "Stridsstil",
+    audience_label: "Klassificering",
     footer: { contact: "admin@viikinkitapahtumat.fi", rights: "Alla rättigheter förbehållna." },
   },
 };

@@ -1,0 +1,41 @@
+{
+  "summary": "Iteration 2 verification — 12 seeded real 2026 events, new audience+fight_style fields, two new pages (/swordfighting, /contact), expanded /guilds, /shops, /courses pages, and i18n. Backend: 37/37 pytest cases pass (28 regression + 9 new). All 12 seeded titles present and approved with audience/fight_style fields populated as specified. Public POST /api/events accepts and persists audience+fight_style, defaults to empty strings when omitted, and ignores seed_slug from external clients. Frontend: header nav now has Viikinkimiekkailu + Yhteydenotto in FI, Viking sword fighting + Contact in EN, Vikingasvärdsfäktning + Kontakt in SV. No 'NAV.X' literal strings leak in any of the three languages. /swordfighting renders with hero + 4 sections (2 articles + fact cards). /contact has email + mailto. /guilds has 23 external links incl. SVTL section. /shops has 20 external links. /courses renders intro + dynamic API courses. EventCard shows audience + fight_style as overline labels (HARRASTAJAT EASTERN, YLEISÖ WESTERN, etc.). Calendar view of /events on Apr 2026 correctly shows 'Bonk Pohjalla VII' on dates 3, 4, 5. Submit form has audience + fight_style dropdowns. No regressions vs iteration 1.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Global", "issues": ["401 errors are logged in browser console on every page load from GET /api/auth/me before login. Functionally harmless (used to detect existing session) but noisy in DevTools — could be silenced by treating 401 as the no-session case without console.error."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_backend_api.py",
+    "/app/backend/tests/test_seeded_and_new_fields.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Optional) Suppress console.error for the 401 from /api/auth/me probe on cold load; treat 401 silently as 'no session'.",
+    "(Carry-over from iter 1, optional) Localise admin toast/confirm strings ('OK'/'Error'/'?') via i18n t()."
+  ],
+  "critical_code_review_comments": [
+    "seed_events.py is properly idempotent via seed_slug and uses upsert semantics — re-running it does NOT create duplicates. Verified by running it during this iteration: '12 events seeded/updated' with the same total count maintained.",
+    "EventCreate uses ConfigDict(extra='ignore'), so attempts to inject seed_slug or status from a public POST are silently dropped. Verified: test_seed_slug_is_ignored_on_public_submit passes and no seed_slug field appears on output.",
+    "EventOut explicitly enumerates audience + fight_style with default empty strings, so events seeded before iteration 2 (none in current data) and events submitted without these fields all serialise consistently — no None vs missing key inconsistencies.",
+    "Saltvik Viking Market in seed has fight_style='Western Klandorf' which looks like a typo / paste artefact ('Klandorf' is not a recognised style and also did not appear in the original viikinkitapahtumat.fi listing). Recommend trimming to just 'Western'.",
+    "All 12 seeded titles match the spec exactly (verified by string equality)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_seeded_and_new_fields.py (new)"
+  ],
+  "success_rate": {"backend": "100% (37/37)", "frontend": "100% (all targeted flows verified)"},
+  "test_credentials": "admin@viikinkitapahtumat.fi / ***REDACTED*** (verified working)",
+  "seed_data_creation": "Re-ran /app/backend/scripts/seed_events.py — idempotent, 12 events upserted as approved. Pytest also creates TEST_-prefixed events and cleans them via admin DELETE.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 2 fully green. Backend pytest is now in TWO files: test_backend_api.py (28 core API tests, regression) + test_seeded_and_new_fields.py (9 tests for seeded events + audience/fight_style + seed_slug ignore). Run: pytest /app/backend/tests/ -v. Seeded titles list is in EXPECTED_TITLES at top of test_seeded_and_new_fields.py — keep in sync with seed_events.py if titles change. Frontend testids: lang-switcher, lang-option-{fi|en|sv}, tab-list, tab-calendar, field-audience, field-fight_style, field-* for submit. Note that several CSS rules apply text-transform: uppercase to nav items and audience/fight_style labels — when asserting visibility via inner_text, account for upper-case rendering.",
+  "rca of the issue": "No bugs. Three apparent failures during automated UI checks were false negatives caused by CSS text-transform: uppercase on header nav items and on the EventCard overline labels. Visual screenshot + the actual inner_text output confirms 'VIIKINKIMIEKKAILU', 'YHTEYDENOTTO', 'HARRASTAJAT', 'EASTERN', 'YLEISÖ', 'WESTERN' are all rendered correctly. No code change required."
+}

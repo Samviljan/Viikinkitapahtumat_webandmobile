@@ -13,6 +13,8 @@ import About from "@/pages/About";
 import Courses from "@/pages/Courses";
 import Guilds from "@/pages/Guilds";
 import Shops from "@/pages/Shops";
+import Swordfighting from "@/pages/Swordfighting";
+import Contact from "@/pages/Contact";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 
@@ -31,6 +33,8 @@ function App() {
               <Route path="/courses" element={<Courses />} />
               <Route path="/guilds" element={<Guilds />} />
               <Route path="/shops" element={<Shops />} />
+              <Route path="/swordfighting" element={<Swordfighting />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route

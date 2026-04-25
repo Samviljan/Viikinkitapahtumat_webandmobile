@@ -74,6 +74,12 @@ export default function EventDetail() {
             <DetailRow icon={MapPin} label={event.location} />
             <DetailRow icon={User} label={`${t("events.organizer")}: ${event.organizer}`} />
             {event.organizer_email && <DetailRow icon={Mail} label={event.organizer_email} />}
+            {event.audience && (
+              <DetailRow icon={User} label={`${t("audience_label")}: ${event.audience}`} />
+            )}
+            {event.fight_style && (
+              <DetailRow icon={User} label={`${t("fight_label")}: ${event.fight_style}`} />
+            )}
           </div>
 
           <p className="font-serif text-lg text-viking-bone leading-relaxed whitespace-pre-line">{desc}</p>

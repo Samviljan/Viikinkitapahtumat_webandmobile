@@ -41,6 +41,8 @@ export default function Submit() {
     organizer_email: "",
     link: "",
     image_url: "",
+    audience: "",
+    fight_style: "",
   });
 
   const update = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
@@ -52,6 +54,8 @@ export default function Submit() {
       const payload = { ...form };
       if (!payload.organizer_email) delete payload.organizer_email;
       if (!payload.end_date) delete payload.end_date;
+      if (!payload.audience) delete payload.audience;
+      if (!payload.fight_style) delete payload.fight_style;
       await api.post("/events", payload);
       setSuccess(true);
       toast.success(t("submit.success"));
@@ -235,6 +239,54 @@ export default function Submit() {
               className={fieldClass}
             />
           </Field>
+
+          <div className="grid sm:grid-cols-2 gap-5">
+            <Field label={t("submit.audience")}>
+              <Select
+                value={form.audience || "none"}
+                onValueChange={(v) => setForm((p) => ({ ...p, audience: v === "none" ? "" : v }))}
+              >
+                <SelectTrigger data-testid="field-audience" className={fieldClass}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-viking-surface border-viking-edge text-viking-bone">
+                  <SelectItem value="none" className="focus:bg-viking-surface2 focus:text-viking-gold">
+                    {t("submit.audience_none")}
+                  </SelectItem>
+                  <SelectItem value="Yleisö" className="focus:bg-viking-surface2 focus:text-viking-gold">
+                    {t("submit.audience_public")}
+                  </SelectItem>
+                  <SelectItem value="Harrastajat" className="focus:bg-viking-surface2 focus:text-viking-gold">
+                    {t("submit.audience_hobby")}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label={t("submit.fight_style")}>
+              <Select
+                value={form.fight_style || "none"}
+                onValueChange={(v) => setForm((p) => ({ ...p, fight_style: v === "none" ? "" : v }))}
+              >
+                <SelectTrigger data-testid="field-fight-style" className={fieldClass}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-viking-surface border-viking-edge text-viking-bone">
+                  <SelectItem value="none" className="focus:bg-viking-surface2 focus:text-viking-gold">
+                    {t("submit.fight_none")}
+                  </SelectItem>
+                  <SelectItem value="Western" className="focus:bg-viking-surface2 focus:text-viking-gold">
+                    {t("submit.fight_western")}
+                  </SelectItem>
+                  <SelectItem value="Eastern" className="focus:bg-viking-surface2 focus:text-viking-gold">
+                    {t("submit.fight_eastern")}
+                  </SelectItem>
+                  <SelectItem value="Other" className="focus:bg-viking-surface2 focus:text-viking-gold">
+                    {t("submit.fight_other")}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
 
           <Button
             type="submit"

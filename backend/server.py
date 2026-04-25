@@ -120,6 +120,8 @@ class EventCreate(BaseModel):
     organizer_email: Optional[EmailStr] = None
     link: Optional[str] = ""
     image_url: Optional[str] = ""
+    audience: Optional[str] = ""  # "Yleisö" | "Harrastajat" | ""
+    fight_style: Optional[str] = ""  # "Western" | "Eastern" | ...
 
 
 class EventOut(BaseModel):
@@ -140,6 +142,8 @@ class EventOut(BaseModel):
     image_url: str
     status: str
     created_at: str
+    audience: Optional[str] = ""
+    fight_style: Optional[str] = ""
 
 
 class EventStatusUpdate(BaseModel):
@@ -208,6 +212,8 @@ async def submit_event(payload: EventCreate):
             "description_sv": doc.get("description_sv") or "",
             "link": doc.get("link") or "",
             "image_url": doc.get("image_url") or "",
+            "audience": doc.get("audience") or "",
+            "fight_style": doc.get("fight_style") or "",
         }
     )
     await db.events.insert_one(doc)
