@@ -6,8 +6,30 @@ export function addMonths(d, n) {
   return new Date(d.getFullYear(), d.getMonth() + n, 1);
 }
 
+/**
+ * Format a Date as a LOCAL `YYYY-MM-DD` string. Using local components avoids
+ * the UTC drift caused by `toISOString()` in non-UTC timezones (e.g. Helsinki
+ * UTC+2/+3) where local midnight maps to the previous UTC day.
+ */
 export function isoDay(d) {
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * Parse a `YYYY-MM-DD` event date string as a LOCAL Date (not UTC). Returns
+ * null for unparseable input. Other formats fall back to the native parser.
+ */
+export function parseEventDate(s) {
+  if (!s) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (m) {
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  }
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
 }
 
 export function sameDay(a, b) {
@@ -40,9 +62,9 @@ export function buildMonthGrid(cursor) {
 export function buildEventsByDay(events) {
   const map = new Map();
   for (const e of events || []) {
-    if (!e.start_date) continue;
-    const start = new Date(e.start_date);
-    const end = e.end_date ? new Date(e.end_date) : start;
+    const start = parseEventDate(e.start_date);
+    if (!start) continue;
+    const end = parseEventDate(e.end_date) || start;
     const cur = new Date(start);
     while (cur <= end) {
       const key = isoDay(cur);
