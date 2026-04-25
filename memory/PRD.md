@@ -63,8 +63,15 @@ Modernise https://viikinkitapahtumat.fi with: visually better calendar/event lis
 - ✅ **Resend integration** (`email_service.py`) with HTML templates for: admin notification, subscribe confirmation, monthly digest. Falls back to logging when API key missing.
 - ✅ 54/54 backend tests + frontend e2e green.
 
+## Iteration 4 — Image revert, sword imagery, category rename, past filter (2026-04-25)
+- ✅ Restored original `https://viikinkitapahtumat.fi/pics/*.jpg` URLs for all 12 seeded events; AI-generated event images are no longer referenced (orphan files in `/app/frontend/public/event-images/` remain).
+- ✅ Generated **2 NEW Gemini Nano Banana images** for the Viikinkimiekkailu page (`miekkailu-hero.png` + `miekkailu-reenact.png`) — saved as proper PNGs to `/app/frontend/public/sword-images/`.
+- ✅ Renamed event category **`battle` → `training_camp`** (FI: Harjoitusleiri, EN: Training camp, SV: Träningsläger). Migrated all DB rows + Literal type in backend + i18n + CATS arrays + CAT_TINT + CAT_DOT in frontend.
+- ✅ **Past-event filter**: `GET /api/events` and `/api/events.ics` now exclude events whose end_date (or start_date if no end_date) is before today, by default. Pass `?include_past=true` to override (admin moderation paths use `/api/admin/events` which is unaffected).
+- ✅ 66/66 backend tests + frontend e2e green.
+
 ## Deferred — Native mobile app
-- Native React Native / Expo app is its own separate codebase + iteration (separate App Store / Play Store accounts, EAS Build, push notification certs, etc.). PWA already covers installability + offline shell on mobile, so this is on hold until the user is ready to invest in a proper native project.
+- Native React Native / Expo app is its own separate codebase + iteration. PWA already covers installability + offline shell on mobile, so this is on hold until the user is ready to invest in a proper native project.
 
 ## Backlog (priorities)
 - **P1** Native mobile app (React Native / Expo) syncing the same `/api/events` endpoints.
