@@ -91,15 +91,18 @@ Modernise https://viikinkitapahtumat.fi with: visually better calendar/event lis
 ## Deferred — Native mobile app
 - Native React Native / Expo app is its own separate codebase + iteration. PWA already covers installability + offline shell on mobile, so this is on hold until the user is ready to invest in a proper native project.
 
+## Iteration 9 — UX polish & component refactor (2026-04-25)
+- ✅ **Tapahtumat list view → month grouping**: Events.jsx now renders a new `EventsByMonth` component that buckets events by `start_date` year+month, sorts chronologically, and renders a section header per month with localised name (`t("months")[idx]`) + year + count. New testids: `events-list-by-month`, `month-{year}-{monthIndex}`.
+- ✅ **Single-color category bar on event cards**: EventCard.jsx replaced the small top-left tinted badge with a prominent uppercase ember-themed bar (full-width above the image when image present, full-width strip above the body when no image). Same background colour for all categories — viking-ember/95 + bone text + gold border + ember-glow. Testid: `event-card-cat-{id}`.
+- ✅ **Radix Dialog a11y warning silenced**: Added `<DialogDescription className="sr-only">` after `<DialogTitle>` in AdminEventEditDialog, AdminMerchantsPanel.MerchantDialog, AdminGuildsPanel.GuildDialog. Console warning "Missing Description or aria-describedby" gone.
+- ✅ **Refactor — EventCalendar.jsx (168 → ~60 LoC)**: Extracted `components/calendar/CalendarHeader.jsx`, `components/calendar/CalendarDayCell.jsx`, `components/calendar/calendarUtils.js` (startOfMonth, addMonths, isoDay, sameDay, buildMonthGrid, buildEventsByDay, CAT_DOT). All existing testids preserved (event-calendar / cal-prev / cal-next / cal-event-{id}).
+- ✅ **Refactor — AdminDashboard.jsx (423 → ~145 LoC)**: Extracted `components/admin/AdminStatCard.jsx`, `components/admin/AdminNewsletterPanel.jsx`, `components/admin/AdminWeeklyReportPanel.jsx`, `components/admin/AdminEventRow.jsx`. All existing testids preserved (admin-row-{id}, edit-{id}, approve-{id}, reject-{id}, delete-{id}, newsletter-panel, weekly-report-panel, etc.).
+- ✅ Frontend e2e: 100% on iter 9 asks (iteration_9.json). No regressions; backend untouched.
+
 ## Backlog (priorities)
-- **P1** Native mobile app (React Native / Expo) syncing the same `/api/events` endpoints.
-- **P1** Curated content for Courses/Guilds/Shops pages (currently a small placeholder list for Guilds/Shops).
-- **P1** Email notification to admin when a new submission arrives (e.g. SendGrid/Resend).
-- **P1** iCal feed (`/api/events.ics`) so visitors can subscribe in their own calendar app.
+- **P1** Native mobile app (React Native / Expo) syncing `/api/events`.
 - **P2** Image upload via object storage (currently URL only).
 - **P2** Brute-force / rate-limit on `/api/auth/login`.
-- **P2** Validate `?status=` enum on `/api/admin/events`.
-- **P2** Admin: edit event details (currently approve/reject only).
 - **P2** Custom favicon + Apple touch icons.
 - **P2** Open Graph / Twitter cards per event for shareability.
 
