@@ -96,9 +96,8 @@ def _guild(row, idx, category):
     return {"name": name, "region": region, "url": url, "category": category, "order_index": idx}
 
 
-async def main():
-    c = AsyncIOMotorClient(os.environ["MONGO_URL"])
-    db = c[os.environ["DB_NAME"]]
+async def seed_taxonomy(db) -> dict:
+    """Seed merchants + guilds into the given Motor db handle. Idempotent."""
     await db.merchants.create_index("id", unique=True, sparse=True)
     await db.merchants.create_index("name", unique=True)
     await db.guilds.create_index("id", unique=True, sparse=True)
@@ -108,7 +107,14 @@ async def main():
     n2 = await upsert_many(db.merchants, SMITHS, lambda r, i: _merchant(r, i, "smith"))
     n3 = await upsert_many(db.guilds, SVTL_MEMBERS, lambda r, i: _guild(r, i, "svtl_member"))
     n4 = await upsert_many(db.guilds, OTHER_GUILDS, lambda r, i: _guild(r, i, "other"))
-    print(f"Merchants seeded: gear={n1}, smith={n2}. Guilds seeded: svtl={n3}, other={n4}.")
+    return {"merchants_gear": n1, "merchants_smith": n2, "guilds_svtl": n3, "guilds_other": n4}
+
+
+async def main():
+    c = AsyncIOMotorClient(os.environ["MONGO_URL"])
+    db = c[os.environ["DB_NAME"]]
+    res = await seed_taxonomy(db)
+    print(f"Seeded: {res}")
     c.close()
 
 

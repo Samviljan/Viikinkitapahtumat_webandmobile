@@ -802,6 +802,21 @@ async def on_startup():
             {"$set": {"password_hash": hash_password(admin_password)}},
         )
 
+    # Auto-seed merchants / guilds taxonomy on first startup of an empty DB.
+    # Idempotent: only runs when collections are empty so manual edits aren't
+    # overwritten on subsequent restarts.
+    try:
+        if await db.merchants.estimated_document_count() == 0:
+            from scripts.seed_taxonomy import seed_taxonomy
+            res = await seed_taxonomy(db)
+            logger.info("Auto-seeded merchants/guilds: %s", res)
+        elif await db.guilds.estimated_document_count() == 0:
+            from scripts.seed_taxonomy import seed_taxonomy
+            res = await seed_taxonomy(db)
+            logger.info("Auto-seeded merchants/guilds (guilds were empty): %s", res)
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Taxonomy auto-seed failed: %s", e)
+
     # APScheduler — 1st of every month at 09:00 Europe/Helsinki
     scheduler = AsyncIOScheduler(timezone=pytz.timezone("Europe/Helsinki"))
     scheduler.add_job(
