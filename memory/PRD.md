@@ -42,12 +42,29 @@ Modernise https://viikinkitapahtumat.fi with: visually better calendar/event lis
 ## Iteration 2 — Real content imported (2026-04-25)
 - ✅ Added new pages: **Viikinkimiekkailu** (`/swordfighting`) with two long-form articles and **Yhteydenotto** (`/contact`) with mailto form + copy-email button. Both are in the main nav in all 3 languages.
 - ✅ Extended Event model with optional `audience` (Yleisö / Harrastajat) and `fight_style` (Western / Eastern / …) fields. Surfaced on EventCard + EventDetail + Admin dashboard. Added selects to the Submit form.
-- ✅ Seeded **12 real 2026 events** from viikinkitapahtumat.fi via idempotent `/app/backend/scripts/seed_events.py` (Bonk Pohjalla VII, Sleipnir, Vähänkyrön Viikinkipäivä, Hämeen Keskiaikafestivaali, Keskiajan Turku, Rautakauden Birckala, Rosalan viikinkipäivät, Saltvik Viking Market, Tarinoiden Tori, Ulvilan Hansamarkkinat, Wiipurintien markkinat, Helsingin Keskiaikapäivä).
-- ✅ Replaced placeholder Guilds list with the real **SVTL** federation section + **6 SVTL member clubs** + **15 other guilds/associations**, each with external links.
-- ✅ Replaced placeholder Shops list with **17 gear/supply shops** + **2 smiths** sections.
-- ✅ Rewrote Courses page with intro paragraphs from the original site + a dynamic listing of upcoming course-category events from the API.
-- ✅ Silenced expected 401 console noise on `/auth/me` cold-load probe.
-- ✅ 37/37 backend tests + frontend e2e all green.
+- ✅ Seeded **12 real 2026 events** from viikinkitapahtumat.fi via idempotent `/app/backend/scripts/seed_events.py`.
+- ✅ Replaced placeholder Guilds list with the real **SVTL** federation section + **6 SVTL member clubs** + **15 other guilds/associations**.
+- ✅ Replaced placeholder Shops list with **17 gear/supply shops** + **2 smiths**.
+- ✅ Rewrote Courses page with intro + dynamic course-event listing.
+- ✅ 37/37 backend tests + frontend e2e green.
+
+## Iteration 3 — AI images, newsletter, iCal, admin email (2026-04-25)
+- ✅ Generated **12 AI viking-themed event images** with Gemini Nano Banana (`/app/backend/scripts/generate_event_images.py`), saved as proper PNG files to `/app/frontend/public/event-images/` and wired into the seeded events via image_url.
+- ✅ Removed **Tietoa** (About) page entirely (route, file, translations).
+- ✅ **Newsletter subscription system**:
+  - `POST /api/newsletter/subscribe` — public, idempotent, sends confirmation email via Resend.
+  - `GET /api/newsletter/unsubscribe?token=...` — token-based unsub, redirects to `/unsubscribe`.
+  - `<NewsletterSignup>` component on Home (card variant) and footer (compact variant).
+  - `/unsubscribe` page (success + invalid token states).
+  - **Admin panel**: 4th stat card "Tilaajat", `<NewsletterPanel>` with Esikatsele + Lähetä nyt buttons that hit `/api/admin/newsletter/preview` and `/api/admin/newsletter/send`.
+  - **Scheduler**: APScheduler running `_scheduled_monthly_digest` on the 1st of each month at 09:00 Europe/Helsinki.
+- ✅ **iCal feed**: `GET /api/events.ics` returns valid VCALENDAR with all approved events, plus a "Tilaa kalenteri" button on `/events` that links to it.
+- ✅ **Admin email notification** on every new public event submission (background task → Resend).
+- ✅ **Resend integration** (`email_service.py`) with HTML templates for: admin notification, subscribe confirmation, monthly digest. Falls back to logging when API key missing.
+- ✅ 54/54 backend tests + frontend e2e green.
+
+## Deferred — Native mobile app
+- Native React Native / Expo app is its own separate codebase + iteration (separate App Store / Play Store accounts, EAS Build, push notification certs, etc.). PWA already covers installability + offline shell on mobile, so this is on hold until the user is ready to invest in a proper native project.
 
 ## Backlog (priorities)
 - **P1** Native mobile app (React Native / Expo) syncing the same `/api/events` endpoints.
