@@ -15,7 +15,7 @@ ADMIN_PASSWORD = "***REDACTED***"
 # The frontend domain serves /event-images/<slug>.png
 FRONTEND_DOMAIN = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 # Backend public site (used by ical / unsubscribe redirect)
-PUBLIC_SITE_URL = "https://0fcd15d9-7f5e-4906-8026-f8ea77ba0b4a.preview.emergentagent.com"
+PUBLIC_SITE_URL = "https://events-refresh-1.preview.emergentagent.com"
 
 
 # ---------- iCal feed ----------

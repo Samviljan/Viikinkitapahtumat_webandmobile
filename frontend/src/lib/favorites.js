@@ -9,7 +9,8 @@ function read() {
     if (!raw) return [];
     const arr = JSON.parse(raw);
     return Array.isArray(arr) ? arr.filter((x) => typeof x === "string") : [];
-  } catch {
+  } catch (err) {
+    console.warn("favorites: read failed", err);
     return [];
   }
 }
@@ -18,8 +19,9 @@ function write(ids) {
   try {
     localStorage.setItem(KEY, JSON.stringify(ids));
     window.dispatchEvent(new CustomEvent(EVT, { detail: ids }));
-  } catch {
-    // storage full or disabled — ignore
+  } catch (err) {
+    // storage full, disabled, or in a sandboxed context — log but never crash UI.
+    console.warn("favorites: write failed", err);
   }
 }
 
