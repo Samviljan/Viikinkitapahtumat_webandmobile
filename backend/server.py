@@ -23,8 +23,10 @@ import pytz
 
 from email_service import (
     notify_admin_new_event,
+    notify_submitter_decision,
     send_subscribe_confirmation,
     send_monthly_digest as svc_send_monthly_digest,
+    send_weekly_admin_report as svc_send_weekly_admin_report,
     make_unsubscribe_token,
 )
 
@@ -405,6 +407,7 @@ async def admin_get_event(event_id: str, _admin: dict = Depends(get_admin_user))
 async def admin_update_status(
     event_id: str,
     payload: EventStatusUpdate,
+    background: BackgroundTasks,
     _admin: dict = Depends(get_admin_user),
 ):
     res = await db.events.find_one_and_update(
@@ -415,6 +418,8 @@ async def admin_update_status(
     )
     if not res:
         raise HTTPException(status_code=404, detail="Event not found")
+    if payload.status in ("approved", "rejected"):
+        background.add_task(notify_submitter_decision, res, payload.status == "approved")
     return EventOut(**res)
 
 
@@ -438,6 +443,28 @@ async def admin_stats(_admin: dict = Depends(get_admin_user)):
 @api_router.post("/admin/newsletter/send")
 async def admin_send_newsletter(_admin: dict = Depends(get_admin_user)):
     return await svc_send_monthly_digest(db, days=60)
+
+
+@api_router.post("/admin/weekly-report/send")
+async def admin_send_weekly_report(_admin: dict = Depends(get_admin_user)):
+    return await svc_send_weekly_admin_report(db)
+
+
+@api_router.get("/admin/weekly-report/preview")
+async def admin_preview_weekly_report(_admin: dict = Depends(get_admin_user)):
+    from email_service import render_weekly_admin_report, select_upcoming_events
+    pending_count = await db.events.count_documents({"status": "pending"})
+    approved_count = await db.events.count_documents({"status": "approved"})
+    rejected_count = await db.events.count_documents({"status": "rejected"})
+    sub_count = await db.newsletter_subscribers.count_documents({"status": "active"})
+    week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    new_subs = await db.newsletter_subscribers.count_documents({"status": "active", "created_at": {"$gte": week_ago}})
+    pending = await db.events.find({"status": "pending"}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    approved = await db.events.find({"status": "approved"}, {"_id": 0}).to_list(2000)
+    upcoming = select_upcoming_events(approved, days=30)
+    stats = {"pending": pending_count, "approved": approved_count, "rejected": rejected_count, "subscribers": sub_count}
+    subject, html = render_weekly_admin_report(stats, pending, upcoming, new_subs)
+    return {"subject": subject, "html": html, "stats": stats, "new_subs": new_subs}
 
 
 @api_router.get("/admin/newsletter/preview")
@@ -485,6 +512,14 @@ async def _scheduled_monthly_digest():
         logger.exception("Monthly digest failed: %s", e)
 
 
+async def _scheduled_weekly_admin_report():
+    try:
+        result = await svc_send_weekly_admin_report(db)
+        logger.info("Weekly admin report sent: %s", result)
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Weekly admin report failed: %s", e)
+
+
 # -----------------------------------------------------------------------------
 # Startup
 # -----------------------------------------------------------------------------
@@ -526,8 +561,14 @@ async def on_startup():
         id="monthly_digest",
         replace_existing=True,
     )
+    scheduler.add_job(
+        _scheduled_weekly_admin_report,
+        CronTrigger(day_of_week="mon", hour=9, minute=0),
+        id="weekly_admin_report",
+        replace_existing=True,
+    )
     scheduler.start()
-    logger.info("APScheduler started — monthly digest at 09:00 day 1, Europe/Helsinki")
+    logger.info("APScheduler started — monthly digest 1st@09:00, weekly admin report Mon@09:00, Europe/Helsinki")
 
 
 @app.on_event("shutdown")

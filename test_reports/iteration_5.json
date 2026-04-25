@@ -1,0 +1,49 @@
+{
+  "summary": "Iteration 5 testing — weekly admin report endpoints + decision-emails on PATCH + i18n cleanup of haarniskat/armour/rustningar. Backend: 79/79 pytest pass (66 prior + 13 new in test_iteration5_weekly_and_decision_emails.py). Both new admin endpoints work, return correct shapes, enforce admin auth, and PATCH responds in <2s with non-blocking BackgroundTask. APScheduler logs confirm BOTH jobs registered: monthly_digest (1st@09:00) + weekly_admin_report (Mon@09:00) Europe/Helsinki. Frontend: had to fix one trivial syntax garbage at end of i18n.js (frontend was failing to compile due to leftover stray characters in lines 661-666). After fix, AdminDashboard renders WeeklyReportPanel below NewsletterPanel correctly (y=391 vs y=209), preview button click loads inline weekly report HTML (Viikkokatsaus/Odottaa/Tilaajat all present). Sword page i18n: FI clean (no 'haarniskat'), SV clean (no 'rustningar'), but EN still contains 'armour' in p3 — i18n.js EN sword.p3 says 'viking swords, shields and armour'. Also FI translations for new admin.weekly_* keys are missing (only EN+SV have them) — UI shows raw keys 'admin.weekly_title', 'admin.weekly_sub', 'admin.weekly_preview', 'admin.weekly_send_now' when language=FI.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "WeeklyReportPanel (AdminDashboard.jsx) FI translations", "issue": "Missing FI keys admin.weekly_title / weekly_sub / weekly_preview / weekly_send_now / weekly_confirm in i18n.js. UI shows raw keys when lang=fi (default). EN and SV blocks have them.", "selector": "[data-testid=weekly-report-panel]", "priority": "HIGH"},
+      {"component": "Swordfighting page EN translation", "issue": "sword.p3 in EN still contains the word 'armour' ('Period weapons — viking swords, shields and armour'). Iteration 5 explicitly required removing armour/armor from EN.", "selector": "p (sword.p3)", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration5_weekly_and_decision_emails.py",
+    "/app/backend/tests/test_backend_api.py",
+    "/app/backend/tests/test_iteration4_past_filter.py",
+    "/app/backend/tests/test_newsletter_and_ical.py",
+    "/app/backend/tests/test_seeded_and_new_fields.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Add FI translations for admin.weekly_title, admin.weekly_sub, admin.weekly_preview, admin.weekly_send_now, admin.weekly_confirm in /app/frontend/src/lib/i18n.js TRANSLATIONS.fi.admin block.",
+    "Remove the word 'armour' from EN sword.p3 in i18n.js (e.g., change 'viking swords, shields and armour' to 'viking swords and shields').",
+    "(Already fixed by testing agent) Trailing garbage characters at end of /app/frontend/src/lib/i18n.js (lines 661-666 contained '}\\n;\\n}\\ny}_fi`] || \\\"\\\";\\n}\\n;\\n}') were causing webpack/eslint parse errors and the frontend was not compiling. Cleaned up to a single proper closing of pickLocalized()."
+  ],
+  "critical_code_review_comments": [
+    "FRONTEND COMPILATION WAS BROKEN ON ARRIVAL: i18n.js had stray duplicated/garbage tokens after the last function. Frontend webpack reported 'Parsing error: Unexpected token (662:0)'. Fixed.",
+    "FI i18n missing weekly_* keys is a clear oversight — main agent added them only to EN and SV. Default language is FI so admins see raw keys.",
+    "EN sword.p3 still contains 'armour' — iteration 5 spec required removing it. The FI and SV equivalents were correctly cleaned. Probably overlooked because the EN sentence rewrite wasn't done.",
+    "Backend: PATCH /api/admin/events/{id} correctly takes BackgroundTasks as a FastAPI parameter, schedules notify_submitter_decision after the response — measured PATCH latency well under 500ms in tests.",
+    "Backend: notify_submitter_decision short-circuits when organizer_email is missing, returning {sent:false, reason:'no_organizer_email'} — no exception raised.",
+    "Backend: send_weekly_admin_report aggregates pending/approved/rejected/subscribers + new_subs (last 7d) and renders a card-style HTML email; preview endpoint matches send endpoint logic exactly.",
+    "APScheduler: both jobs (monthly_digest & weekly_admin_report) registered at startup with replace_existing=True — confirmed in supervisor backend logs.",
+    "i18n.js is now ~615 lines but has 3 hardcoded TRANSLATIONS dicts; consider splitting per-language files (>700 lines threshold approaching)."
+  ],
+  "updated_files": [
+    "/app/frontend/src/lib/i18n.js (removed trailing garbage tokens at lines 661-666 to allow frontend to compile)",
+    "/app/backend/tests/test_iteration5_weekly_and_decision_emails.py (NEW: 13 tests)"
+  ],
+  "success_rate": {"backend": "100% (79/79)", "frontend": "60% (panel renders + preview works + FI/SV i18n clean; EN i18n has armour, FI weekly_* keys missing)"},
+  "test_credentials": "admin@viikinkitapahtumat.fi / ***REDACTED*** (verified working)",
+  "seed_data_creation": "TEST_iter5_* events created and cleaned up within tests (DELETE called at end of each PATCH test).",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "After E1 adds FI weekly_* keys and removes 'armour' from EN sword.p3, retest by visiting /admin (login as admin) and confirming the weekly panel shows real text not raw keys, then visit /swordfighting with localStorage.vk_lang='en' and confirm 'armour'/'armor' no longer appears. Backend tests are stable — re-run via: cd /app && python -m pytest backend/tests/. Public frontend URL: https://events-refresh-1.preview.emergentagent.com (note: NOT the same host as backend REACT_APP_BACKEND_URL=https://events-refresh-1.preview.emergentagent.com — both happen to be the same domain but routes /api go to backend port 8001 via ingress).",
+  "rca of the issue": "TWO issues found by testing: (1) i18n.js compilation: trailing garbage tokens (lines 661-666) — likely from a botched search/replace edit on pickLocalized helper. Symptom: 'Parsing error: Unexpected token (662:0)', frontend not compiling. Fix applied. (2) Incomplete iter-5 i18n changes: FI admin block in TRANSLATIONS object missing weekly_title/weekly_sub/weekly_preview/weekly_send_now/weekly_confirm keys (EN/SV have them); EN sword.p3 still mentions 'armour' (FI/SV cleaned). REPRODUCTION: Login to /admin in default FI lang -> WeeklyReportPanel shows literal 'admin.weekly_title' etc. Switch lang to EN, visit /swordfighting -> third paragraph 'Period weapons — viking swords, shields and armour'. MITIGATION: E1 to add the 5 FI keys + drop 'armour' from EN sword.p3."
+}

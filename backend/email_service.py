@@ -38,7 +38,6 @@ def _admin_email() -> str:
 
 
 async def send_email(to: str, subject: str, html: str) -> dict:
-    """Send a single email. Returns {"sent": bool, "id": ...} or {"sent": False, "reason": ...}."""
     if not _is_configured():
         logger.warning("[email mock] to=%s subject=%s (RESEND_API_KEY not set)", to, subject)
         return {"sent": False, "reason": "no_api_key"}
@@ -191,6 +190,146 @@ def render_monthly_digest(events: list[dict], unsubscribe_url: str) -> tuple[str
 async def notify_admin_new_event(ev: dict) -> dict:
     subject, html = render_admin_notification(ev)
     return await send_email(_admin_email(), subject, html)
+
+
+def render_event_decision(ev: dict, approved: bool) -> tuple[str, str]:
+    site = _site_url()
+    title = escape(ev.get("title_fi") or "")
+    if approved:
+        link = f"{site}/events/{ev.get('id')}" if (site and ev.get("id")) else ""
+        cta_html = (
+            f'<p style="margin-top:24px"><a href="{link}" style="{BTN_STYLE}">Katso julkaistu tapahtuma</a></p>'
+            if link
+            else ""
+        )
+        body = (
+            f'<div style="{BASE_STYLE}">'
+            f'<h1 style="{H1_STYLE}">Tapahtumasi on hyväksytty</h1>'
+            f'<div style="{CARD_STYLE}">'
+            f"<p>Hei,</p>"
+            f"<p>Hienoa! Lähettämäsi tapahtuma <strong>{title}</strong> on hyväksytty ja "
+            f"se näkyy nyt sivustomme tapahtumakalenterissa ja kuukausiuutiskirjeessä.</p>"
+            f"<p>Kiitos että jaat tapahtumasi viikinkiyhteisön kanssa.</p>"
+            f"{cta_html}"
+            f"</div></div>"
+        )
+        subject = f"Hyväksytty: {ev.get('title_fi') or ''}"
+    else:
+        body = (
+            f'<div style="{BASE_STYLE}">'
+            f'<h1 style="{H1_STYLE}">Tapahtumailmoituksesi tilanne</h1>'
+            f'<div style="{CARD_STYLE}">'
+            f"<p>Hei,</p>"
+            f"<p>Lähettämääsi tapahtumaa <strong>{title}</strong> ei tällä kertaa julkaistu "
+            f"sivustollamme. Tämä voi johtua puutteellisista tiedoista, päällekkäisyydestä toisen "
+            f"ilmoituksen kanssa tai siitä, että tapahtuma ei sovi sivuston aihepiiriin.</p>"
+            f"<p>Voit lähettää tapahtuman uudestaan tarvittavin täydennyksin tai ottaa yhteyttä "
+            f"sähköpostitse osoitteeseen <a href='mailto:{_admin_email()}' style='color:#C19C4D'>"
+            f"{_admin_email()}</a>.</p>"
+            f"</div></div>"
+        )
+        subject = f"Tapahtumailmoituksesi: {ev.get('title_fi') or ''}"
+    return subject, body
+
+
+async def notify_submitter_decision(ev: dict, approved: bool) -> dict:
+    to = ev.get("organizer_email")
+    if not to:
+        return {"sent": False, "reason": "no_organizer_email"}
+    subject, html = render_event_decision(ev, approved)
+    return await send_email(to, subject, html)
+
+
+def render_weekly_admin_report(stats: dict, pending: list[dict], upcoming: list[dict], new_subs: int) -> tuple[str, str]:
+    site = _site_url()
+    pending_html = ""
+    if pending:
+        rows = []
+        for ev in pending[:10]:
+            title = escape(ev.get("title_fi") or "")
+            organizer = escape(ev.get("organizer") or "")
+            date = escape(ev.get("start_date") or "")
+            rows.append(
+                f'<li style="margin-bottom:8px"><strong>{title}</strong> '
+                f'<span style="{META_STYLE}"> · {date} · {organizer}</span></li>'
+            )
+        pending_html = (
+            f'<div style="{CARD_STYLE}">'
+            f'<h2 style="{H2_STYLE}">Odottaa tarkistusta ({stats["pending"]})</h2>'
+            f'<ul style="padding-left:18px;margin:0">{"".join(rows)}</ul>'
+            f"</div>"
+        )
+
+    upcoming_html = ""
+    if upcoming:
+        rows = []
+        for ev in upcoming[:5]:
+            title = escape(ev.get("title_fi") or "")
+            date = escape(ev.get("start_date") or "")
+            location = escape(ev.get("location") or "")
+            rows.append(
+                f'<li style="margin-bottom:6px">{title} '
+                f'<span style="{META_STYLE}">· {date} · {location}</span></li>'
+            )
+        upcoming_html = (
+            f'<div style="{CARD_STYLE}">'
+            f'<h2 style="{H2_STYLE}">Tulevat tapahtumat (seuraavat 5)</h2>'
+            f'<ul style="padding-left:18px;margin:0">{"".join(rows)}</ul>'
+            f"</div>"
+        )
+
+    cta = (
+        f'<p style="margin-top:24px"><a href="{site}/admin" style="{BTN_STYLE}">Avaa hallintapaneeli</a></p>'
+        if site
+        else ""
+    )
+    body = (
+        f'<div style="{BASE_STYLE}">'
+        f'<h1 style="{H1_STYLE}">Viikon yhteenveto</h1>'
+        f'<p>Hei admin, tässä viikon kooste sivustosi tilasta.</p>'
+        f'<div style="display:flex;flex-wrap:wrap;gap:8px;margin:16px 0">'
+        f'<div style="{CARD_STYLE};flex:1;min-width:140px;text-align:center">'
+        f'<div style="{META_STYLE}">Odottaa</div>'
+        f'<div style="font-size:32px;color:#8A251D;font-weight:600">{stats["pending"]}</div>'
+        f'</div>'
+        f'<div style="{CARD_STYLE};flex:1;min-width:140px;text-align:center">'
+        f'<div style="{META_STYLE}">Hyväksytyt yhteensä</div>'
+        f'<div style="font-size:32px;color:#C19C4D;font-weight:600">{stats["approved"]}</div>'
+        f'</div>'
+        f'<div style="{CARD_STYLE};flex:1;min-width:140px;text-align:center">'
+        f'<div style="{META_STYLE}">Tilaajat</div>'
+        f'<div style="font-size:32px;color:#C19C4D;font-weight:600">{stats["subscribers"]}</div>'
+        f'</div>'
+        f'<div style="{CARD_STYLE};flex:1;min-width:140px;text-align:center">'
+        f'<div style="{META_STYLE}">Uudet tilaajat 7 pv</div>'
+        f'<div style="font-size:32px;color:#C19C4D;font-weight:600">+{new_subs}</div>'
+        f'</div>'
+        f'</div>'
+        f"{pending_html}"
+        f"{upcoming_html}"
+        f"{cta}"
+        f"</div>"
+    )
+    return f"Viikkokatsaus — {datetime.now(timezone.utc).strftime('%-d.%-m.%Y')}", body
+
+
+async def send_weekly_admin_report(db) -> dict:
+    pending_count = await db.events.count_documents({"status": "pending"})
+    approved_count = await db.events.count_documents({"status": "approved"})
+    rejected_count = await db.events.count_documents({"status": "rejected"})
+    sub_count = await db.newsletter_subscribers.count_documents({"status": "active"})
+    week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    new_subs = await db.newsletter_subscribers.count_documents({
+        "status": "active",
+        "created_at": {"$gte": week_ago},
+    })
+    pending = await db.events.find({"status": "pending"}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    approved = await db.events.find({"status": "approved"}, {"_id": 0}).to_list(2000)
+    upcoming = select_upcoming_events(approved, days=30)
+    stats = {"pending": pending_count, "approved": approved_count, "rejected": rejected_count, "subscribers": sub_count}
+    subject, html = render_weekly_admin_report(stats, pending, upcoming, new_subs)
+    res = await send_email(_admin_email(), subject, html)
+    return {"to": _admin_email(), "stats": stats, "new_subs": new_subs, **res}
 
 
 def make_unsubscribe_token() -> str:

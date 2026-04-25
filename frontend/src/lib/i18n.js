@@ -155,7 +155,7 @@ const TRANSLATIONS = {
       p2:
         "Viikinkimiekkailu ei ole pelkästään fyysinen aktiviteetti vaan myös syvällinen tutkimus viikinkien sotataidoista ja kulttuurista. Harrastajat paneutuvat tarkasti historiallisiin lähteisiin, arkeologisiin löytöihin ja taistelumenetelmiin.",
       p3:
-        "Käytännön harjoitukset keskittyvät miekkailun perustekniikoihin, kilvenkäyttöön, liikkuvuuteen ja taistelutaitoon. Käytössä ovat aikakautiset aseet — viikinkimiekat, kilvet ja haarniskat — ja monet ryhmät noudattavat tiukkoja sääntöjä osallistujien turvallisuuden varmistamiseksi.",
+        "Käytännön harjoitukset keskittyvät miekkailun perustekniikoihin, kilvenkäyttöön, liikkuvuuteen ja taistelutaitoon. Käytössä ovat aikakautiset aseet — viikinkimiekat ja kilvet — ja monet ryhmät noudattavat tiukkoja sääntöjä osallistujien turvallisuuden varmistamiseksi.",
       h_reenactment: "Historianelävöittäminen",
       r1:
         "Historianelävöittäminen, eli reenactment, on harrastus, joka mahdollistaa menneiden aikakausien kokemisen ja tutkimisen elävänä. Viikinkiaika herää henkiin värikkäästi ja autenttisesti.",
@@ -317,6 +317,12 @@ const TRANSLATIONS = {
       newsletter_confirm: "Send the newsletter to all active subscribers?",
       newsletter_sent: "Sent",
       newsletter_count: "Events in digest",
+      weekly_title: "Weekly admin digest",
+      weekly_sub:
+        "Get a short weekly summary in your inbox (pending events, next 30 days, new subscribers). Sent automatically every Monday at 09:00 Helsinki time.",
+      weekly_send_now: "Send weekly digest now",
+      weekly_preview: "Preview",
+      weekly_confirm: "Send the weekly digest to your email?",
     },
     about: undefined,
     courses: {
@@ -513,6 +519,12 @@ const TRANSLATIONS = {
       newsletter_confirm: "Skicka nyhetsbrevet till alla aktiva prenumeranter?",
       newsletter_sent: "Skickat",
       newsletter_count: "Evenemang i utskicket",
+      weekly_title: "Veckosammandrag för admin",
+      weekly_sub:
+        "Få en kort veckorapport i din inkorg (väntande evenemang, kommande 30 dagar, nya prenumeranter). Skickas automatiskt varje måndag kl. 09:00 finsk tid.",
+      weekly_send_now: "Skicka veckosammandrag nu",
+      weekly_preview: "Förhandsgranska",
+      weekly_confirm: "Skicka veckosammandraget till din e-post?",
     },
     about: undefined,
     courses: {
@@ -550,7 +562,7 @@ const TRANSLATIONS = {
       p2:
         "Det är inte bara fysisk aktivitet utan också en djupgående studie av vikingarnas krigföring och kultur. Utövarna fördjupar sig i historiska källor, arkeologiska fynd och stridsmetoder.",
       p3:
-        "Den praktiska träningen fokuserar på grundläggande svärdsteknik, sköldarbete, fotarbete och stridsfärdigheter. Tidens vapen — vikingasvärd, sköldar och rustningar — skapar en så autentisk upplevelse som möjligt.",
+        "Den praktiska träningen fokuserar på grundläggande svärdsteknik, sköldarbete, fotarbete och stridsfärdigheter. Tidens vapen — vikingasvärd och sköldar — skapar en så autentisk upplevelse som möjligt.",
       h_reenactment: "Re-enactment",
       r1:
         "Historisk re-enactment låter dig uppleva och studera tidigare epoker som levande händelser. Vikingatiden kommer fram färgstarkt och autentiskt.",
