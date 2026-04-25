@@ -2,6 +2,8 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Calendar, MapPin, ArrowUpRight } from "lucide-react";
 import { useI18n, pickLocalized } from "@/lib/i18n";
+import FavoriteButton from "@/components/FavoriteButton";
+import RemindMeButton from "@/components/RemindMeButton";
 
 export default function EventCard({ event, compact = false }) {
   const { lang, t } = useI18n();
@@ -32,6 +34,11 @@ export default function EventCard({ event, compact = false }) {
             className="absolute top-0 left-0 right-0 bg-viking-ember/95 text-viking-bone font-rune uppercase tracking-[0.2em] text-[10px] sm:text-[11px] px-4 py-2 text-center border-b border-viking-gold/40 ember-glow shadow-[0_2px_0_rgba(0,0,0,0.35)]"
           >
             {categoryLabel}
+          </div>
+          {/* Action icons (favorite + remind) bottom-right of image */}
+          <div className="absolute bottom-3 right-3 flex items-center gap-2">
+            <RemindMeButton eventId={event.id} variant="compact" />
+            <FavoriteButton eventId={event.id} />
           </div>
         </div>
       ) : null}

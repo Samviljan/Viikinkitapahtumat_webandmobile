@@ -27,6 +27,8 @@ from email_service import (
     send_subscribe_confirmation,
     send_monthly_digest as svc_send_monthly_digest,
     send_weekly_admin_report as svc_send_weekly_admin_report,
+    send_reminder_confirmation as svc_send_reminder_confirmation,
+    send_event_reminders as svc_send_event_reminders,
     make_unsubscribe_token,
 )
 
@@ -225,6 +227,11 @@ class GuildOut(BaseModel):
 
 
 class SubscribeRequest(BaseModel):
+    email: EmailStr
+    lang: Optional[str] = "fi"
+
+
+class ReminderRequest(BaseModel):
     email: EmailStr
     lang: Optional[str] = "fi"
 
@@ -440,6 +447,53 @@ async def unsubscribe(token: str):
     )
     site = os.environ.get("PUBLIC_SITE_URL", "").rstrip("/")
     target = f"{site}/?unsub={'ok' if res.modified_count else 'invalid'}" if site else "/"
+    return RedirectResponse(url=target, status_code=303)
+
+
+# -----------------------------------------------------------------------------
+# Event reminders (public)
+# -----------------------------------------------------------------------------
+@api_router.post("/events/{event_id}/remind")
+async def request_event_reminder(
+    event_id: str, payload: ReminderRequest, background: BackgroundTasks
+):
+    ev = await db.events.find_one({"id": event_id, "status": "approved"}, {"_id": 0})
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+    email = payload.email.lower()
+    existing = await db.event_reminders.find_one({"event_id": event_id, "email": email})
+    if existing and existing.get("status") == "active":
+        return {"ok": True, "already": True}
+    token = make_unsubscribe_token()
+    now = datetime.now(timezone.utc).isoformat()
+    doc = {
+        "id": existing.get("id") if existing else str(uuid.uuid4()),
+        "event_id": event_id,
+        "email": email,
+        "lang": payload.lang or "fi",
+        "status": "active",
+        "unsubscribe_token": token,
+        "created_at": existing.get("created_at") if existing else now,
+        "updated_at": now,
+        "sent_at": None,
+    }
+    await db.event_reminders.update_one(
+        {"event_id": event_id, "email": email},
+        {"$set": doc},
+        upsert=True,
+    )
+    background.add_task(svc_send_reminder_confirmation, ev, email, token)
+    return {"ok": True}
+
+
+@api_router.get("/reminders/unsubscribe")
+async def unsubscribe_reminder(token: str):
+    res = await db.event_reminders.update_one(
+        {"unsubscribe_token": token},
+        {"$set": {"status": "unsubscribed", "updated_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    site = os.environ.get("PUBLIC_SITE_URL", "").rstrip("/")
+    target = f"{site}/?reminder_unsub={'ok' if res.modified_count else 'invalid'}" if site else "/"
     return RedirectResponse(url=target, status_code=303)
 
 
@@ -704,6 +758,14 @@ async def _scheduled_weekly_admin_report():
         logger.exception("Weekly admin report failed: %s", e)
 
 
+async def _scheduled_event_reminders():
+    try:
+        result = await svc_send_event_reminders(db, days_ahead=7)
+        logger.info("Event reminders sent: %s", result)
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Event reminders failed: %s", e)
+
+
 # -----------------------------------------------------------------------------
 # Startup
 # -----------------------------------------------------------------------------
@@ -717,6 +779,9 @@ async def on_startup():
     await db.events.create_index("start_date")
     await db.newsletter_subscribers.create_index("email", unique=True)
     await db.newsletter_subscribers.create_index("unsubscribe_token")
+    await db.event_reminders.create_index([("event_id", 1), ("email", 1)], unique=True)
+    await db.event_reminders.create_index("unsubscribe_token")
+    await db.event_reminders.create_index("status")
 
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@viikinkitapahtumat.fi").lower()
     admin_password = os.environ["ADMIN_PASSWORD"]
@@ -751,8 +816,14 @@ async def on_startup():
         id="weekly_admin_report",
         replace_existing=True,
     )
+    scheduler.add_job(
+        _scheduled_event_reminders,
+        CronTrigger(hour=9, minute=0),
+        id="event_reminders_daily",
+        replace_existing=True,
+    )
     scheduler.start()
-    logger.info("APScheduler started — monthly digest 1st@09:00, weekly admin report Mon@09:00, Europe/Helsinki")
+    logger.info("APScheduler started — monthly digest 1st@09:00, weekly admin report Mon@09:00, event reminders daily@09:00, Europe/Helsinki")
 
 
 @app.on_event("shutdown")

@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
-import { Menu, X, Globe2, Shield, LogOut } from "lucide-react";
+import { useFavorites } from "@/lib/favorites";
+import { Menu, X, Globe2, Shield, LogOut, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NewsletterSignup from "@/components/NewsletterSignup";
 import {
@@ -84,6 +85,36 @@ function Brand() {
   );
 }
 
+function FavoritesNavLink() {
+  const { t } = useI18n();
+  const { count } = useFavorites();
+  return (
+    <NavLink
+      to="/favorites"
+      data-testid="nav-favorites"
+      title={t("nav.favorites")}
+      aria-label={t("nav.favorites")}
+      className={({ isActive }) =>
+        `relative inline-flex h-9 w-9 items-center justify-center rounded-sm border transition-colors ${
+          isActive
+            ? "border-viking-gold text-viking-gold"
+            : "border-viking-edge text-viking-bone hover:border-viking-gold hover:text-viking-gold"
+        }`
+      }
+    >
+      <Star size={16} className={count > 0 ? "fill-viking-gold text-viking-gold" : ""} />
+      {count > 0 && (
+        <span
+          data-testid="favorites-count-badge"
+          className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-viking-ember text-viking-bone text-[10px] font-rune rounded-full flex items-center justify-center border border-viking-bg"
+        >
+          {count}
+        </span>
+      )}
+    </NavLink>
+  );
+}
+
 export default function Layout({ children }) {
   const [open, setOpen] = useState(false);
   const { t } = useI18n();
@@ -117,6 +148,7 @@ export default function Layout({ children }) {
           </nav>
 
           <div className="flex items-center gap-2">
+            <FavoritesNavLink />
             <LanguageSwitcher />
             {user && user.role === "admin" ? (
               <>
@@ -173,6 +205,19 @@ export default function Layout({ children }) {
                   {t(item.key)}
                 </NavLink>
               ))}
+              <NavLink
+                to="/favorites"
+                onClick={() => setOpen(false)}
+                data-testid="mnav-favorites"
+                className={({ isActive }) =>
+                  `font-rune text-xs px-3 py-3 rounded-sm border-b border-viking-edge/40 inline-flex items-center gap-2 ${
+                    isActive ? "text-viking-gold" : "text-viking-bone hover:text-viking-gold"
+                  }`
+                }
+              >
+                <Star size={14} />
+                {t("nav.favorites")}
+              </NavLink>
               {user && user.role === "admin" && (
                 <>
                   <NavLink

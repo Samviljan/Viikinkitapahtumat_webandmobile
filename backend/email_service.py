@@ -363,6 +363,116 @@ def select_upcoming_events(all_events: Iterable[dict], days: int = 60) -> list[d
     return out
 
 
+def render_reminder_confirmation(ev: dict, email: str, unsub_url: str) -> tuple[str, str]:
+    site = _site_url()
+    title = escape(ev.get("title_fi") or "")
+    date = escape(ev.get("start_date") or "")
+    if ev.get("end_date"):
+        date = f"{date} – {escape(ev['end_date'])}"
+    location = escape(ev.get("location") or "")
+    link = f"{site}/events/{ev.get('id')}" if (site and ev.get("id")) else ""
+    cta = (
+        f'<p style="margin-top:24px"><a href="{link}" style="{BTN_STYLE}">Katso tapahtuma</a></p>'
+        if link
+        else ""
+    )
+    body = (
+        f'<div style="{BASE_STYLE}">'
+        f'<h1 style="{H1_STYLE}">Muistutus tilattu</h1>'
+        f'<div style="{CARD_STYLE}">'
+        f'<p>Hei,</p>'
+        f'<p>Tilauksesi muistutuksesta tapahtumalle <strong>{title}</strong> on '
+        f'vastaanotettu osoitteeseen <strong>{escape(email)}</strong>.</p>'
+        f'<p style="{META_STYLE}">{date} · {location}</p>'
+        f'<p>Lähetämme sinulle muistutuksen sähköpostitse <strong>7 päivää ennen tapahtumaa</strong>.</p>'
+        f"{cta}"
+        f"</div>"
+        f'<p style="{META_STYLE};margin-top:32px;border-top:1px solid #352A23;padding-top:16px">'
+        f'Et halua tätä muistutusta? '
+        f'<a href="{escape(unsub_url)}" style="color:#A89A82">Peruuta muistutus</a>.'
+        f"</p>"
+        f"</div>"
+    )
+    return f"Muistutus tilattu: {ev.get('title_fi') or ''}", body
+
+
+def render_event_reminder(ev: dict, unsub_url: str) -> tuple[str, str]:
+    site = _site_url()
+    title = escape(ev.get("title_fi") or "")
+    date = escape(ev.get("start_date") or "")
+    if ev.get("end_date"):
+        date = f"{date} – {escape(ev['end_date'])}"
+    location = escape(ev.get("location") or "")
+    organizer = escape(ev.get("organizer") or "")
+    desc = escape((ev.get("description_fi") or "")[:300])
+    link = f"{site}/events/{ev.get('id')}" if (site and ev.get("id")) else ""
+    cta = (
+        f'<p style="margin-top:24px"><a href="{link}" style="{BTN_STYLE}">Avaa tapahtuma</a></p>'
+        if link
+        else ""
+    )
+    body = (
+        f'<div style="{BASE_STYLE}">'
+        f'<h1 style="{H1_STYLE}">Tapahtumasi viikon päässä</h1>'
+        f'<p>Hei! Pyytämäsi muistutus seuraavasta tapahtumasta:</p>'
+        f'<div style="{CARD_STYLE}">'
+        f'<h2 style="{H2_STYLE}">{title}</h2>'
+        f'<p style="{META_STYLE}">{date} · {location} · {organizer}</p>'
+        f"<p>{desc}…</p>"
+        f"{cta}"
+        f"</div>"
+        f'<p style="{META_STYLE};margin-top:32px;border-top:1px solid #352A23;padding-top:16px">'
+        f'Et halua jatkossa muistutuksia tästä tapahtumasta? '
+        f'<a href="{escape(unsub_url)}" style="color:#A89A82">Peruuta muistutus</a>.'
+        f"</p>"
+        f"</div>"
+    )
+    return f"Muistutus: {ev.get('title_fi') or ''} viikon päässä", body
+
+
+def reminder_unsubscribe_url(token: str) -> str:
+    site = _site_url()
+    if site:
+        return f"{site}/api/reminders/unsubscribe?token={token}"
+    return f"/api/reminders/unsubscribe?token={token}"
+
+
+async def send_reminder_confirmation(ev: dict, email: str, token: str) -> dict:
+    subject, html = render_reminder_confirmation(ev, email, reminder_unsubscribe_url(token))
+    return await send_email(email, subject, html)
+
+
+async def send_event_reminders(db, days_ahead: int = 7) -> dict:
+    """Send reminder emails for events that start exactly `days_ahead` days from today.
+
+    Only sends to active reminders that have not yet been emailed.
+    """
+    target = (datetime.now(timezone.utc).date() + timedelta(days=days_ahead)).isoformat()
+    events = await db.events.find(
+        {"status": "approved", "start_date": target}, {"_id": 0}
+    ).to_list(500)
+    sent = 0
+    skipped = 0
+    for ev in events:
+        reminders = await db.event_reminders.find(
+            {"event_id": ev["id"], "status": "active", "sent_at": None}, {"_id": 0}
+        ).to_list(10000)
+        for rem in reminders:
+            subject, html = render_event_reminder(
+                ev, reminder_unsubscribe_url(rem["unsubscribe_token"])
+            )
+            res = await send_email(rem["email"], subject, html)
+            if res.get("sent"):
+                sent += 1
+                await db.event_reminders.update_one(
+                    {"id": rem["id"]},
+                    {"$set": {"sent_at": datetime.now(timezone.utc).isoformat()}},
+                )
+            else:
+                skipped += 1
+    return {"target_date": target, "events": len(events), "sent": sent, "skipped": skipped}
+
+
 async def send_monthly_digest(db, days: int = 60) -> dict:
     """Send a digest of upcoming events to all active subscribers.
 

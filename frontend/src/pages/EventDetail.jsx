@@ -5,6 +5,8 @@ import { useI18n, pickLocalized } from "@/lib/i18n";
 import { Calendar, MapPin, User, Mail, Globe, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDateRange } from "@/components/EventCard";
+import FavoriteButton from "@/components/FavoriteButton";
+import RemindMeButton from "@/components/RemindMeButton";
 
 export default function EventDetail() {
   const { id } = useParams();
@@ -84,14 +86,18 @@ export default function EventDetail() {
 
           <p className="font-serif text-lg text-viking-bone leading-relaxed whitespace-pre-line">{desc}</p>
 
-          {event.link && (
-            <a href={event.link} target="_blank" rel="noopener noreferrer" data-testid="event-link">
-              <Button className="mt-10 bg-viking-ember hover:bg-viking-emberHover text-viking-bone rounded-sm font-rune text-xs ember-glow">
-                <Globe size={14} className="mr-2" />
-                {t("events.website")}
-              </Button>
-            </a>
-          )}
+          <div className="mt-10 flex flex-wrap items-center gap-3">
+            {event.link && (
+              <a href={event.link} target="_blank" rel="noopener noreferrer" data-testid="event-link">
+                <Button className="bg-viking-ember hover:bg-viking-emberHover text-viking-bone rounded-sm font-rune text-xs ember-glow">
+                  <Globe size={14} className="mr-2" />
+                  {t("events.website")}
+                </Button>
+              </a>
+            )}
+            <RemindMeButton eventId={event.id} />
+            <FavoriteButton eventId={event.id} variant="label" />
+          </div>
         </div>
       </div>
     </article>

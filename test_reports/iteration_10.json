@@ -1,0 +1,36 @@
+{
+  "summary": "Iter 10 (favorites + reminder feature) — backend 100% pass (99/99 incl. 7 new iter10 tests), frontend critical flows all verified live on public preview. Created /app/backend/tests/test_iteration10_event_reminders.py covering happy path, idempotency (already=true), 404 unknown event, 404 pending event, unsubscribe ok+invalid, send_event_reminders dict shape — all 7 pass. Full regression of 92 prior backend tests still green. Frontend on https://events-refresh-1.preview.emergentagent.com/events: fav-toggle-{id} + remind-trigger-{id} render on EventCards (10 each in list view), star toggle flips data-state off->on and updates favorites-count-badge to '1' in the SAME tab without a tab switch (CustomEvent works). Clicking remind-trigger-{id} opens remind-dialog WITHOUT navigating to /events/{id} (url confirmed stable). POST /api/events/{id}/remind succeeds end-to-end. /favorites page renders favorites-grid; favorites-clear empties to favorites-empty placeholder and removes the badge. EventDetail page shows both fav-toggle-{id} (label 'Tallenna'/'Spara') and remind-trigger-{id} (full label 'Muistuta minua'/'Påminn mig'). i18n SV switch verified — UI fully Swedish (Spara, Påminn mig, Sivusto->Webbplats, Takaisin->Tillbaka, Evenemang, etc., no raw keys leaked).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration10_event_reminders.py",
+    "/app/test_reports/pytest/iter10_results.xml",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "POST /api/events/{event_id}/remind correctly enforces status='approved' on the event lookup (server.py:460), so pending events return 404 as required — verified.",
+    "Idempotency is keyed on (event_id, email) with email lowercased server-side (server.py:463) before the unique-index lookup. The unique compound index on event_reminders is created at startup (server.py:782). Tests confirm second POST returns {ok:true, already:true} without duplicating documents.",
+    "GET /api/reminders/unsubscribe relies on res.modified_count to choose ok|invalid in the redirect target (server.py:496). Note: an already-unsubscribed token would now match but modified_count==0 (no field change), so it would redirect to reminder_unsub=invalid. This is acceptable — main agent may consider matched_count instead if 'already unsubscribed' should still show ok, but spec only requires ok on first unsubscribe and invalid for unknown tokens.",
+    "send_event_reminders(db, days_ahead=7) returns dict with target_date/events/sent/skipped — verified by direct call. Service correctly filters status='approved' AND start_date==target_iso AND status='active' AND sent_at is None, then marks sent_at on success.",
+    "FavoriteButton uses preventDefault + stopPropagation so clicking the star inside a <Link>-wrapped EventCard does NOT navigate — verified (URL stable after click).",
+    "RemindMeButton uses sr-only DialogDescription so Radix a11y warning stays clean (no console warning observed).",
+    "useFavorites hook uses a same-tab CustomEvent 'vk:favorites:change' — Layout badge and /favorites page update reactively without tab refresh, verified end-to-end.",
+    "Backend test required emails to be lowercased before mongo lookup — fixture in test_iteration10_event_reminders.py adjusted accordingly (TEST_iter10_unsub_... -> test_iter10_unsub_...). All test reminder docs use 'TEST_'/'test_' prefix and are auto-cleaned at the end of TestUnsubscribe.test_unsubscribe_valid_token_via_db.",
+    "CONSOLE: AuthProvider cold-load /api/auth/me 401s remain (carried over from prior iters; unrelated to iter 10)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration10_event_reminders.py (new)"
+  ],
+  "success_rate": {"backend": "100% (99/99 — 7 new iter10 + 92 regression)", "frontend": "100% on critical flows tested (cards fav/remind, dialog no-nav, /favorites grid+empty+clear, EventDetail buttons, SV i18n)"},
+  "test_credentials": "admin@viikinkitapahtumat.fi / ***REDACTED*** — verified.",
+  "seed_data_creation": "Test reminders inserted with TEST_iter10_*@example.com prefix and cleaned up at end of TestUnsubscribe via db.event_reminders.delete_many({email: /^TEST_iter10_/i}). Approved-event fixture creates a TEST_iter10_event_* event and DELETEs it via /api/admin/events/{id} on teardown. No production data touched.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter 10 verified end-to-end. Public URL: https://events-refresh-1.preview.emergentagent.com. Backend: POST /api/events/{id}/remind {email,lang} -> 200 {ok:true} or {ok:true,already:true}; 404 if event missing OR pending. GET /api/reminders/unsubscribe?token=... -> 303 with Location reminder_unsub=ok|invalid. APScheduler runs send_event_reminders daily 09:00 Europe/Helsinki with days_ahead=7. Mongo indexes: event_reminders unique(event_id,email), unsubscribe_token, status. Frontend testids confirmed live: fav-toggle-{id}, remind-trigger-{id} (on EventCard image bottom-right and on EventDetail action row), remind-dialog, remind-email, remind-submit, favorites-count-badge (in nav), nav-favorites, mnav-favorites, favorites-grid, favorites-empty, favorites-clear. localStorage hook /app/frontend/src/lib/favorites.js dispatches CustomEvent 'vk:favorites:change' for same-tab reactivity. i18n keys nav.favorites/fav.*/remind.*/favorites.* present in fi/en/sv. Note for next runs: Sonner toasts in portal — use page.expect_response on POST /remind for reliable assertions instead of body.innerText scraping.",
+  "rca of the issue": "No issues found. All iter10 functionality (favorites localStorage star + email reminder per event with 7-day-ahead APScheduler delivery, buttons on both EventCard and EventDetail, /favorites page, FI/EN/SV i18n) works as specified."
+}

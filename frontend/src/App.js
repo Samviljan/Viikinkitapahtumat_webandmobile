@@ -9,6 +9,7 @@ import Home from "@/pages/Home";
 import Events from "@/pages/Events";
 import EventDetail from "@/pages/EventDetail";
 import Submit from "@/pages/Submit";import Courses from "@/pages/Courses";
+import Favorites from "@/pages/Favorites";
 import Guilds from "@/pages/Guilds";
 import Shops from "@/pages/Shops";
 import Swordfighting from "@/pages/Swordfighting";
@@ -27,6 +28,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/events" element={<Events />} />
               <Route path="/events/:id" element={<EventDetail />} />
+              <Route path="/favorites" element={<Favorites />} />
               <Route path="/submit" element={<Submit />} />
               <Route path="/courses" element={<Courses />} />
               <Route path="/guilds" element={<Guilds />} />
