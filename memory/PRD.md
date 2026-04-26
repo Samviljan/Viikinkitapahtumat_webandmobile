@@ -205,7 +205,17 @@ See `/app/memory/test_credentials.md`.
 - ✅ Mobile-tabit: korvattu expo-router `<Tabs>` `<Slot/>`-pohjaisella custom-tabbar:lla → vain aktiivinen näyttö DOM:ssa.
 - ✅ AppBackground per-näyttö → tausta täyttää koko ruudun, ei mustia palkkeja.
 
-## Iteration 23 — Country filter, PDF programmes, EventCard PDF link (2026-04-26)
+## Iteration 23 — Country filter + PDF programme upload (2026-04-26)
+- ✅ Web + mobile multi-select country chips (FI/SE/EE/...).
+- ✅ PdfUploadField (Submit + Admin), backend POST/GET /api/uploads/event-programs (10 MB max, GridFS bucket event_programs).
+- ✅ EventCard PDF-linkki listanäkymässä.
+
+## Iteration 24 — PDF link only on web (mobile freemium) (2026-04-26)
+- ✅ **Mobiili**: poistettu PDF-ohjelma-linkki `EventCard.tsx`:stä (premium-ominaisuus, jätetään mobiilin maksulliselle versiolle vaihe 2:ssa). Vahvistettu Playwrightilla 0 PDF-linkkiä mobiilissa.
+- ✅ **Web EventDetail**: lisätty näkyvä "Tapahtuman ohjelma" -nappi (kullainen `outline`-tyyli, `<FileText/>`-ikoni) "Sivusto"-napin viereen. Avautuu uudessa välilehdessä.
+- ✅ **Web kalenterinäkymä CalendarDayCell**: lisätty pieni FileText-ikoni tapahtuman otsikon perään kun `program_pdf_url` on asetettu — visuaalinen vihje että ohjelma on saatavilla kun käyttäjä klikkaa tapahtumaa.
+- ✅ **EventCard-listanäkymä** säilyttää aiemmin lisätyn linkin (Iter 23) — toimii edelleen.
+- ✅ **Käännökset** `events.program_pdf` käytössä kaikissa 3 paikassa (lista-EventCard, EventDetail, kalenteri-vihje aria-labeleissa).
 - ✅ **Web maafiltteri**: Events.jsx — multi-select country chip-rivi (`COUNTRY_CODES` + `COUNTRY_FLAGS` + `COUNTRY_NAMES`) joka näkyy vain jos tuloksissa ≥2 maata. Käyttäjä voi valita useita maita. "Kaikki maat"-nappi (X) tyhjentää valinnat. Suodatus tapahtuu client-puolella `filteredEvents`-memo:ssa.
 - ✅ **Mobile maafiltteri**: HomeScreen — sama multi-select chip-rivi SearchPanelin sisällä (✓ FI lippu + nimi). Sama logiikka: `selectedCountries`-set, `presentCountries`-suodatus.
 - ✅ **PDF-ohjelman lataus** — uusi `PdfUploadField`-komponentti:

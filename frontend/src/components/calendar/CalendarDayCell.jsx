@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { pickLocalized } from "@/lib/i18n";
 import { CAT_DOT, isoDay } from "./calendarUtils";
 import { flagFor } from "@/lib/countries";
+import { FileText } from "lucide-react";
 
 export default function CalendarDayCell({ day, dayEvents, isToday, lang }) {
   if (!day) {
@@ -49,6 +50,13 @@ export default function CalendarDayCell({ day, dayEvents, isToday, lang }) {
                   {flagFor(ev.country || "FI")}
                 </span>
                 {pickLocalized(ev, lang, "title")}
+                {ev.program_pdf_url ? (
+                  <FileText
+                    size={9}
+                    className="inline ml-1 text-viking-gold align-baseline"
+                    aria-label="Tapahtuman ohjelma saatavilla"
+                  />
+                ) : null}
               </span>
             </div>
           </Link>

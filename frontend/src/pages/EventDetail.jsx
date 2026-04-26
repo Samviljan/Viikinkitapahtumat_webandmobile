@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "@/lib/api";
 import { useI18n, pickLocalized } from "@/lib/i18n";
-import { Calendar, MapPin, User, Mail, Globe, ChevronLeft, Hourglass, Clock } from "lucide-react";
+import { Calendar, MapPin, User, Mail, Globe, ChevronLeft, Hourglass, Clock, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDateRange, computeEventTiming } from "@/components/EventCard";
 import FavoriteButton from "@/components/FavoriteButton";
@@ -152,6 +152,26 @@ export default function EventDetail() {
                 <Button className="bg-viking-ember hover:bg-viking-emberHover text-viking-bone rounded-sm font-rune text-xs ember-glow">
                   <Globe size={14} className="mr-2" />
                   {t("events.website")}
+                </Button>
+              </a>
+            )}
+            {event.program_pdf_url && (
+              <a
+                href={
+                  event.program_pdf_url.startsWith("http")
+                    ? event.program_pdf_url
+                    : `${process.env.REACT_APP_BACKEND_URL || ""}${event.program_pdf_url}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="event-program-link"
+              >
+                <Button
+                  variant="outline"
+                  className="border-viking-gold/60 text-viking-gold hover:bg-viking-gold/10 hover:text-viking-gold rounded-sm font-rune text-xs"
+                >
+                  <FileText size={14} className="mr-2" />
+                  {t("events.program_pdf")}
                 </Button>
               </a>
             )}
