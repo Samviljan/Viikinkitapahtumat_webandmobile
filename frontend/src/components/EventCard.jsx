@@ -94,6 +94,9 @@ export default function EventCard({ event, compact = false }) {
             {daysUntil !== null && (
               <span className="inline-flex items-center gap-1.5">
                 <Hourglass size={12} className="text-viking-ember" />
+                <span className="font-rune tracking-[0.15em] uppercase text-viking-stone">
+                  {t("events.countdown_label")}
+                </span>
                 <span className="font-rune tracking-[0.15em] uppercase text-viking-ember">
                   {countdownLabel(daysUntil, t)}
                 </span>

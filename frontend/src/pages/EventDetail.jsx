@@ -82,22 +82,26 @@ export default function EventDetail() {
 
           {/* Countdown / duration banner */}
           {(daysUntil !== null || (durationDays && durationDays > 1)) && (
-            <div
-              data-testid="event-detail-countdown"
-              className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-6"
-            >
+            <div className="mb-6" data-testid="event-detail-countdown">
               {daysUntil !== null && (
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-viking-ember/50 bg-viking-ember/10 text-viking-ember font-rune text-[11px] tracking-[0.15em] uppercase">
-                  <Hourglass size={13} />
-                  {countdownLabelDetail(daysUntil, t)}
-                </span>
+                <div className="text-overline text-viking-stone mb-2">
+                  {t("events.countdown_label")}
+                </div>
               )}
-              {durationDays && durationDays > 1 && (
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-viking-gold/50 bg-viking-gold/5 text-viking-gold font-rune text-[11px] tracking-[0.15em] uppercase">
-                  <Clock size={13} />
-                  {durationLabelDetail(durationDays, t)}
-                </span>
-              )}
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                {daysUntil !== null && (
+                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-viking-ember/50 bg-viking-ember/10 text-viking-ember font-rune text-[11px] tracking-[0.15em] uppercase">
+                    <Hourglass size={13} />
+                    {countdownLabelDetail(daysUntil, t)}
+                  </span>
+                )}
+                {durationDays && durationDays > 1 && (
+                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-viking-gold/50 bg-viking-gold/5 text-viking-gold font-rune text-[11px] tracking-[0.15em] uppercase">
+                    <Clock size={13} />
+                    {durationLabelDetail(durationDays, t)}
+                  </span>
+                )}
+              </div>
             </div>
           )}
 
