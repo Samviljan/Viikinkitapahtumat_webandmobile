@@ -182,6 +182,19 @@ See `/app/memory/test_credentials.md`.
 - ✅ Frontend-supervisor korjattu: edellisen agentin eksynyt `expo start --port 3000` -prosessi tapettu.
 
 ## Iteration 18 — Image policy: only user-uploaded (2026-04-26)
+- ✅ Tyhjensin AI-image-migraation: kaikilta 12 tapahtumalta poistettu `/api/events-images/*.png`-URL:t. Käyttäjän lataamat (`/api/uploads/events/*`) säilytettiin.
+- ✅ Mobile + web yhdenmukaiset placeholder: tyhjä image_url → mobile kategoria-ikoni-thumbnail, web kategoria-bar ilman hero-kuvalaatikkoa.
+
+## Iteration 19 — Sync prod events into preview DB (2026-04-26)
+- ✅ **Uusi sync-skripti** `/app/backend/scripts/sync_prod_events.py`:
+  - Hakee `GET https://viikinkitapahtumat.fi/api/events?include_past=true` (19 hyväksyttyä tapahtumaa)
+  - Varmuuskopio `_preview_events_backup_<ISO>.json` (12 vanhaa tapahtumaa) ennen tyhjennystä
+  - Kirjoittaa relatiiviset `/api/uploads/...`-image-URL:t absoluuttisiksi `https://viikinkitapahtumat.fi/api/uploads/...` jotta käyttäjien GridFS-lataamat kuvat näkyvät myös previewissä ilman binäärikopiointia
+  - Replace-strategia: `delete_many({}) → insert_many(prod)` säilyttäen ID:t (deep-linkit pysyvät stabiileina)
+- ✅ **Lopputila preview-DB:ssä**: 19 approved-tapahtumaa (oli 12), 18/19 maa=FI ja 1/19 maa=SE, kaikilla on `image_url`-kenttä asetettu (tuotantotilan mukaisesti).
+- ✅ **Kuvien tila tuotannosta perittynä**: 9/19 toimivat (käyttäjien GridFS-lataamat `/api/uploads/...jpg`), 10/19 rikki (`viikinkitapahtumat.fi/pics/*.jpg` jotka palauttavat HTML:ää myös tuotannossa). Mobiili näyttää 9 kuvaa ja 10 kategoria-ikoni-placeholderia ⇒ **identtinen kokemus tuotannon kanssa**.
+- ✅ Verifikaatio Playwright 414×896: 18 event-card renderöity, "search-result-count" badge = 18, 9 kuvaa ladattu, 0 rikki-img-ikonia (kaikki epäonnistuneet kuvat saavat kategoria-ikoni-placeholderin).
+- ✅ Idempotentti: skripti voidaan ajaa uudelleen milloin tahansa preview:n tuoreuttamiseen tuotannon nykytilaan.
 - ✅ **AI-image -migraatio kumottu**: `clear_ai_event_images.py` -skripti tyhjensi `image_url`-kentän kaikilta 12 tapahtumalta jotka osoittivat `/api/events-images/*.png`-AI-kuviin. Kentät jotka osoittavat käyttäjän lataamiin GridFS-asseteihin (`/api/uploads/events/*`) tai ulkoisiin URLeihin säilytettiin (näitä ei ollut).
 - ✅ **Yhdenmukainen mobile/web placeholder-policy**: kun `event.image_url` on tyhjä → web EventCard ohittaa hero-kuvalaatikon ja näyttää kategoriabarin otsikon yläpuolella; mobile EventCard näyttää 96×96 kategoria-ikoni-placeholderin (kullainen ikoni tummalla taustalla + lippubadge). Sekä web että mobile lukevat samasta `/api/events`-API:sta, joten kun käyttäjä lataa kuvan administa (GridFS), se päivittyy automaattisesti molemmissa.
 - ✅ **Stale `/api/events-images/*` -mountin säilytys**: backend-mountti pidetty toiminnassa siltä varalta että käyttäjä haluaa myöhemmin manuaalisesti viitata kuviin admin-formista.
