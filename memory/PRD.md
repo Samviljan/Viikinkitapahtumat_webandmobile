@@ -170,6 +170,19 @@ See `/app/memory/test_credentials.md`.
 - ✅ Smoke-testi (Playwright 414×896): TITLE=Viikinkitapahtumat, alanavi (Etusivu / Suosikit / Kalenteri), 11 tapahtumakorttia API:sta.
 
 ## Iteration 16 — Mobile UX redesign + image fix (2026-04-26)
+- ✅ **Rikkinäiset tapahtumakuvat korjattu**: `viikinkitapahtumat.fi/pics/*.jpg`-URL:t palauttivat HTML:ää. Mountattu `/api/events-images/*` reitille, migraatio päivitti 12/12 tapahtumaa AI Nano Banana -kuviin same-origin (0 ORB-virhettä).
+- ✅ **Hakulaatikko**: `<SearchPanel>` (kullainen reuna + tulosbadge) erottaa hakutoiminnot.
+- ✅ **Lähellä minua + aikafiltteri** toimivat rinnakkain, aktiiviyhdistelmä näkyy tilarivissä.
+- ✅ **Kuukausivalitsin** `<MonthPicker>`: 12 kk vaakaskrolli.
+- ✅ **EventCard mini-thumbnail**: 96×96 kuva vasemmalla + lippubadge, kullainen aksentti + drop shadow → erotellut laatikot.
+
+## Iteration 17 — Past-event toggle + DB cleanup (2026-04-26)
+- ✅ **Selvitetty 11 vs 12 -mysteeri**: DB:ssä on 12 hyväksyttyä tapahtumaa, mutta `/api/events` suodattaa pois "Bonk Pohjalla VII":n (3.–5.4.2026 → menneisyydessä) Iter 4:n menneisyysfilterillä. Sama suodatus pätee verkkosivulle ja mobiilille — molemmat näyttivät 11.
+- ✅ **DB-siivous**: poistettu 2 jäännös-pending-tapahtumaa (`TEST_NoAudience`, `TEST_SeedSlugAttempt`) jotka olivat aiemmista testiajoista.
+- ✅ **Mobiilin "Näytä menneet" -toggle**: SearchPanelin alaosaan lisätty checkbox-tyyppinen Pressable joka kutsuu `/api/events?include_past=true`. `useEvents(includePast)`-hook ottaa nyt parametrin. Aktivoituna laskuri kasvaa 11 → 12.
+- ✅ **Kuvien tila**: kaikilla 12 hyväksytyllä tapahtumalla on toimiva `/api/events-images/*.png`-kuva (content-type=image/png, 0 ORB-virhettä). Mobiili ja web käyttävät SAMOJA kuvia samasta API:sta. Ei puuttuvia kuvia → ei tarvinnut generoida lisää.
+- ✅ **Frontend-supervisor korjattu**: edellisen agentin jättämä eksyy `expo start --port 3000` -prosessi (PID 1014/1025/1026) blokkasi React-frontendin käynnistymisen. Tapettu prosessi, supervisor restartattu, frontend taas RUNNING.
+- ✅ Web-build re-exportattu, Playwright-smoke 414×896: ennen togglea "11", toggle aktivoituna "12".
 - ✅ **Rikkinäiset tapahtumakuvat korjattu**: `viikinkitapahtumat.fi/pics/*.jpg`-URL:t palauttivat HTML:ää (alkuperäinen sivusto rikki). Mountattu `/app/frontend/public/event-images/`-PNG:t backendiin reitille `/api/events-images/*` (StaticFiles). Migraatioskripti `/app/backend/scripts/migrate_event_images.py` päivitti 12/12 tapahtuman `image_url`-kentän AI-generoituihin Nano Banana -kuviin same-origin-osoitteisiin (ei enää ORB-blokkia).
 - ✅ **Hakulaatikko (mobiili)**: uusi `<SearchPanel>` -komponentti — kullasta reunustettu paneeli "HAE TAPAHTUMIA" -otsikolla + ember-värinen tulosbadge (esim. "11"). Hakutoiminta erottuu visuaalisesti omaksi sektiokseen tapahtumalistasta.
 - ✅ **Yhdistetty Lähellä minua + aikafiltteri**: `nearMe`-tila on nyt itsenäinen ja toimii rinnakkain aikafilttereiden ("Tällä viikolla / Tässä kuussa / 3 kk") tai kuukausivalitsimen kanssa. Aktiivinen yhdistelmä näkyy tilarivissä (esim. "Lähellä minua · Kesäkuu 2026").

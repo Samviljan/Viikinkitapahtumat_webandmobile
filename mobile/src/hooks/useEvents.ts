@@ -9,7 +9,7 @@ interface UseEventsResult {
   refresh: () => Promise<void>;
 }
 
-export function useEvents(): UseEventsResult {
+export function useEvents(includePast = false): UseEventsResult {
   const [events, setEvents] = useState<VikingEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +17,9 @@ export function useEvents(): UseEventsResult {
   const refresh = useCallback(async () => {
     setError(null);
     try {
-      const { data } = await api.get<VikingEvent[]>("/events");
+      const { data } = await api.get<VikingEvent[]>("/events", {
+        params: includePast ? { include_past: "true" } : undefined,
+      });
       setEvents(Array.isArray(data) ? data : []);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to load events";
@@ -25,7 +27,7 @@ export function useEvents(): UseEventsResult {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [includePast]);
 
   useEffect(() => {
     refresh();

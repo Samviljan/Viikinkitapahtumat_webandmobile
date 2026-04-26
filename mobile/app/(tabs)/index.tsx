@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   Platform,
+  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -24,7 +25,8 @@ import type { VikingEvent } from "@/src/types";
 type DateFilter = "any" | "this_week" | "this_month" | "next_3_months";
 
 export default function HomeScreen() {
-  const { events, loading, error, refresh } = useEvents();
+  const [includePast, setIncludePast] = useState(false);
+  const { events, loading, error, refresh } = useEvents(includePast);
   const { coords, status, request } = useLocation();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -194,6 +196,21 @@ export default function HomeScreen() {
                 <MonthPicker value={monthFilter} onChange={pickMonth} />
               </SearchPanelSection>
 
+              <Pressable
+                testID="toggle-include-past"
+                onPress={() => setIncludePast((v) => !v)}
+                style={styles.pastToggle}
+              >
+                <Ionicons
+                  name={includePast ? "checkbox" : "square-outline"}
+                  size={16}
+                  color={includePast ? colors.gold : colors.stone}
+                />
+                <Text style={[styles.pastToggleText, includePast && styles.pastToggleTextActive]}>
+                  Näytä myös menneet tapahtumat
+                </Text>
+              </Pressable>
+
               {activeSummary ? (
                 <View style={styles.summary} testID="active-filter-summary">
                   <Ionicons name="funnel-outline" size={11} color={colors.gold} />
@@ -273,6 +290,20 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     fontWeight: "600",
   },
+  pastToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingTop: spacing.xs,
+    paddingBottom: 6,
+  },
+  pastToggleText: {
+    color: colors.stone,
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 0.3,
+  },
+  pastToggleTextActive: { color: colors.gold },
   center: { alignItems: "center", paddingVertical: spacing.xxl },
   empty: {
     alignItems: "center",
