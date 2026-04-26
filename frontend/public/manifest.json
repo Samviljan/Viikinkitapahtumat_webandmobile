@@ -1,7 +1,7 @@
 {
   "short_name": "Viikinki",
   "name": "Viikinkitapahtumat",
-  "description": "Suomen viikinkitapahtumat — kalenteri ja yhteisö viikinki- ja rauta-aikaharrastajille.",
+  "description": "Viikinkitapahtumat — pohjoisen viikinki- ja rauta-aikaharrastajien kalenteri ja yhteisö.",
   "icons": [
     {
       "src": "favicon.ico",

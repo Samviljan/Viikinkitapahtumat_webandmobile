@@ -175,7 +175,7 @@ export default function HomeScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.brandTitle}>VIIKINKITAPAHTUMAT</Text>
                 <Text style={styles.brandTagline}>
-                  Suomen viikinki- ja rauta-aikaharrastajien kalenteri
+                  Pohjoisen viikinki- ja rauta-aikaharrastajien kalenteri
                 </Text>
               </View>
             </View>

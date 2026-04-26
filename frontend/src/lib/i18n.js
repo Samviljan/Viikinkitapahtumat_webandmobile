@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 
 const TRANSLATIONS = {
   fi: {
-    site: { name: "Viikinkitapahtumat", tagline: "Suomen viikinki- ja rauta-aikaharrastajien kalenteri" },
+    site: { name: "Viikinkitapahtumat", tagline: "Pohjoisen viikinki- ja rauta-aikaharrastajien kalenteri" },
     nav: {
       home: "Etusivu",
       events: "Tapahtumat",
@@ -21,7 +21,7 @@ const TRANSLATIONS = {
       hero_title_a: "Tapahtumat",
       hero_title_b: "muinaisille sieluille",
       hero_sub:
-        "Markkinat, taistelunäytökset, kurssit ja juhlat — kaikki Suomen viikinkiajan harrastusyhteisön tapahtumat yhdessä paikassa.",
+        "Markkinat, taistelunäytökset, kurssit ja juhlat — pohjoisen viikinkiajan harrastusyhteisön tapahtumat yhdessä paikassa.",
       cta_browse: "Selaa kalenteria",
       cta_submit: "Ilmoita tapahtuma",
       featured: "Tulevat kohokohdat",
@@ -303,7 +303,7 @@ const TRANSLATIONS = {
     },
   },
   en: {
-    site: { name: "Viking Events", tagline: "Calendar of Finnish viking & iron age happenings" },
+    site: { name: "Viking Events", tagline: "Nordic calendar of viking & iron age happenings" },
     nav: {
       home: "Home",
       events: "Events",
@@ -321,7 +321,7 @@ const TRANSLATIONS = {
       hero_title_a: "Gatherings",
       hero_title_b: "for ancient souls",
       hero_sub:
-        "Markets, battle reenactments, courses and feasts — every event of Finland's Viking reenactment community in one almanac.",
+        "Markets, battle reenactments, courses and feasts — every event of the Nordic Viking reenactment community in one almanac.",
       cta_browse: "Browse calendar",
       cta_submit: "Submit event",
       featured: "Upcoming highlights",
@@ -591,7 +591,7 @@ const TRANSLATIONS = {
     },
   },
   sv: {
-    site: { name: "Vikingaevent", tagline: "Kalender för Finlands vikinga- och järnåldersentusiaster" },
+    site: { name: "Vikingaevent", tagline: "Nordisk kalender för vikinga- och järnåldersentusiaster" },
     nav: {
       home: "Hem",
       events: "Evenemang",
@@ -609,7 +609,7 @@ const TRANSLATIONS = {
       hero_title_a: "Sammankomster",
       hero_title_b: "för forntida själar",
       hero_sub:
-        "Marknader, slaguppvisningar, kurser och fester — alla evenemang i Finlands vikingagemenskap i en almanacka.",
+        "Marknader, slaguppvisningar, kurser och fester — alla evenemang i den nordiska vikingagemenskapen i en almanacka.",
       cta_browse: "Bläddra i kalendern",
       cta_submit: "Anmäl evenemang",
       featured: "Kommande höjdpunkter",
@@ -880,7 +880,7 @@ const TRANSLATIONS = {
   et: {
     "site": {
         "name": "Vikingipüürimised",
-        "tagline": "Soome vikingiajastu ja rauaajastu harrastajate kalender"
+        "tagline": "Põhjamaade vikingiajastu ja rauaajastu harrastajate kalender"
     },
     "nav": {
         "home": "Avaleht",
@@ -899,7 +899,7 @@ const TRANSLATIONS = {
         "hero_eyebrow": "Rauaaeg · Vikingiaeg · Varakeskaja",
         "hero_title_a": "Üritused",
         "hero_title_b": "muistsete hingede jaoks",
-        "hero_sub": "Turuplatsid, lahingupildused, kursused ja pühad — kõik Soome vikingiajastu harrastusühenduse üritused ühes kohas.",
+        "hero_sub": "Turuplatsid, lahingupildused, kursused ja pühad — kõik Põhjamaade vikingiajastu harrastusühenduse üritused ühes kohas.",
         "cta_browse": "Sirvi kalendrit",
         "cta_submit": "Teata üritusest",
         "featured": "Tulevased esiletõstud",
@@ -1187,7 +1187,7 @@ const TRANSLATIONS = {
   pl: {
     "site": {
         "name": "Wydarzenia Wikingów",
-        "tagline": "Kalendarz entuzjastów epoki wikingów i żelaza w Finlandii"
+        "tagline": "Nordycki kalendarz entuzjastów epoki wikingów i żelaza"
     },
     "nav": {
         "home": "Strona główna",
@@ -1206,7 +1206,7 @@ const TRANSLATIONS = {
         "hero_eyebrow": "Epoka żelaza · Epoka wikingów · Wczesne średniowiecze",
         "hero_title_a": "Wydarzenia",
         "hero_title_b": "dla starożytnych dusz",
-        "hero_sub": "Targi, pokazy bitew, kursy i festiwale — wszystkie wydarzenia fińskiej społeczności entuzjastów epoki wikingów w jednym miejscu.",
+        "hero_sub": "Targi, pokazy bitew, kursy i festiwale — wszystkie wydarzenia nordyckiej społeczności entuzjastów epoki wikingów w jednym miejscu.",
         "cta_browse": "Przeglądaj kalendarz",
         "cta_submit": "Zgłoś wydarzenie",
         "featured": "Nadchodzące godne uwagi",
