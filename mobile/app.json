@@ -20,7 +20,12 @@
     },
     "android": {
       "package": "fi.viikinkitapahtumat.mobile",
-      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -36,17 +41,13 @@
       "typedRoutes": true,
       "baseUrl": "/api/mobile-app"
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/__EAS_PROJECT_ID__"
-    },
     "extra": {
       "apiBaseUrl": "https://events-refresh-1.preview.emergentagent.com",
+      "router": {},
       "eas": {
-        "projectId": "__EAS_PROJECT_ID__"
+        "projectId": "73281723-f172-4938-8fc0-c1feee70bc51"
       }
-    }
+    },
+    "owner": "samviljan"
   }
 }
