@@ -888,6 +888,16 @@ async def _scheduled_event_reminders():
         logger.exception("Event reminders failed: %s", e)
 
 
+async def _scheduled_prod_events_sync():
+    """Refresh preview/test DB events from production twice a day."""
+    try:
+        from scripts.sync_prod_events import main as sync_main
+        await sync_main()
+        logger.info("Prod → preview events sync completed")
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Prod → preview events sync failed: %s", e)
+
+
 # -----------------------------------------------------------------------------
 # Startup
 # -----------------------------------------------------------------------------
@@ -959,8 +969,20 @@ async def on_startup():
         id="event_reminders_daily",
         replace_existing=True,
     )
+    # Sync events from production into preview/test DB twice daily — 06:00 + 18:00 Europe/Helsinki.
+    # Only enabled when the env flag opts in (the production deployment must NOT pull from itself).
+    if os.environ.get("PROD_SYNC_ENABLED", "true").lower() in ("1", "true", "yes"):
+        scheduler.add_job(
+            _scheduled_prod_events_sync,
+            CronTrigger(hour="6,18", minute=0),
+            id="prod_events_sync",
+            replace_existing=True,
+        )
     scheduler.start()
-    logger.info("APScheduler started — monthly digest 1st@09:00, weekly admin report Mon@09:00, event reminders daily@09:00, Europe/Helsinki")
+    logger.info(
+        "APScheduler started — monthly digest 1st@09:00, weekly admin report Mon@09:00, "
+        "event reminders daily@09:00, prod events sync 06:00+18:00, Europe/Helsinki"
+    )
 
 
 @app.on_event("shutdown")

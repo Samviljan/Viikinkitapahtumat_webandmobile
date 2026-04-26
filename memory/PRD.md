@@ -186,6 +186,15 @@ See `/app/memory/test_credentials.md`.
 - ✅ Mobile + web yhdenmukaiset placeholder: tyhjä image_url → mobile kategoria-ikoni-thumbnail, web kategoria-bar ilman hero-kuvalaatikkoa.
 
 ## Iteration 19 — Sync prod events into preview DB (2026-04-26)
+- ✅ Sync-skripti `scripts/sync_prod_events.py` hakee tuotannosta 19 hyväksyttyä tapahtumaa, varmuuskopioi nykyinen tila ja korvaa preview-DB:n.
+- ✅ Image URLit muunnetaan absoluuttisiksi prod-osoitteiksi.
+- ✅ Idempotentti — voi ajaa milloin tahansa.
+
+## Iteration 20 — Scheduled prod-to-preview sync (2026-04-26)
+- ✅ **APScheduler-job lisätty**: `_scheduled_prod_events_sync` ajetaan automaattisesti **06:00 ja 18:00 Europe/Helsinki**-aikavyöhykkeen mukaan. Kutsuu `scripts.sync_prod_events.main()` ja kirjoittaa lokiin onnistumisen / virheen.
+- ✅ **Env-suoja tuotantoa varten**: `PROD_SYNC_ENABLED` (default = `true`). Tuotannossa pitää asettaa `PROD_SYNC_ENABLED=false` `.env`:ssä jotta tuotanto ei kutsu itseään (muutoin syklinen overwriting). Preview-ympäristössä jätetään oletukseksi.
+- ✅ Lokissa nyt: `"APScheduler started — … prod events sync 06:00+18:00, Europe/Helsinki"`. Manuaalinen ajo edelleen mahdollinen: `cd /app/backend && python -m scripts.sync_prod_events`.
+- ✅ Schedulerin täydellinen jobilista nyt: monthly digest (1st@09:00), weekly admin report (Mon@09:00), event reminders (daily@09:00), **prod sync (06:00+18:00)**.
 - ✅ **Uusi sync-skripti** `/app/backend/scripts/sync_prod_events.py`:
   - Hakee `GET https://viikinkitapahtumat.fi/api/events?include_past=true` (19 hyväksyttyä tapahtumaa)
   - Varmuuskopio `_preview_events_backup_<ISO>.json` (12 vanhaa tapahtumaa) ennen tyhjennystä
