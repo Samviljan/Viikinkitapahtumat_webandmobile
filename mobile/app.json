@@ -36,8 +36,17 @@
       "typedRoutes": true,
       "baseUrl": "/api/mobile-app"
     },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/__EAS_PROJECT_ID__"
+    },
     "extra": {
-      "apiBaseUrl": "https://events-refresh-1.preview.emergentagent.com"
+      "apiBaseUrl": "https://events-refresh-1.preview.emergentagent.com",
+      "eas": {
+        "projectId": "__EAS_PROJECT_ID__"
+      }
     }
   }
 }
