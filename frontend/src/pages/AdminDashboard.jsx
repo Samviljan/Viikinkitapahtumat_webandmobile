@@ -11,6 +11,7 @@ import AdminGuildsPanel from "@/components/AdminGuildsPanel";
 import AdminStatCard from "@/components/admin/AdminStatCard";
 import AdminNewsletterPanel from "@/components/admin/AdminNewsletterPanel";
 import AdminWeeklyReportPanel from "@/components/admin/AdminWeeklyReportPanel";
+import AdminSyncPanel from "@/components/admin/AdminSyncPanel";
 import AdminEventRow from "@/components/admin/AdminEventRow";
 
 const STATUSES = ["pending", "approved", "rejected", "all"];
@@ -86,6 +87,7 @@ export default function AdminDashboard() {
 
       <AdminNewsletterPanel />
       <AdminWeeklyReportPanel />
+      <AdminSyncPanel />
 
       <Tabs value={status} onValueChange={setStatus} className="w-full">
         <TabsList

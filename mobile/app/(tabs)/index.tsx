@@ -144,6 +144,16 @@ export default function HomeScreen() {
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           <View>
+            <View style={styles.brand}>
+              <Text style={styles.brandRune}>ᚠ</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.brandTitle}>VIIKINKITAPAHTUMAT</Text>
+                <Text style={styles.brandTagline}>
+                  Suomen viikinki- ja rauta-aikaharrastajien kalenteri
+                </Text>
+              </View>
+            </View>
+
             <Text style={text.overline}>Saatavilla {events.length}</Text>
             <Text style={[text.h1, { marginTop: 4, marginBottom: spacing.lg }]}>
               Tapahtumat
@@ -259,7 +269,36 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
+  safe: { flex: 1, backgroundColor: "transparent" },
+  brand: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    marginBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.edge,
+  },
+  brandRune: {
+    color: colors.gold,
+    fontSize: 32,
+    lineHeight: 32,
+    width: 36,
+    textAlign: "center",
+  },
+  brandTitle: {
+    color: colors.bone,
+    fontSize: 14,
+    fontWeight: "800",
+    letterSpacing: 3,
+  },
+  brandTagline: {
+    color: colors.stone,
+    fontSize: 11,
+    marginTop: 2,
+    letterSpacing: 0.4,
+  },
   list: {
     paddingHorizontal: spacing.lg,
     paddingTop: Platform.OS === "ios" ? spacing.sm : spacing.lg,

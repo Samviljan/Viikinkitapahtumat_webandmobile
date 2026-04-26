@@ -845,6 +845,19 @@ async def admin_list_subscribers(_admin: dict = Depends(get_admin_user)):
     return docs
 
 
+@api_router.post("/admin/sync-prod-events")
+async def admin_sync_prod_events(_admin: dict = Depends(get_admin_user)):
+    """Manually trigger the prod → preview events sync. Returns count."""
+    try:
+        from scripts.sync_prod_events import main as sync_main
+        await sync_main()
+        total = await db.events.count_documents({})
+        return {"ok": True, "events_in_db": total}
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Manual prod sync failed: %s", e)
+        raise HTTPException(status_code=500, detail=f"Sync failed: {e}")
+
+
 # -----------------------------------------------------------------------------
 # Health
 # -----------------------------------------------------------------------------

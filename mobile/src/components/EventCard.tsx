@@ -124,7 +124,7 @@ const THUMB = 96;
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: "rgba(26,20,17,0.92)",
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.edge,

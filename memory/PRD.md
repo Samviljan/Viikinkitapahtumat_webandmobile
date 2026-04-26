@@ -191,6 +191,17 @@ See `/app/memory/test_credentials.md`.
 - ✅ Idempotentti — voi ajaa milloin tahansa.
 
 ## Iteration 20 — Scheduled prod-to-preview sync (2026-04-26)
+- ✅ APScheduler-job `_scheduled_prod_events_sync` ajetaan automaattisesti 06:00 ja 18:00 Europe/Helsinki.
+- ✅ Env-flag `PROD_SYNC_ENABLED` (default true). Tuotannossa pitää asettaa false.
+
+## Iteration 21 — Admin sync button, mobile bg, header, guilds & shops tabs (2026-04-26)
+- ✅ **Admin "Synkkaa nyt"-painike**: uusi komponentti `AdminSyncPanel.jsx` AdminDashboardin alaosaan. Backend `POST /api/admin/sync-prod-events` (admin-only) kutsuu `scripts.sync_prod_events.main()` ja palauttaa `{ok, events_in_db}`. Confirmaatio-dialogi ennen suoritusta + toast-ilmoitus tulosten kanssa.
+- ✅ **Mobiilin viikinki-taustakuva**: generoitu Nano Bananalla (gemini-3.1-flash-image-preview) → `/app/mobile/assets/bg-viking.png` (660 kB). Atmospheerinen yksin matkaava viikinki, sumussa hohtava metsä, ember-pisteet. Skripti `scripts/generate_mobile_bg.py` voidaan ajaa uudelleen kuvan päivittämiseksi.
+- ✅ **RootLayout** (`app/_layout.tsx`) käyttää `<ImageBackground>` + scrim-overlay (`rgba(14,11,9,0.25)`) jotta kuva paistaa läpi mutta sisältö on luettavaa. Kortit (SearchPanel, EventCard, LinkListRow) puoliksi läpinäkyviä `rgba(26,20,17,0.88-0.92)` jotta tausta näkyy reunoilla.
+- ✅ **Etusivun otsikko**: lisätty `<View style={brand}>` HomeScreenin yläosaan — kullainen ᚠ-rune + "VIIKINKITAPAHTUMAT" + "Suomen viikinki- ja rauta-aikaharrastajien kalenteri" -tagline.
+- ✅ **Mobiilin uudet välilehdet**: `app/(tabs)/guilds.tsx` (Kaartit) ja `app/(tabs)/shops.tsx` (Kauppiaat). Hakevat `/api/guilds` (21 yhdistystä) ja `/api/merchants` (19 kauppiasta), ryhmiteltyinä kategorian mukaan, napauttamalla avautuu kotisivut Linking.openURL:lla. Yhteinen `<LinkListRow>`-komponentti + `<SectionTitle>`. Tabs-layout päivitetty 5 välilehteen (Etusivu / Suosikit / Kalenteri / Kaartit / Kauppiaat).
+- ✅ **Web "Tilaa kalenteri"-tooltip**: Events.jsx:ssä Info-painike (lucide-react `Info`-ikoni) "Tilaa kalenteri" -napin viereen → shadcn Tooltip-komponentti selittää mitä iCal-tilaus tekee (Google/Apple/Outlook-kalenteriin synkkaus). Käännetty FI/EN/SV/ET/PL.
+- ✅ Verifioitu: TypeScript 0 virhettä, web-export 2.59 MB, sync POST endpoint 200 OK (19 events), bg-image rendautuu (1174 uniikkia väriä taustanäytteestä), 5 alatabia näkyvissä, otsikko + rune näkyvät.
 - ✅ **APScheduler-job lisätty**: `_scheduled_prod_events_sync` ajetaan automaattisesti **06:00 ja 18:00 Europe/Helsinki**-aikavyöhykkeen mukaan. Kutsuu `scripts.sync_prod_events.main()` ja kirjoittaa lokiin onnistumisen / virheen.
 - ✅ **Env-suoja tuotantoa varten**: `PROD_SYNC_ENABLED` (default = `true`). Tuotannossa pitää asettaa `PROD_SYNC_ENABLED=false` `.env`:ssä jotta tuotanto ei kutsu itseään (muutoin syklinen overwriting). Preview-ympäristössä jätetään oletukseksi.
 - ✅ Lokissa nyt: `"APScheduler started — … prod events sync 06:00+18:00, Europe/Helsinki"`. Manuaalinen ajo edelleen mahdollinen: `cd /app/backend && python -m scripts.sync_prod_events`.

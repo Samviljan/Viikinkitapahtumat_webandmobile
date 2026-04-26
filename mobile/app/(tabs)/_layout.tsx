@@ -12,18 +12,20 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.gold,
         tabBarInactiveTintColor: colors.stone,
         tabBarStyle: {
-          backgroundColor: colors.surface,
+          backgroundColor: "rgba(14,11,9,0.92)",
           borderTopColor: colors.edge,
           borderTopWidth: 1,
           height: 64,
           paddingBottom: 8,
           paddingTop: 8,
         },
-        tabBarLabelStyle: { fontSize: 11, letterSpacing: 1 },
+        tabBarLabelStyle: { fontSize: 10, letterSpacing: 0.5 },
+        sceneStyle: { backgroundColor: "transparent" },
         headerStyle: { backgroundColor: colors.bg },
         headerTintColor: colors.bone,
         headerTitleStyle: { color: colors.bone, fontWeight: "700", fontSize: 18 },
         headerShadowVisible: false,
+        headerShown: false,
       }}
     >
       <Tabs.Screen
@@ -51,6 +53,26 @@ export default function TabsLayout() {
           tabBarLabel: "Kalenteri",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="guilds"
+        options={{
+          title: "Kaartit",
+          tabBarLabel: "Kaartit",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="shield" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="shops"
+        options={{
+          title: "Kauppiaat",
+          tabBarLabel: "Kauppiaat",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="storefront" color={color} size={size} />
           ),
         }}
       />

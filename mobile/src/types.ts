@@ -32,3 +32,21 @@ export interface VikingEvent {
   audience?: string;
   fight_style?: string;
 }
+
+export interface Guild {
+  id: string;
+  name: string;
+  region: string;
+  url: string;
+  category: string;
+  order_index: number;
+}
+
+export interface Merchant {
+  id: string;
+  name: string;
+  description: string;
+  url: string;
+  category: string;
+  order_index: number;
+}

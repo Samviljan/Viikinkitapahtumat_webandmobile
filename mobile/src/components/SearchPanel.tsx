@@ -35,7 +35,7 @@ export function SearchPanel({ title, resultsCount, children }: Props) {
 
 const styles = StyleSheet.create({
   panel: {
-    backgroundColor: colors.surface,
+    backgroundColor: "rgba(26,20,17,0.88)",
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.gold,

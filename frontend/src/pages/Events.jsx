@@ -12,8 +12,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { CalendarPlus } from "lucide-react";
+import { CalendarPlus, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const ICAL_PATH = "/api/events.ics";
 
@@ -65,18 +71,41 @@ export default function Events() {
               </SelectContent>
             </Select>
           </div>
-          <a
-            href={`${process.env.REACT_APP_BACKEND_URL}${ICAL_PATH}`}
-            data-testid="ical-subscribe"
-          >
-            <Button
-              variant="outline"
-              className="border-viking-gold/50 text-viking-gold hover:bg-viking-gold/10 hover:text-viking-gold rounded-sm font-rune text-xs h-10"
+          <div className="flex items-center gap-2">
+            <a
+              href={`${process.env.REACT_APP_BACKEND_URL}${ICAL_PATH}`}
+              data-testid="ical-subscribe"
             >
-              <CalendarPlus size={14} className="mr-2" />
-              {t("events.ical_subscribe")}
-            </Button>
-          </a>
+              <Button
+                variant="outline"
+                className="border-viking-gold/50 text-viking-gold hover:bg-viking-gold/10 hover:text-viking-gold rounded-sm font-rune text-xs h-10"
+              >
+                <CalendarPlus size={14} className="mr-2" />
+                {t("events.ical_subscribe")}
+              </Button>
+            </a>
+            <TooltipProvider delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    data-testid="ical-info"
+                    aria-label={t("events.ical_help_label")}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-sm border border-viking-edge text-viking-stone hover:text-viking-gold hover:border-viking-gold/50 transition-colors"
+                  >
+                    <Info size={14} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  align="end"
+                  className="max-w-xs bg-viking-surface border border-viking-edge text-viking-bone text-xs leading-relaxed"
+                >
+                  {t("events.ical_help")}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
 
         <Tabs defaultValue="calendar" className="w-full">
