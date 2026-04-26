@@ -128,7 +128,20 @@ Modernise https://viikinkitapahtumat.fi with: visually better calendar/event lis
 
 ## Endpoints reference
 See `/app/memory/test_credentials.md`.
+## Iteration 12 — Image upload from local device (2026-04-26)
+- ✅ **Backend**: `POST /api/uploads/events` (julkinen) — multipart-upload, validoi MIME/ext, max 6 MB → tallentaa `/app/backend/uploads/events/<uuid>.<ext>` ja palauttaa relatiivisen URL:n.
+- ✅ **Backend**: `GET /api/admin/uploads/events` (admin) → listaa kaikki ladatut kuvat (kirjasto/galleria), 401 jos ei kirjautunut.
+- ✅ **Backend**: `app.mount('/api/uploads', StaticFiles(...))` → tiedostot ladattavissa `/api/uploads/events/<file>`-osoitteesta saman ingressin kautta.
+- ✅ **Frontend**: uudelleenkäytettävä `<ImageUploadField>` (URL-input + Lataa kuva -nappi + esikatselu + Tyhjennä).
+- ✅ Käytössä `/submit`-formissa (testidPrefix `field-image`) ja `AdminEventEditDialog`issa (`edit-image` pääkuvalle, `edit-gallery-new` galleriaan).
+- ✅ `lib/images.js` → `resolveImageUrl()` muuntaa relatiivisen URL:n absoluuttiseksi `<img>`-renderöinnissä. EventCard ja EventDetail käyttävät sitä.
+- ✅ i18n FI/EN/SV `upload.*` (Lataa kuva / Upload image / Ladda upp bild jne.).
+- ✅ Tests: `/app/backend/tests/test_iteration12_image_upload.py` (7/7 läpi). Iter5-testin flaky threshold nostettu 2 s → 5 s.
+
+
 ## Backlog (priorities)
 - **P1** Native mobile app (React Native / Expo) syncing `/api/events`.
-- **P2** PWA push, file uploads (object storage), brute-force-rate-limit, OG-tagit, custom favicon, lisämuistutus 1 vrk ennen.
+- **P1** Move uploads to GridFS or object storage (currently container disk — does not survive prod-deploy restarts).
+- **P2** Date pickers: replace native `<input type="date">` with shadcn Calendar+Popover for visual consistency.
+- **P2** PWA push, brute-force-rate-limit, OG-tagit, custom favicon, lisämuistutus 1 vrk ennen, admin image-library picker UI.
 - **P3** Production data sync utility (preview admin → prod admin).
