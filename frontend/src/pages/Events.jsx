@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { CalendarPlus, Info } from "lucide-react";
+import { CalendarPlus, Info, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -20,6 +20,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { COUNTRY_CODES, COUNTRY_FLAGS, COUNTRY_NAMES } from "@/lib/countries";
 
 const ICAL_PATH = "/api/events.ics";
 
@@ -29,6 +30,8 @@ export default function Events() {
   const { t } = useI18n();
   const [events, setEvents] = useState([]);
   const [cat, setCat] = useState("all");
+  // Multi-select country filter — empty set = all countries shown
+  const [selectedCountries, setSelectedCountries] = useState(() => new Set());
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -42,12 +45,35 @@ export default function Events() {
       .finally(() => setLoaded(true));
   }, [cat]);
 
+  // Apply country filter on the client (server already filtered by category).
+  // Only show country chips for countries that actually exist in the result set
+  // so the filter UI never offers an empty option.
+  const presentCountries = useMemo(() => {
+    const set = new Set();
+    for (const e of events) set.add(e.country || "FI");
+    return COUNTRY_CODES.filter((c) => set.has(c));
+  }, [events]);
+
+  const filteredEvents = useMemo(() => {
+    if (selectedCountries.size === 0) return events;
+    return events.filter((e) => selectedCountries.has(e.country || "FI"));
+  }, [events, selectedCountries]);
+
+  function toggleCountry(code) {
+    setSelectedCountries((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return next;
+    });
+  }
+
   return (
     <>
       <PageHero eyebrow={t("nav.events")} title={t("events.title")} sub={t("events.sub")} />
 
       <section className="mx-auto max-w-7xl px-4 sm:px-8 py-12">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
             <span className="text-overline">{t("events.filter_category")}</span>
             <Select value={cat} onValueChange={setCat}>
@@ -108,7 +134,47 @@ export default function Events() {
           </div>
         </div>
 
-        <Tabs defaultValue="calendar" className="w-full">
+        {presentCountries.length > 1 && (
+          <div
+            data-testid="country-filter-row"
+            className="flex flex-wrap items-center gap-2 mb-8"
+          >
+            <span className="text-overline mr-1">
+              {t("events.filter_country")}
+            </span>
+            {presentCountries.map((code) => {
+              const active = selectedCountries.has(code);
+              return (
+                <button
+                  key={code}
+                  type="button"
+                  data-testid={`country-chip-${code}`}
+                  onClick={() => toggleCountry(code)}
+                  className={`inline-flex items-center gap-1.5 rounded-sm border px-3 py-1.5 font-rune text-[10px] tracking-[0.18em] uppercase transition-colors ${
+                    active
+                      ? "bg-viking-gold/10 border-viking-gold text-viking-gold"
+                      : "bg-viking-surface border-viking-edge text-viking-stone hover:border-viking-gold/60 hover:text-viking-bone"
+                  }`}
+                >
+                  <span className="text-base leading-none">
+                    {COUNTRY_FLAGS[code]}
+                  </span>
+                  <span>{COUNTRY_NAMES[code]}</span>
+                </button>
+              );
+            })}
+            {selectedCountries.size > 0 && (
+              <button
+                type="button"
+                data-testid="country-chip-clear"
+                onClick={() => setSelectedCountries(new Set())}
+                className="inline-flex items-center gap-1 ml-1 rounded-sm border border-viking-edge bg-viking-surface px-2.5 py-1.5 font-rune text-[10px] tracking-[0.18em] uppercase text-viking-ember hover:text-viking-bone hover:border-viking-ember"
+              >
+                <X size={10} /> {t("events.filter_country_all")}
+              </button>
+            )}
+          </div>
+        )}        <Tabs defaultValue="calendar" className="w-full">
           <TabsList
             data-testid="events-tabs"
             className="bg-viking-surface border border-viking-edge rounded-sm p-1 mb-8"
@@ -130,8 +196,8 @@ export default function Events() {
           </TabsList>
 
           <TabsContent value="calendar">
-            <EventCalendar events={events} />
-            {loaded && events.length === 0 && (
+            <EventCalendar events={filteredEvents} />
+            {loaded && filteredEvents.length === 0 && (
               <div className="mt-6 carved-card rounded-sm p-8 text-center text-viking-stone">
                 {t("events.empty")}
               </div>
@@ -139,12 +205,12 @@ export default function Events() {
           </TabsContent>
 
           <TabsContent value="list">
-            {loaded && events.length === 0 ? (
+            {loaded && filteredEvents.length === 0 ? (
               <div className="carved-card rounded-sm p-10 text-center text-viking-stone">
                 {t("events.empty")}
               </div>
             ) : (
-              <EventsByMonth events={events} />
+              <EventsByMonth events={filteredEvents} />
             )}
           </TabsContent>
         </Tabs>

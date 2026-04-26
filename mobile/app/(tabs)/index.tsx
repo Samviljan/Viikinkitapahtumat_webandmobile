@@ -20,7 +20,8 @@ import { MonthPicker, MonthValue } from "@/src/components/MonthPicker";
 import { useEvents } from "@/src/hooks/useEvents";
 import { geocode, haversineKm, useLocation } from "@/src/hooks/useLocation";
 import { FI_MONTHS, parseEventDate } from "@/src/lib/format";
-import { colors, spacing, text } from "@/src/lib/theme";
+import { COUNTRY_CODES, COUNTRY_FLAGS, COUNTRY_NAMES } from "@/src/lib/countries";
+import { colors, radius, spacing, text } from "@/src/lib/theme";
 import type { VikingEvent } from "@/src/types";
 
 type DateFilter = "any" | "this_week" | "this_month" | "next_3_months";
@@ -33,6 +34,9 @@ export default function HomeScreen() {
 
   const [searchText, setSearchText] = useState("");
   const [nearMe, setNearMe] = useState(false);
+  const [selectedCountries, setSelectedCountries] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [dateFilter, setDateFilter] = useState<DateFilter>("any");
   const [monthFilter, setMonthFilter] = useState<MonthValue | null>(null);
   const [distances, setDistances] = useState<Record<string, number>>({});
@@ -122,8 +126,28 @@ export default function HomeScreen() {
       });
     }
 
+    if (selectedCountries.size > 0) {
+      list = list.filter((e) => selectedCountries.has(e.country || "FI"));
+    }
+
     return list;
-  }, [events, searchText, nearMe, coords, distances, dateFilter, monthFilter]);
+  }, [events, searchText, nearMe, coords, distances, dateFilter, monthFilter, selectedCountries]);
+
+  // Only show country chips for countries that exist in the unfiltered result set
+  const presentCountries = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of events) set.add(e.country || "FI");
+    return COUNTRY_CODES.filter((c) => set.has(c));
+  }, [events]);
+
+  function toggleCountry(code: string) {
+    setSelectedCountries((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return next;
+    });
+  }
 
   const activeSummary = useMemo(() => {
     const parts: string[] = [];
@@ -207,6 +231,49 @@ export default function HomeScreen() {
               <SearchPanelSection label="Valitse kuukausi">
                 <MonthPicker value={monthFilter} onChange={pickMonth} />
               </SearchPanelSection>
+
+              {presentCountries.length > 1 ? (
+                <SearchPanelSection label="Maa">
+                  <View style={styles.countryRow} testID="country-filter-row">
+                    {presentCountries.map((code) => {
+                      const active = selectedCountries.has(code);
+                      return (
+                        <Pressable
+                          key={code}
+                          testID={`country-chip-${code}`}
+                          onPress={() => toggleCountry(code)}
+                          style={[
+                            styles.countryChip,
+                            active && styles.countryChipActive,
+                          ]}
+                        >
+                          <Text style={styles.countryFlag}>
+                            {COUNTRY_FLAGS[code]}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.countryLabel,
+                              active && styles.countryLabelActive,
+                            ]}
+                          >
+                            {COUNTRY_NAMES[code]}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                    {selectedCountries.size > 0 ? (
+                      <Pressable
+                        testID="country-chip-clear"
+                        onPress={() => setSelectedCountries(new Set())}
+                        style={[styles.countryChip, styles.countryChipClear]}
+                      >
+                        <Ionicons name="close" size={11} color={colors.ember} />
+                        <Text style={styles.countryClearLabel}>Kaikki maat</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                </SearchPanelSection>
+              ) : null}
 
               <Pressable
                 testID="toggle-include-past"
@@ -346,6 +413,44 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   pastToggleTextActive: { color: colors.gold },
+  countryRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  countryChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.edge,
+    backgroundColor: "rgba(26,20,17,0.7)",
+  },
+  countryChipActive: {
+    borderColor: colors.gold,
+    backgroundColor: "rgba(201,161,74,0.18)",
+  },
+  countryChipClear: {
+    borderColor: colors.ember,
+  },
+  countryFlag: { fontSize: 13, lineHeight: 14 },
+  countryLabel: {
+    color: colors.stone,
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.5,
+  },
+  countryLabelActive: { color: colors.gold },
+  countryClearLabel: {
+    color: colors.ember,
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+  },
   center: { alignItems: "center", paddingVertical: spacing.xxl },
   empty: {
     alignItems: "center",

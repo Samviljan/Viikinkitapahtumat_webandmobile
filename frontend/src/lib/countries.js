@@ -16,6 +16,25 @@ export const COUNTRY_FLAGS = {
   LT: "🇱🇹",
 };
 
+export const COUNTRY_NAMES = {
+  FI: "Suomi",
+  SE: "Ruotsi",
+  EE: "Viro",
+  NO: "Norja",
+  DK: "Tanska",
+  PL: "Puola",
+  DE: "Saksa",
+  IS: "Islanti",
+  LV: "Latvia",
+  LT: "Liettua",
+};
+
+export const COUNTRY_CODES = Object.keys(COUNTRY_FLAGS);
+
 export function flagFor(code) {
   return COUNTRY_FLAGS[code] || "";
+}
+
+export function nameFor(code) {
+  return COUNTRY_NAMES[code] || code;
 }

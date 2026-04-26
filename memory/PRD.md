@@ -202,6 +202,23 @@ See `/app/memory/test_credentials.md`.
 - ✅ Web "Tilaa kalenteri" -tooltip 5 kielelle.
 
 ## Iteration 22 — Bleed-through + bg-cover fixes (2026-04-26)
+- ✅ Mobile-tabit: korvattu expo-router `<Tabs>` `<Slot/>`-pohjaisella custom-tabbar:lla → vain aktiivinen näyttö DOM:ssa.
+- ✅ AppBackground per-näyttö → tausta täyttää koko ruudun, ei mustia palkkeja.
+
+## Iteration 23 — Country filter, PDF programmes, EventCard PDF link (2026-04-26)
+- ✅ **Web maafiltteri**: Events.jsx — multi-select country chip-rivi (`COUNTRY_CODES` + `COUNTRY_FLAGS` + `COUNTRY_NAMES`) joka näkyy vain jos tuloksissa ≥2 maata. Käyttäjä voi valita useita maita. "Kaikki maat"-nappi (X) tyhjentää valinnat. Suodatus tapahtuu client-puolella `filteredEvents`-memo:ssa.
+- ✅ **Mobile maafiltteri**: HomeScreen — sama multi-select chip-rivi SearchPanelin sisällä (✓ FI lippu + nimi). Sama logiikka: `selectedCountries`-set, `presentCountries`-suodatus.
+- ✅ **PDF-ohjelman lataus** — uusi `PdfUploadField`-komponentti:
+  - URL-tekstikenttä + "PDF"-latausnappi + selitys "Vain PDF-tiedosto. Maksimikoko 10 MB."
+  - Lisätty Submit-lomakkeeseen JA AdminEventEditDialogiin
+  - Backend `POST /api/uploads/event-programs` (PDF-only validation, 10 MB max, GridFS bucket `event_programs`)
+  - Backend `GET /api/uploads/event-programs/{filename}` palauttaa PDF:n inline (Content-Disposition + Cache-Control immutable)
+  - `program_pdf_url` lisätty EventCreate, EventEdit ja EventOut Pydantic-malleihin
+- ✅ **EventCard PDF-linkki** (web + mobiili):
+  - Web: kullainen "Tapahtuman ohjelma" -linkki (`FileText`-ikoni) tapahtumakortin alaosassa kun `program_pdf_url` on asetettu
+  - Mobile: ohjelma-PDF-rivi kortin alaosassa, napauttamalla avautuu PDF natiivi-selaimessa (Linking.openURL)
+- ✅ **Käännökset 5 kielelle** (FI/EN/SV/ET/PL): `events.program_pdf`, `events.filter_country`, `events.filter_country_all`, `submit.program_pdf`.
+- ✅ Verifioitu: backend-PUT hyväksyy `program_pdf_url`-kentän, julkinen `/api/events` palauttaa kentän, web-list näyttää 1 PDF-linkin testitapahtumalla, mobiili näyttää 1 PDF-linkin, country chip-rivi 2 maalla (FI 18, SE 1) sekä webissä että mobiilissa.
 - ✅ **Welkanperintä-ongelma korjattu** (web-tab-vaihto jätti edellisen näytön sisällön DOM:iin):
   - Korvattu expo-router `<Tabs>` (joka käyttää `@react-navigation/bottom-tabs` v7 — ei honoraa `unmountOnBlur` web:ssä) omalla `<Slot/>`-pohjaisella routingilla. Slot mounts vain aktiivisen näytön kerrallaan.
   - Custom-tabBar-komponentti (5 välilehteä) käyttää `usePathname()` aktiivisen tilan tunnistamiseen ja `router.replace()` navigointiin → puhtaat siirtymät, ei DOM-leakkia.

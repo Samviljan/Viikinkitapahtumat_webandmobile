@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import PageHero from "@/components/PageHero";
 import ImageUploadField from "@/components/ImageUploadField";
+import PdfUploadField from "@/components/PdfUploadField";
 import { toast } from "sonner";
 import { CheckCircle2 } from "lucide-react";
 
@@ -46,6 +47,7 @@ export default function Submit() {
     image_url: "",
     audience: "",
     fight_style: "",
+    program_pdf_url: "",
   });
 
   const update = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
@@ -59,6 +61,7 @@ export default function Submit() {
       if (!payload.end_date) delete payload.end_date;
       if (!payload.audience) delete payload.audience;
       if (!payload.fight_style) delete payload.fight_style;
+      if (!payload.program_pdf_url) delete payload.program_pdf_url;
       await api.post("/events", payload);
       setSuccess(true);
       toast.success(t("submit.success"));
@@ -256,6 +259,14 @@ export default function Submit() {
               value={form.image_url}
               onChange={(v) => setForm((p) => ({ ...p, image_url: v }))}
               testIdPrefix="field-image"
+            />
+          </Field>
+
+          <Field label={t("submit.program_pdf")}>
+            <PdfUploadField
+              value={form.program_pdf_url}
+              onChange={(v) => setForm((p) => ({ ...p, program_pdf_url: v }))}
+              testIdPrefix="field-program"
             />
           </Field>
 

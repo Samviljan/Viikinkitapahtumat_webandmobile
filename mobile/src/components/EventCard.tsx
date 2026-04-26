@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { colors, radius, spacing, text } from "@/src/lib/theme";
-import { resolveImageUrl } from "@/src/api/client";
+import { apiBaseUrl, resolveImageUrl } from "@/src/api/client";
 import { useFavorites } from "@/src/hooks/useFavorites";
 import { flagFor } from "@/src/lib/countries";
 import { FI_CATS, countdownLabel, daysUntil, formatDateRange } from "@/src/lib/format";
@@ -114,6 +114,24 @@ export function EventCard({ event }: { event: VikingEvent }) {
             <Text style={styles.footerLabel}>TAPAHTUMAAN</Text>
             <Text style={styles.footerVal}>{countdownLabel(cd)}</Text>
           </View>
+        ) : null}
+
+        {event.program_pdf_url ? (
+          <Pressable
+            testID={`event-program-link-${event.id}`}
+            onPress={(e) => {
+              e.stopPropagation?.();
+              const url = event.program_pdf_url!.startsWith("http")
+                ? event.program_pdf_url!
+                : `${apiBaseUrl}${event.program_pdf_url}`;
+              Linking.openURL(url).catch(() => {});
+            }}
+            style={styles.programRow}
+          >
+            <Ionicons name="document-text-outline" size={12} color={colors.gold} />
+            <Text style={styles.programText}>TAPAHTUMAN OHJELMA (PDF)</Text>
+            <Ionicons name="open-outline" size={11} color={colors.stone} />
+          </Pressable>
         ) : null}
       </Pressable>
     </Link>
@@ -230,5 +248,22 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     fontWeight: "700",
     marginLeft: "auto",
+  },
+  programRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.edge,
+    backgroundColor: "rgba(201,161,74,0.06)",
+  },
+  programText: {
+    color: colors.gold,
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1.4,
+    flex: 1,
   },
 });

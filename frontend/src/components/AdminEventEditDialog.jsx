@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ImageUploadField from "@/components/ImageUploadField";
+import PdfUploadField from "@/components/PdfUploadField";
 import { toast } from "sonner";
 
 const fieldClass =
@@ -56,6 +57,7 @@ export default function AdminEventEditDialog({ event, open, onOpenChange, onSave
         gallery: Array.isArray(event.gallery) ? event.gallery : [],
         audience: event.audience || "",
         fight_style: event.fight_style || "",
+        program_pdf_url: event.program_pdf_url || "",
       });
       setGalleryDraft("");
     }
@@ -217,6 +219,14 @@ export default function AdminEventEditDialog({ event, open, onOpenChange, onSave
               value={form.image_url}
               onChange={(v) => setForm((p) => ({ ...p, image_url: v }))}
               testIdPrefix="edit-image"
+            />
+          </Field>
+
+          <Field label={t("submit.program_pdf")}>
+            <PdfUploadField
+              value={form.program_pdf_url}
+              onChange={(v) => setForm((p) => ({ ...p, program_pdf_url: v }))}
+              testIdPrefix="edit-program"
             />
           </Field>
 

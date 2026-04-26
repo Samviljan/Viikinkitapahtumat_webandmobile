@@ -31,6 +31,7 @@ export interface VikingEvent {
   created_at: string;
   audience?: string;
   fight_style?: string;
+  program_pdf_url?: string;
 }
 
 export interface Guild {

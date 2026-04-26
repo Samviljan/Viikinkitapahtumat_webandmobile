@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, ArrowUpRight, Hourglass, Clock } from "lucide-react";
+import { Calendar, MapPin, ArrowUpRight, Hourglass, Clock, FileText } from "lucide-react";
 import { useI18n, pickLocalized } from "@/lib/i18n";
 import FavoriteButton from "@/components/FavoriteButton";
 import RemindMeButton from "@/components/RemindMeButton";
@@ -114,9 +114,27 @@ export default function EventCard({ event, compact = false }) {
           </div>
         )}
 
-        <div className="flex items-center gap-2 pt-1 text-xs font-rune text-viking-ember opacity-0 group-hover:opacity-100 transition-opacity">
-          {t("events.view")}
-          <ArrowUpRight size={12} />
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1">
+          {event.program_pdf_url && (
+            <a
+              data-testid={`event-program-link-${event.id}`}
+              href={
+                event.program_pdf_url.startsWith("http")
+                  ? event.program_pdf_url
+                  : `${process.env.REACT_APP_BACKEND_URL || ""}${event.program_pdf_url}`
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1.5 text-xs font-rune tracking-[0.15em] uppercase text-viking-gold hover:text-viking-bone underline-offset-4 hover:underline"
+            >
+              <FileText size={12} /> {t("events.program_pdf")}
+            </a>
+          )}
+          <div className="flex items-center gap-2 text-xs font-rune text-viking-ember opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
+            {t("events.view")}
+            <ArrowUpRight size={12} />
+          </div>
         </div>
       </div>
     </Link>

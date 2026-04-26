@@ -142,6 +142,7 @@ class EventCreate(BaseModel):
     gallery: List[str] = []
     audience: Optional[str] = ""
     fight_style: Optional[str] = ""
+    program_pdf_url: Optional[str] = ""
 
 
 class EventOut(BaseModel):
@@ -166,6 +167,7 @@ class EventOut(BaseModel):
     created_at: str
     audience: Optional[str] = ""
     fight_style: Optional[str] = ""
+    program_pdf_url: Optional[str] = ""
 
 
 class EventStatusUpdate(BaseModel):
@@ -193,6 +195,7 @@ class EventEdit(BaseModel):
     gallery: List[str] = []
     audience: Optional[str] = ""
     fight_style: Optional[str] = ""
+    program_pdf_url: Optional[str] = ""
 
 
 MerchantCategory = Literal["gear", "smith"]
@@ -297,6 +300,7 @@ def _serialize_event(doc: dict) -> dict:
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket  # noqa: E402
 
 MAX_UPLOAD_BYTES = 6 * 1024 * 1024  # 6 MB
+MAX_PROGRAM_BYTES = 10 * 1024 * 1024  # 10 MB
 ALLOWED_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 ALLOWED_IMAGE_MIME = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MIME_FOR_EXT = {
@@ -374,6 +378,58 @@ async def serve_event_image(filename: str):
         content=data,
         media_type=ctype,
         headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
+
+
+@api_router.post("/uploads/event-programs", status_code=201)
+async def upload_event_program(file: UploadFile = File(...)):
+    """Public upload — event submitter or admin can attach a PDF programme.
+    Validates content-type + size and writes to GridFS bucket `event_programs`.
+
+    Response: {"url": "/api/uploads/event-programs/<id>.pdf", "name": "<original>"}
+    """
+    ctype = (file.content_type or "").lower()
+    ext = (Path(file.filename or "").suffix or "").lower()
+    if ctype != "application/pdf" and ext != ".pdf":
+        raise HTTPException(status_code=415, detail="Only PDF files are allowed")
+
+    body = await file.read()
+    if len(body) == 0:
+        raise HTTPException(status_code=400, detail="Empty file")
+    if len(body) > MAX_PROGRAM_BYTES:
+        raise HTTPException(status_code=413, detail="PDF too large (max 10 MB)")
+
+    filename = f"{uuid.uuid4().hex}.pdf"
+    bucket = AsyncIOMotorGridFSBucket(db, bucket_name="event_programs")
+    await bucket.upload_from_stream(
+        filename,
+        body,
+        metadata={"content_type": "application/pdf", "original_name": file.filename or filename},
+    )
+    return {
+        "url": f"/api/uploads/event-programs/{filename}",
+        "name": file.filename or filename,
+    }
+
+
+@api_router.get("/uploads/event-programs/{filename}")
+async def serve_event_program(filename: str):
+    """Stream a PDF stored in GridFS. Cache aggressively (filenames immutable)."""
+    cur = db["event_programs.files"].find_one({"filename": filename}, {"_id": 1, "metadata": 1})
+    doc = await cur if hasattr(cur, "__await__") else cur
+    if not doc:
+        raise HTTPException(status_code=404, detail="Program PDF not found")
+    bucket = AsyncIOMotorGridFSBucket(db, bucket_name="event_programs")
+    stream = await bucket.open_download_stream_by_name(filename)
+    data = await stream.read()
+    original = (doc.get("metadata") or {}).get("original_name") or filename
+    return Response(
+        content=data,
+        media_type="application/pdf",
+        headers={
+            "Cache-Control": "public, max-age=31536000, immutable",
+            "Content-Disposition": f'inline; filename="{original}"',
+        },
     )
 
 
