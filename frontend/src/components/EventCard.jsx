@@ -5,6 +5,7 @@ import { useI18n, pickLocalized } from "@/lib/i18n";
 import FavoriteButton from "@/components/FavoriteButton";
 import RemindMeButton from "@/components/RemindMeButton";
 import { flagFor } from "@/lib/countries";
+import { resolveImageUrl } from "@/lib/images";
 
 export default function EventCard({ event, compact = false }) {
   const { lang, t } = useI18n();
@@ -25,7 +26,7 @@ export default function EventCard({ event, compact = false }) {
       {!compact && event.image_url ? (
         <div className="relative h-44 overflow-hidden">
           <img
-            src={event.image_url}
+            src={resolveImageUrl(event.image_url)}
             alt=""
             loading="lazy"
             className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"

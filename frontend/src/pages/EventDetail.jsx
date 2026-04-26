@@ -8,6 +8,7 @@ import { formatDateRange, computeEventTiming } from "@/components/EventCard";
 import FavoriteButton from "@/components/FavoriteButton";
 import RemindMeButton from "@/components/RemindMeButton";
 import { flagFor } from "@/lib/countries";
+import { resolveImageUrl } from "@/lib/images";
 
 export default function EventDetail() {
   const { id } = useParams();
@@ -55,7 +56,7 @@ export default function EventDetail() {
     <article className="pb-20" data-testid="event-detail">
       {event.image_url ? (
         <div className="relative h-[42vh] min-h-[280px] w-full overflow-hidden">
-          <img src={event.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={resolveImageUrl(event.image_url)} alt="" className="absolute inset-0 w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-viking-bg/40 via-viking-bg/60 to-viking-bg" />
         </div>
       ) : (
@@ -127,14 +128,14 @@ export default function EventDetail() {
                 {gallery.map((url, idx) => (
                   <a
                     key={`${url}-${idx}`}
-                    href={url}
+                    href={resolveImageUrl(url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     data-testid={`event-detail-gallery-item-${idx}`}
                     className="group block aspect-[4/3] overflow-hidden rounded-sm border border-viking-edge hover:border-viking-gold/60 transition-colors"
                   >
                     <img
-                      src={url}
+                      src={resolveImageUrl(url)}
                       alt=""
                       loading="lazy"
                       className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"

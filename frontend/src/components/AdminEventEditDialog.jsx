@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import ImageUploadField from "@/components/ImageUploadField";
 import { toast } from "sonner";
 
 const fieldClass =
@@ -209,18 +210,22 @@ export default function AdminEventEditDialog({ event, open, onOpenChange, onSave
             <Input data-testid="edit-link" value={form.link} onChange={update("link")} className={fieldClass} placeholder="https://" />
           </Field>
           <Field label={t("submit.image")}>
-            <Input data-testid="edit-image" value={form.image_url} onChange={update("image_url")} className={fieldClass} placeholder="https://" />
+            <ImageUploadField
+              value={form.image_url}
+              onChange={(v) => setForm((p) => ({ ...p, image_url: v }))}
+              testIdPrefix="edit-image"
+            />
           </Field>
 
           <Field label={t("submit.gallery")}>
-            <div className="space-y-2" data-testid="edit-gallery">
+            <div className="space-y-3" data-testid="edit-gallery">
               {form.gallery.length === 0 && (
                 <p className="text-xs text-viking-stone italic">{t("submit.gallery_empty")}</p>
               )}
               {form.gallery.map((url, idx) => (
                 <div key={`${url}-${idx}`} className="flex items-center gap-2">
                   <img
-                    src={url}
+                    src={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL || ""}${url}`}
                     alt=""
                     className="h-10 w-14 object-cover rounded-sm border border-viking-edge"
                     onError={(e) => {
@@ -243,17 +248,17 @@ export default function AdminEventEditDialog({ event, open, onOpenChange, onSave
                   </button>
                 </div>
               ))}
-              <div className="flex gap-2">
-                <Input
-                  data-testid="edit-gallery-input"
+              <div className="border-t border-viking-edge/60 pt-3">
+                <ImageUploadField
                   value={galleryDraft}
-                  onChange={(e) => setGalleryDraft(e.target.value)}
-                  className={fieldClass}
+                  onChange={(v) => setGalleryDraft(v)}
+                  testIdPrefix="edit-gallery-new"
                   placeholder="https://example.com/image.jpg"
                 />
                 <Button
                   type="button"
                   data-testid="edit-gallery-add"
+                  disabled={!galleryDraft.trim()}
                   onClick={() => {
                     const v = galleryDraft.trim();
                     if (!v) return;
@@ -261,9 +266,9 @@ export default function AdminEventEditDialog({ event, open, onOpenChange, onSave
                     setGalleryDraft("");
                   }}
                   variant="outline"
-                  className="border-viking-edge text-viking-bone hover:border-viking-gold hover:text-viking-gold rounded-sm font-rune text-[10px]"
+                  className="mt-2 border-viking-edge text-viking-bone hover:border-viking-gold hover:text-viking-gold rounded-sm font-rune text-[10px]"
                 >
-                  {t("admin.add")}
+                  {t("admin.add")} →
                 </Button>
               </div>
             </div>

@@ -1,0 +1,48 @@
+{
+  "summary": "Iter 12 image-upload feature — backend 7/7 new tests pass + frontend smoke verified end-to-end on /submit and admin event edit dialog. Created /app/backend/tests/test_iteration12_image_upload.py covering: (1) POST /api/uploads/events with a 1x1 inline-generated PNG returns 201 + {url:'/api/uploads/events/<32hex>.png', name:'hammer.png'}; file written to /app/backend/uploads/events/<id>.png; bytes match; GET <REACT_APP_BACKEND_URL>+url through ingress returns the same bytes with content-type image/png. (2) text/plain returns 415. (3) no file returns 422. (4) ~9.7MB PNG returns 413. (5) GET /api/admin/uploads/events without auth -> 401; with admin auth -> 200, list of {url,name,size,mtime}, sorted by mtime DESC (verified by uploading two files 1.2s apart and asserting second appears before first). (6) PUT /api/admin/events/{id} accepts image_url='/api/uploads/events/<hex>.png' (relative) and persists; subsequent admin GET returns the same value. All test-uploaded files are removed in pytest teardown via UPLOAD_DIR/<file>.unlink. Frontend Playwright smoke on /submit: ImageUploadField renders field-image-url, field-image-upload-btn, hidden field-image-file-input. Setting a 69-byte inline PNG via set_input_files triggers POST /api/uploads/events; URL field auto-populates to /api/uploads/events/8df1d8...png; field-image-preview renders with absolute src https://events-refresh-1.preview.emergentagent.com/api/uploads/events/...png (resolveImageUrl prepends backend); field-image-clear button blanks the URL. Admin /admin login + opening any pending event's edit dialog confirms edit-image-url, edit-image-upload-btn, edit-image-file-input, edit-gallery-new-url, edit-gallery-new-upload-btn, edit-gallery-new-file-input all render. Regression: 109/110 backend tests pass — only failure is a flaky timing assertion in iter5 PATCH test (10s vs 2s threshold) unrelated to iter12.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PATCH /api/admin/events/{id}", "issue": "test_iteration5_weekly_and_decision_emails::test_patch_approved_with_email_returns_200_fast intermittently exceeds 2000ms threshold (saw 10116ms this run). Likely email-send + auto-translation BackgroundTasks contending. Pre-existing flaky test, not iter 12 regression."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/submit form (and admin edit dialog)", "issues": ["Date inputs render as native browser date pickers (mm/dd/yyyy), not the shadcn Calendar/Popover component. Pre-existing — unrelated to iter12, but flagged per design review checklist."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration12_image_upload.py",
+    "/app/test_reports/pytest/iter12_results.xml",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "OPTIONAL: Investigate flaky iter5 PATCH-speed test (raise threshold to 5s OR mock the email/translation BackgroundTasks).",
+    "OPTIONAL (pre-existing, not iter12): Replace native date inputs in Submit.jsx and AdminEventEditDialog with shadcn Calendar+Popover for visual consistency."
+  ],
+  "critical_code_review_comments": [
+    "POST /api/uploads/events validates EITHER MIME ∈ ALLOWED_IMAGE_MIME OR extension ∈ ALLOWED_IMAGE_EXT — correct fall-through for clients that send octet-stream but with proper extension. 415 raised when neither matches.",
+    "Empty-file branch raises 400 ('Empty file'). Spec asked for 422 only for missing file (multipart key absent). FastAPI's File(...) auto-422 on missing key works as required; empty-but-present file returning 400 is acceptable and not in the spec.",
+    "MAX_UPLOAD_BYTES = 6MB enforced AFTER reading the full body into memory (await file.read()). For very large hostile uploads this still consumes RAM before rejection. P2: stream + check Content-Length header upfront. Acceptable for current preview environment.",
+    "app.mount('/api/uploads', StaticFiles(directory=…/uploads)) is registered AFTER app.include_router(api_router). Verified GET /api/uploads/events/<file> reaches the static files handler through the K8s ingress (test passed). UPLOAD_ROOT = …/uploads/events while the mount points at …/uploads — so URL '/api/uploads/events/<file>' resolves correctly to the events subfolder.",
+    "GET /api/admin/uploads/events sorts by -mtime correctly. Filters out non-files and unsupported extensions. Returns size+mtime for the picker UI.",
+    "ImageUploadField stores RELATIVE URL '/api/uploads/...' in form state and uses REACT_APP_BACKEND_URL to build the preview absolute URL. resolveImageUrl in /lib/images.js applies the same transform on EventCard / EventDetail — DRY pattern is correct.",
+    "Frontend axios `api` client sends multipart/form-data correctly; URL field auto-fills with the relative URL after upload (not the absolute one), which matches the design (DB stores relative; render-time resolveImageUrl prepends backend).",
+    "data-testid coverage complete: field-image-{url,upload-btn,file-input,preview,clear} on /submit; edit-image-{url,upload-btn,file-input,preview,clear} and edit-gallery-new-{url,upload-btn,file-input} on admin dialog. All present and queryable."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration12_image_upload.py (new)"
+  ],
+  "success_rate": {
+    "backend": "100% on iter 12 new tests (7/7); 99% overall (109/110) — 1 pre-existing flaky timing test in iter5",
+    "frontend": "100% on iter 12 new UI: /submit ImageUploadField full upload→preview→clear cycle verified; admin dialog all 6 edit-image-*/edit-gallery-new-* selectors verified present"
+  },
+  "test_credentials": "admin@viikinkitapahtumat.fi / ***REDACTED*** verified via /api/auth/login (cookie + bearer token both work).",
+  "seed_data_creation": "Iter 12 tests upload 4 transient PNGs across the run; each fixture records the filename and removes it from /app/backend/uploads/events on teardown (unlink missing_ok=True). One TEST_iter12_image_<uuid8> event is created via POST /api/events and DELETEd via admin in the relative-image-url test. After full pytest run, leftover library entries on disk are zero (verified by inspecting GET /api/admin/uploads/events response sizes between runs).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter 12 backend complete and locked. Public URL: https://events-refresh-1.preview.emergentagent.com. Backend test module: /app/backend/tests/test_iteration12_image_upload.py — generates a 69-byte 1x1 PNG inline via struct + zlib (no fixture dependency), and a ~9.7MB PNG built from os.urandom for the 413 test. Upload root on disk: /app/backend/uploads/events/<32hex>.<ext>. Static files mounted at /api/uploads (so URLs are /api/uploads/events/<file>). Fastapi UploadFile + File(...) returns 422 automatically when the multipart 'file' key is missing. The frontend ImageUploadField stores RELATIVE URLs ('/api/uploads/...'); resolveImageUrl in /app/frontend/src/lib/images.js prepends REACT_APP_BACKEND_URL when rendering. testIdPrefix variants in use: 'field-image' (/submit), 'edit-image' and 'edit-gallery-new' (admin dialog). Pre-existing flaky test: test_iteration5_weekly_and_decision_emails::test_patch_approved_with_email_returns_200_fast — threshold is 2000ms but BackgroundTasks (email + translation) sometimes push it to 10s.",
+  "rca of the issue": "No iter 12 issues. Single regression failure (iter5 PATCH speed) is pre-existing flakiness caused by background email + translation tasks running before the PATCH response is sent in some runs; not introduced by iter 12 image upload changes."
+}

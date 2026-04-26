@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import PageHero from "@/components/PageHero";
+import ImageUploadField from "@/components/ImageUploadField";
 import { toast } from "sonner";
 import { CheckCircle2 } from "lucide-react";
 
@@ -251,12 +252,10 @@ export default function Submit() {
           </Field>
 
           <Field label={t("submit.image")}>
-            <Input
-              data-testid="field-image"
+            <ImageUploadField
               value={form.image_url}
-              onChange={update("image_url")}
-              placeholder="https://"
-              className={fieldClass}
+              onChange={(v) => setForm((p) => ({ ...p, image_url: v }))}
+              testIdPrefix="field-image"
             />
           </Field>
 

@@ -12,8 +12,9 @@ from typing import Optional, List, Literal
 
 import bcrypt
 import jwt
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, Query, BackgroundTasks
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, Query, BackgroundTasks, UploadFile, File
 from fastapi.responses import PlainTextResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
@@ -288,6 +289,71 @@ async def logout(response: Response):
 # -----------------------------------------------------------------------------
 def _serialize_event(doc: dict) -> dict:
     return {k: v for k, v in doc.items() if k != "_id"}
+
+
+# -----------------------------------------------------------------------------
+# Image upload + library
+# -----------------------------------------------------------------------------
+UPLOAD_ROOT = Path(__file__).resolve().parent / "uploads" / "events"
+UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
+MAX_UPLOAD_BYTES = 6 * 1024 * 1024  # 6 MB
+ALLOWED_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+ALLOWED_IMAGE_MIME = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+
+
+def _public_upload_url(filename: str) -> str:
+    return f"/api/uploads/events/{filename}"
+
+
+@api_router.post("/uploads/events", status_code=201)
+async def upload_event_image(file: UploadFile = File(...)):
+    """Public upload — anyone submitting an event can attach an image directly
+    from their device. Validates type + size and writes to /app/backend/uploads/events.
+
+    Response: {"url": "/api/uploads/events/<uuid>.<ext>", "name": "<original>"}
+    """
+    ctype = (file.content_type or "").lower()
+    ext = (Path(file.filename or "").suffix or "").lower()
+    if ctype not in ALLOWED_IMAGE_MIME and ext not in ALLOWED_IMAGE_EXT:
+        raise HTTPException(status_code=415, detail="Only image files are allowed")
+    if not ext:
+        ext = {
+            "image/jpeg": ".jpg",
+            "image/png": ".png",
+            "image/webp": ".webp",
+            "image/gif": ".gif",
+        }.get(ctype, ".jpg")
+
+    body = await file.read()
+    if len(body) == 0:
+        raise HTTPException(status_code=400, detail="Empty file")
+    if len(body) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="Image too large (max 6 MB)")
+
+    filename = f"{uuid.uuid4().hex}{ext}"
+    target = UPLOAD_ROOT / filename
+    target.write_bytes(body)
+    return {"url": _public_upload_url(filename), "name": file.filename or filename}
+
+
+@api_router.get("/admin/uploads/events")
+async def list_uploaded_images(_admin: dict = Depends(get_admin_user)):
+    """Admin-only image library: lists every uploaded file under uploads/events
+    so the admin can re-attach an existing image to a new event from a picker.
+    """
+    files = []
+    for p in sorted(UPLOAD_ROOT.iterdir(), key=lambda x: -x.stat().st_mtime):
+        if not p.is_file():
+            continue
+        if p.suffix.lower() not in ALLOWED_IMAGE_EXT:
+            continue
+        files.append({
+            "url": _public_upload_url(p.name),
+            "name": p.name,
+            "size": p.stat().st_size,
+            "mtime": p.stat().st_mtime,
+        })
+    return files
 
 
 @api_router.post("/events", response_model=EventOut, status_code=201)
@@ -868,6 +934,14 @@ async def shutdown_db_client():
 
 # Include router
 app.include_router(api_router)
+
+# Serve uploaded event images. Mounted on the same /api prefix so the K8s
+# ingress (which routes /api/* to the backend) reaches it without extra config.
+app.mount(
+    "/api/uploads",
+    StaticFiles(directory=str(Path(__file__).resolve().parent / "uploads")),
+    name="uploads",
+)
 
 # CORS: when credentials are required (cookies), browsers reject `Access-Control-Allow-Origin: *`.
 # Therefore we configure the middleware to echo the request origin via allow_origin_regex
