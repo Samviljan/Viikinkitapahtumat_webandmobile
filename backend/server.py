@@ -13,7 +13,8 @@ from typing import Optional, List, Literal
 import bcrypt
 import jwt
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, Query, BackgroundTasks, UploadFile, File
-from fastapi.responses import PlainTextResponse, RedirectResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
@@ -972,6 +973,38 @@ async def shutdown_db_client():
 
 # Include router
 app.include_router(api_router)
+
+# -----------------------------------------------------------------------------
+# Mobile app web build (Expo export served via /api ingress)
+# -----------------------------------------------------------------------------
+_MOBILE_DIST = Path("/app/mobile/dist")
+if _MOBILE_DIST.exists() and (_MOBILE_DIST / "index.html").exists():
+    # Mount static assets (real files: _expo/, assets/, metadata.json) under /api/mobile-app.
+    # We deliberately do NOT use html=True here so that 404s bubble up to the SPA fallback below.
+    app.mount(
+        "/api/mobile-app/static",
+        StaticFiles(directory=str(_MOBILE_DIST)),
+        name="mobile-app-static",
+    )
+
+    # SPA fallback: index.html for the root and any client-side route. Static assets
+    # under /api/mobile-app/_expo/* and /api/mobile-app/assets/* are handled separately.
+    @app.get("/api/mobile-app", include_in_schema=False)
+    @app.get("/api/mobile-app/", include_in_schema=False)
+    @app.get("/api/mobile-app/{full_path:path}", include_in_schema=False)
+    async def _mobile_app_spa(full_path: str = ""):
+        # Real file on disk? Serve it.
+        if full_path:
+            candidate = (_MOBILE_DIST / full_path).resolve()
+            try:
+                candidate.relative_to(_MOBILE_DIST.resolve())
+            except ValueError:
+                # Path traversal attempt — fall through to index.html
+                candidate = None
+            if candidate and candidate.is_file():
+                return FileResponse(candidate)
+        # Otherwise serve index.html for SPA client-side routing.
+        return FileResponse(_MOBILE_DIST / "index.html")
 
 # CORS: when credentials are required (cookies), browsers reject `Access-Control-Allow-Origin: *`.
 # Therefore we configure the middleware to echo the request origin via allow_origin_regex

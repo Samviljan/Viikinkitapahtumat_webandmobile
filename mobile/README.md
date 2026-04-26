@@ -40,22 +40,52 @@ Natiivi mobiilisovellus iOS:lle ja Androidille. Sama data kuin
 
 ## Käyttöönotto
 
-```bash
-cd /app/mobile
-yarn install            # already done in container
-yarn start              # avaa Metro-bundlerin + QR-koodi
+### 🌐 Web-esikatselu (suositeltu — toimii välittömästi selaimessa)
+
+Mobiilisovellus on käännetty staattiseksi web-buildiksi ja tarjoillaan
+backendin `/api/`-ingressin kautta. Voit avata sen heti puhelimen
+selaimessa — myös työpöydältä mobiilinäkymänä:
+
+```
+https://<sinun-preview-url>/api/mobile-app/
 ```
 
-### Testaaminen omalla puhelimella
+Esim. nykyisessä preview-ympäristössä:
+
+```
+https://events-refresh-1.preview.emergentagent.com/api/mobile-app/
+```
+
+Voit lisätä sen **kotinäyttöön** ("Lisää aloitusnäyttöön" / "Add to Home
+Screen") jolloin se käyttäytyy kuin natiivi sovellus ilman selainpalkkia.
+
+### 🔁 Web-buildin uudelleenrakennus muutosten jälkeen
+
+```bash
+cd /app/mobile
+yarn install   # tarvittaessa
+npx expo export --platform web --output-dir dist
+# Backend tarjoilee dist/-kansion automaattisesti /api/mobile-app -reitiltä.
+sudo supervisorctl restart backend  # vain jos lisäsit/poistat tiedostoja
+```
+
+### 📱 Natiivin Expo Go -testaus (kehittäjille omassa verkossa)
+
+Tämä vaatii että kehityskone ja puhelin ovat samassa lähiverkossa.
+Kontti-ympäristössä Ngrok-tunnel ei toimi suuren bundle-koon takia,
+joten Expo Go natiivina vaatii oman LAN-setupin (ei sovellu
+preview-tarkastukseen).
+
+```bash
+cd /app/mobile
+yarn install
+yarn start              # avaa Metro-bundlerin + QR-koodi
+```
 
 1. Asenna **Expo Go** -sovellus puhelimeesi:
    - iOS: https://apps.apple.com/app/expo-go/id982107779
    - Android: https://play.google.com/store/apps/details?id=host.exp.exponent
-2. Aja `yarn start` projektikansiossa
-3. Skannaa terminaaliin tuleva QR-koodi puhelimen kameralla → sovellus avautuu
-
-> Puhelimen ja tietokoneen on oltava samassa Wi-Fi-verkossa. Vaihtoehto:
-> käytä `yarn start --tunnel` jos verkkoyhteys ei toimi.
+2. Skannaa QR-koodi puhelimen kameralla → sovellus avautuu
 
 ## Konfigurointi
 
