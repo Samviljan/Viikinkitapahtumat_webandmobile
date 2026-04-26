@@ -26,6 +26,8 @@ const LANGS = [
   { code: "fi", label: "Suomi" },
   { code: "en", label: "English" },
   { code: "sv", label: "Svenska" },
+  { code: "et", label: "Eesti" },
+  { code: "pl", label: "Polski" },
 ];
 
 function LanguageSwitcher() {

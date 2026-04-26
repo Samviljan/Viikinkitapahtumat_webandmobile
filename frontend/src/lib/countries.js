@@ -11,6 +11,9 @@ export const COUNTRY_FLAGS = {
   DK: "🇩🇰",
   PL: "🇵🇱",
   DE: "🇩🇪",
+  IS: "🇮🇸",
+  LV: "🇱🇻",
+  LT: "🇱🇹",
 };
 
 export function flagFor(code) {

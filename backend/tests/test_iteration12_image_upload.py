@@ -100,10 +100,9 @@ class TestUploadValidPng:
         fname = body["url"].rsplit("/", 1)[-1]
         cleanup_files.append(fname)
 
-        # File on disk
+        # Iter 13: file is now in GridFS, NOT on disk.
         on_disk = UPLOAD_DIR / fname
-        assert on_disk.exists(), f"missing {on_disk}"
-        assert on_disk.read_bytes() == png
+        assert not on_disk.exists(), f"file should NOT be on disk: {on_disk}"
 
         # Reachable via ingress (REACT_APP_BACKEND_URL + url)
         get_r = requests.get(f"{base_url}{body['url']}", timeout=30)
@@ -172,23 +171,25 @@ class TestUploadLibrary:
         second_name = r2.json()["url"].rsplit("/", 1)[-1]
         cleanup_files.append(second_name)
 
-        # Admin list
+        # Admin list — names are original filenames; identify rows by URL filename.
         r = admin_client.get(f"{base_url}/api/admin/uploads/events", timeout=30)
         assert r.status_code == 200, r.text
         items = r.json()
         assert isinstance(items, list)
-        names = [it["name"] for it in items]
-        assert second_name in names and first_name in names
+        urls = [it["url"] for it in items]
+        first_url = f"/api/uploads/events/{first_name}"
+        second_url = f"/api/uploads/events/{second_name}"
+        assert first_url in urls and second_url in urls
 
         # Validate shape on at least one entry
-        sample = next(it for it in items if it["name"] == second_name)
-        assert sample["url"] == f"/api/uploads/events/{second_name}"
+        sample = next(it for it in items if it["url"] == second_url)
+        assert sample["name"] == "second.png"
         assert isinstance(sample["size"], int) and sample["size"] > 0
         assert isinstance(sample["mtime"], (int, float))
 
-        # Sorted DESC by mtime — second should appear before first
-        idx_second = names.index(second_name)
-        idx_first = names.index(first_name)
+        # Sorted DESC by uploadDate — second should appear before first
+        idx_second = urls.index(second_url)
+        idx_first = urls.index(first_url)
         assert idx_second < idx_first, "library should sort by mtime DESC"
 
 

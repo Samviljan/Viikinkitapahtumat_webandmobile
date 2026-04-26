@@ -14,7 +14,6 @@ import bcrypt
 import jwt
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, Query, BackgroundTasks, UploadFile, File
 from fastapi.responses import PlainTextResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
@@ -119,7 +118,7 @@ class UserOut(BaseModel):
 
 EventCategory = Literal["market", "training_camp", "course", "festival", "meetup", "other"]
 EventStatus = Literal["pending", "approved", "rejected"]
-EventCountry = Literal["FI", "SE", "EE", "NO", "DK", "PL", "DE"]
+EventCountry = Literal["FI", "SE", "EE", "NO", "DK", "PL", "DE", "IS", "LV", "LT"]
 
 
 class EventCreate(BaseModel):
@@ -292,13 +291,29 @@ def _serialize_event(doc: dict) -> dict:
 
 
 # -----------------------------------------------------------------------------
-# Image upload + library
+# Image upload + library — GridFS-backed (survives container restarts)
 # -----------------------------------------------------------------------------
-UPLOAD_ROOT = Path(__file__).resolve().parent / "uploads" / "events"
-UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
+from motor.motor_asyncio import AsyncIOMotorGridFSBucket  # noqa: E402
+
 MAX_UPLOAD_BYTES = 6 * 1024 * 1024  # 6 MB
 ALLOWED_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 ALLOWED_IMAGE_MIME = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+MIME_FOR_EXT = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".webp": "image/webp",
+    ".gif": "image/gif",
+}
+
+_gridfs_bucket: Optional[AsyncIOMotorGridFSBucket] = None
+
+
+def _bucket() -> AsyncIOMotorGridFSBucket:
+    global _gridfs_bucket
+    if _gridfs_bucket is None:
+        _gridfs_bucket = AsyncIOMotorGridFSBucket(db, bucket_name="event_images")
+    return _gridfs_bucket
 
 
 def _public_upload_url(filename: str) -> str:
@@ -308,9 +323,9 @@ def _public_upload_url(filename: str) -> str:
 @api_router.post("/uploads/events", status_code=201)
 async def upload_event_image(file: UploadFile = File(...)):
     """Public upload — anyone submitting an event can attach an image directly
-    from their device. Validates type + size and writes to /app/backend/uploads/events.
+    from their device. Validates type + size and writes to GridFS.
 
-    Response: {"url": "/api/uploads/events/<uuid>.<ext>", "name": "<original>"}
+    Response: {"url": "/api/uploads/events/<id>.<ext>", "name": "<original>"}
     """
     ctype = (file.content_type or "").lower()
     ext = (Path(file.filename or "").suffix or "").lower()
@@ -323,6 +338,8 @@ async def upload_event_image(file: UploadFile = File(...)):
             "image/webp": ".webp",
             "image/gif": ".gif",
         }.get(ctype, ".jpg")
+    if not ctype:
+        ctype = MIME_FOR_EXT.get(ext, "application/octet-stream")
 
     body = await file.read()
     if len(body) == 0:
@@ -331,27 +348,48 @@ async def upload_event_image(file: UploadFile = File(...)):
         raise HTTPException(status_code=413, detail="Image too large (max 6 MB)")
 
     filename = f"{uuid.uuid4().hex}{ext}"
-    target = UPLOAD_ROOT / filename
-    target.write_bytes(body)
+    await _bucket().upload_from_stream(
+        filename,
+        body,
+        metadata={"content_type": ctype, "original_name": file.filename or filename},
+    )
     return {"url": _public_upload_url(filename), "name": file.filename or filename}
+
+
+@api_router.get("/uploads/events/{filename}")
+async def serve_event_image(filename: str):
+    """Stream an image stored in GridFS. Cached aggressively client-side because
+    filenames are immutable (uuid-based)."""
+    cur = db["event_images.files"].find_one({"filename": filename}, {"_id": 1, "metadata": 1})
+    doc = await cur if hasattr(cur, "__await__") else cur
+    if not doc:
+        raise HTTPException(status_code=404, detail="Image not found")
+    ctype = (doc.get("metadata") or {}).get("content_type") or MIME_FOR_EXT.get(
+        Path(filename).suffix.lower(), "application/octet-stream"
+    )
+    stream = await _bucket().open_download_stream_by_name(filename)
+    data = await stream.read()
+    return Response(
+        content=data,
+        media_type=ctype,
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
 
 
 @api_router.get("/admin/uploads/events")
 async def list_uploaded_images(_admin: dict = Depends(get_admin_user)):
-    """Admin-only image library: lists every uploaded file under uploads/events
-    so the admin can re-attach an existing image to a new event from a picker.
-    """
+    """Admin-only image library. Lists every image stored in GridFS so the admin
+    can re-attach an existing image to a new event from a picker."""
     files = []
-    for p in sorted(UPLOAD_ROOT.iterdir(), key=lambda x: -x.stat().st_mtime):
-        if not p.is_file():
-            continue
-        if p.suffix.lower() not in ALLOWED_IMAGE_EXT:
-            continue
+    cursor = db["event_images.files"].find(
+        {}, {"filename": 1, "length": 1, "uploadDate": 1, "metadata": 1, "_id": 0}
+    ).sort("uploadDate", -1)
+    async for d in cursor:
         files.append({
-            "url": _public_upload_url(p.name),
-            "name": p.name,
-            "size": p.stat().st_size,
-            "mtime": p.stat().st_mtime,
+            "url": _public_upload_url(d["filename"]),
+            "name": (d.get("metadata") or {}).get("original_name") or d["filename"],
+            "size": d.get("length", 0),
+            "mtime": d.get("uploadDate").timestamp() if d.get("uploadDate") else 0,
         })
     return files
 
@@ -934,14 +972,6 @@ async def shutdown_db_client():
 
 # Include router
 app.include_router(api_router)
-
-# Serve uploaded event images. Mounted on the same /api prefix so the K8s
-# ingress (which routes /api/* to the backend) reaches it without extra config.
-app.mount(
-    "/api/uploads",
-    StaticFiles(directory=str(Path(__file__).resolve().parent / "uploads")),
-    name="uploads",
-)
 
 # CORS: when credentials are required (cookies), browsers reject `Access-Control-Allow-Origin: *`.
 # Therefore we configure the middleware to echo the request origin via allow_origin_regex

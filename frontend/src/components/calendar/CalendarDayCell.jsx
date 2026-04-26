@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { pickLocalized } from "@/lib/i18n";
 import { CAT_DOT, isoDay } from "./calendarUtils";
+import { flagFor } from "@/lib/countries";
 
 export default function CalendarDayCell({ day, dayEvents, isToday, lang }) {
   if (!day) {
@@ -44,6 +45,9 @@ export default function CalendarDayCell({ day, dayEvents, isToday, lang }) {
                 }`}
               />
               <span className="text-[11px] leading-tight text-viking-bone group-hover:text-viking-gold line-clamp-2">
+                <span aria-hidden="true" className="mr-1">
+                  {flagFor(ev.country || "FI")}
+                </span>
                 {pickLocalized(ev, lang, "title")}
               </span>
             </div>

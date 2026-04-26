@@ -27,7 +27,7 @@ const fieldClass =
   "bg-viking-surface border-viking-edge rounded-sm text-viking-bone placeholder:text-viking-stone focus:border-viking-ember focus:ring-viking-ember";
 
 const CATS = ["market", "training_camp", "course", "festival", "meetup", "other"];
-const COUNTRIES = ["FI", "SE", "EE", "NO", "DK", "PL", "DE"];
+const COUNTRIES = ["FI", "SE", "EE", "NO", "DK", "PL", "DE", "IS", "LV", "LT"];
 
 export default function AdminEventEditDialog({ event, open, onOpenChange, onSaved }) {
   const { t } = useI18n();

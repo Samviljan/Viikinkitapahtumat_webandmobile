@@ -1,0 +1,45 @@
+{
+  "summary": "Iter 13 fully verified end-to-end. Backend: 9 new tests (test_iteration13_gridfs_etpl_countries.py) + updated 7 iter12 tests to GridFS reality — all 16 pass. Full backend regression: 119/119 PASS. Verified (1) GridFS upload writes to event_images.files (with metadata.content_type='image/png' + metadata.original_name) and event_images.chunks (chunk_count>=1) AND NOT to /app/backend/uploads/events on disk; bytes match by md5 round-trip through ingress; (2) GET /api/uploads/events/<unknown>.png → 404; (3) admin library lists uploaded GridFS files with correct {url, name=original_name, size=length, mtime}; (4) PUT /api/admin/events/{id} accepts country IS/LV/LT (parametrized) — returns + persists; (5) ZZ rejected with 422; (6) /app/frontend/src/lib/i18n.js contains top-level 'et:' and 'pl:' blocks with et.nav.events='Üritused' and pl.nav.events='Wydarzenia' (read-only assertion, never overwritten). Frontend Playwright on https://events-refresh-1.preview.emergentagent.com: lang-switcher → Eesti shows nav 'ÜRITUSED · VIKINGIMÕÕKAVÕITLUS · KURSUSED · KORPORATSIOONID & ÜHENDUSED · KAUPLUSED · KONTAKT'; Polski shows 'WYDARZENIA · WALKA MIECZAMI WIKINGÓW · KURSY · GILDIE I STOWARZYSZENIA · SKLEPY · KONTAKT' — all 6 expected strings (case-insensitively) present. ZERO raw key paths leaked on home or /events for et and pl. Calendar view (/events): 12/12 cal-event-<id> links across 3 months start with the country flag emoji (🇫🇮 for FI defaults), confirmed via regex match on the regional-indicator pair. AdminEventEditDialog → edit-country select lists exactly 10 options in FI: Suomi, Ruotsi, Viro, Norja, Tanska, Puola, Saksa, Islanti, Latvia, Liettua. edit-image-file-input upload populates edit-image-url with '/api/uploads/events/3da41739192c498eb0ddb17773d4894b.png' (matches /^/api/uploads/events/[0-9a-f]{32}\\.png$/) and 'Kuva ladattu' toast appears.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "AdminEventEditDialog", "issues": ["Pre-existing: date inputs are native browser pickers (mm/dd/yyyy) instead of shadcn Calendar/Popover — flagged in iter12; unchanged in iter13."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration13_gridfs_etpl_countries.py",
+    "/app/backend/tests/test_iteration12_image_upload.py",
+    "/app/test_reports/pytest/iter13_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "GridFS bucket uses bucket_name='event_images', so collections are event_images.files and event_images.chunks — confirmed by direct pymongo query in tests.",
+    "_bucket() lazy singleton via global _gridfs_bucket — fine for single-process uvicorn worker. If scaling to multiple workers per pod, the singleton is per-process anyway, so still safe.",
+    "serve_event_image() does `cur = db['event_images.files'].find_one(...); doc = await cur if hasattr(cur, '__await__') else cur` — slightly unusual coercion; motor's find_one always returns awaitable so the `else` branch is dead code. Cosmetic, not a bug.",
+    "Cache-Control: public, max-age=31536000, immutable — correct since filenames are uuid-based and never reused.",
+    "list_uploaded_images returns mtime as uploadDate.timestamp() — matches the previous disk mtime contract for the admin picker UI; no frontend changes needed.",
+    "EventCountry literal extended to 10 codes; pydantic v2 enforces 422 on unknown values automatically.",
+    "i18n.js et/pl blocks use double-quoted JSON-style keys (e.g. \"events\": \"Üritused\") inside the JS object — works fine because JS object literals accept quoted keys. Some sections under et/pl appear flatter than fi/en/sv (e.g. 'home' is an empty object in et). i18n.js t() falls back en→fi correctly per spec, so this is acceptable.",
+    "CalendarDayCell.jsx flag-emoji prefix — verified by reading textContent of cal-event-* links: 12/12 start with the regional-indicator pair.",
+    "Frontend resolveImageUrl pattern (relative URL in DB → absolute at render) preserved; preview <img> renders successfully (confirmed by 'Kuva ladattu' toast + URL field populated)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration13_gridfs_etpl_countries.py (new)",
+    "/app/backend/tests/test_iteration12_image_upload.py (updated: removed disk-existence assertion → asserts NOT on disk; admin list now keyed by url since 'name' is now original_name)"
+  ],
+  "success_rate": {
+    "backend": "100% — 16/16 iter12+iter13 image+country+i18n tests pass; 119/119 in full regression",
+    "frontend": "100% on iter13 surfaces — i18n et/pl nav + zero key leaks + calendar flag prefix (12/12) + 10 country options in admin + image upload populates relative GridFS URL"
+  },
+  "test_credentials": "admin@viikinkitapahtumat.fi / ***REDACTED*** — verified via /api/auth/login (Bearer token).",
+  "seed_data_creation": "Iter 13 tests upload 4 transient PNGs to GridFS; each is removed in pytest teardown via direct delete from event_images.files + event_images.chunks (pymongo). Country tests create+delete one transient TEST_iter13_country_<8hex> event per parametrized country (IS/LV/LT plus the ZZ rejection test).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter 13 locked. GridFS bucket name is 'event_images' (collections: event_images.files / event_images.chunks). Public URL stays /api/uploads/events/<uuid32hex>.<ext>. Disk folder /app/backend/uploads/events still exists but is no longer written to (legacy iter12 files may remain, harmless). i18n.js now has 5 langs: fi, en, sv, et, pl. The et/pl blocks were generated by Claude Haiku — DO NOT regenerate; tests only assert top-level structure (et: { ... nav.events='Üritused' ... }, pl: { ... nav.events='Wydarzenia' ... }). EventCountry = Literal[FI,SE,EE,NO,DK,PL,DE,IS,LV,LT]; ZZ rejected as 422. Calendar event links carry country flag prefix via CalendarDayCell.jsx. Admin edit dialog data-testids: edit-country, edit-image-url, edit-image-upload-btn, edit-image-file-input, edit-image-preview, edit-image-clear, edit-gallery-new-{url,upload-btn,file-input}. Note: header buttons in admin list use data-testid='edit-<eventId>' (not 'admin-event-edit-<id>'). lang-switcher data-testid='lang-switcher'; options 'lang-option-{fi,en,sv,et,pl}'. The pre-existing iter5 PATCH-speed flake reported in iter12 did not reproduce in this run (passed in 119/119). Pre-existing native date pickers in admin/submit forms still flagged; not iter13.",
+  "rca of the issue": "No issues. Iter 13 is fully working: GridFS storage, i18n et/pl, country extension, and calendar flag prefix all behave per spec."
+}
