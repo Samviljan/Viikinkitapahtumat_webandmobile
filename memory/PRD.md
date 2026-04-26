@@ -166,6 +166,24 @@ See `/app/memory/test_credentials.md`.
 - ✅ **FastAPI-mount** server.py:ssä:
   - Catch-all reitti `/api/mobile-app/{full_path:path}` → tarkistaa onko tiedosto olemassa, palauttaa `FileResponse` tai SPA-fallbackina `index.html`.
   - Tukee deep-linkkejä (esim. `/api/mobile-app/event/<id>`, `/api/mobile-app/favorites`) — kaikki client-side-reitit toimivat selaimessa myös refresh-painalluksella.
+- ✅ **Käyttäjätestaus**: `https://<preview>/api/mobile-app/` näyttää koko mobiilisovelluksen.
+- ✅ Smoke-testi (Playwright 414×896): TITLE=Viikinkitapahtumat, alanavi (Etusivu / Suosikit / Kalenteri), 11 tapahtumakorttia API:sta.
+
+## Iteration 16 — Mobile UX redesign + image fix (2026-04-26)
+- ✅ **Rikkinäiset tapahtumakuvat korjattu**: `viikinkitapahtumat.fi/pics/*.jpg`-URL:t palauttivat HTML:ää (alkuperäinen sivusto rikki). Mountattu `/app/frontend/public/event-images/`-PNG:t backendiin reitille `/api/events-images/*` (StaticFiles). Migraatioskripti `/app/backend/scripts/migrate_event_images.py` päivitti 12/12 tapahtuman `image_url`-kentän AI-generoituihin Nano Banana -kuviin same-origin-osoitteisiin (ei enää ORB-blokkia).
+- ✅ **Hakulaatikko (mobiili)**: uusi `<SearchPanel>` -komponentti — kullasta reunustettu paneeli "HAE TAPAHTUMIA" -otsikolla + ember-värinen tulosbadge (esim. "11"). Hakutoiminta erottuu visuaalisesti omaksi sektiokseen tapahtumalistasta.
+- ✅ **Yhdistetty Lähellä minua + aikafiltteri**: `nearMe`-tila on nyt itsenäinen ja toimii rinnakkain aikafilttereiden ("Tällä viikolla / Tässä kuussa / 3 kk") tai kuukausivalitsimen kanssa. Aktiivinen yhdistelmä näkyy tilarivissä (esim. "Lähellä minua · Kesäkuu 2026").
+- ✅ **Kuukausivalitsin**: uusi `<MonthPicker>` -komponentti — vaakaskrollattava chip-rivi nykyinen + 11 seuraavaa kuukautta (esim. "Huh 26", "Tou 26", …). Aktiivinen valinta (kulta) suodattaa tapahtumat tähän kalenterikuukauteen (overlap = start≤monthEnd && end≥monthStart).
+- ✅ **Mini-thumbnail event card -uudelleenmuotoilu**: `EventCard.tsx` muutettu kompaktiksi horisontaaliseksi listamuotoon — vasemmalla 96×96 thumbnail kuvalla + lipulla, oikealla otsikko/päivämäärä/paikka, ember-värinen alareuna laskurille. Pienempi (~50% vähemmän tilaa per kortti) ⇒ enemmän tapahtumia näkyvissä yhdellä kerralla.
+- ✅ **Distinct event boxes**: jokaisessa kortissa kullainen 3px vasen reuna + tumma drop shadow + reuna + sisäpalkki ⇒ jokainen tapahtuma näyttää omalta fyysiseltä laatikoltaan toisistaan selvästi eroteltuna.
+- ✅ **Kuva-fallback**: jos `<Image>` epäonnistuu (onError), näytetään tyylitelty placeholder kategorian ikonilla kullaisella sävyllä — ei enää rikki-kuvalogoa.
+- ✅ Web-build re-exportattu (2.58 MB, sama base URL `/api/mobile-app`). Playwright-smoke (414×896): TITLE=OK, ROOT_LEN 50.7 kB (kasvanut 14.8 kB uudella paneelilla), kuvavirheet 0/12, kaikki sektiot näkyvissä.
+- ✅ **Ngrok-tunnel-blokkeri ratkaistu**: Expo Go natiivi ei toiminut preview-ympäristössä Ngrok-aikakatkaisujen takia (10+ MB dev bundle). Korvattu staattisella web-buildilla joka tarjoillaan FastAPIn `/api/`-ingressin kautta.
+- ✅ **Web-build** `/app/mobile/dist/`: `npx expo export --platform web` (2.58 MB minifoidu bundle + asset-tiedostot). Riippuvuudet `react-dom@19.1.0`, `react-native-web@^0.21.0`, `@expo/metro-runtime` lisätty.
+- ✅ **Base URL** = `/api/mobile-app` (`app.json` → `experiments.baseUrl`) jotta absoluuttiset polut (`/api/mobile-app/_expo/static/js/web/...`) toimivat ingressin kautta.
+- ✅ **FastAPI-mount** server.py:ssä:
+  - Catch-all reitti `/api/mobile-app/{full_path:path}` → tarkistaa onko tiedosto olemassa, palauttaa `FileResponse` tai SPA-fallbackina `index.html`.
+  - Tukee deep-linkkejä (esim. `/api/mobile-app/event/<id>`, `/api/mobile-app/favorites`) — kaikki client-side-reitit toimivat selaimessa myös refresh-painalluksella.
 - ✅ **Käyttäjätestaus**: `https://<preview>/api/mobile-app/` näyttää koko mobiilisovelluksen. Voi avata mobiililaitteen selaimella tai "Add to Home Screen" PWA-tyyppisenä asennuksena.
 - ✅ Smoke-testi (Playwright 414×896): TITLE=Viikinkitapahtumat, root-DOM 35.9 kB, näkyy "Lähellä minua / Tällä viikolla / Tässä kuussa / 3 kk" -filtterit, 11 tapahtumakorttia ladattuina API:sta, lippuemoji 🇫🇮 + kategoriat + countdown-laskuri, alanavi (Etusivu / Suosikit / Kalenteri).
 - ✅ Verkkosovellus + API + iCal regressio: 200/200/200. Ei vaikutuksia muuhun systeemiin.

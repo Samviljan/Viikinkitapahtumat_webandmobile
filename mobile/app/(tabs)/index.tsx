@@ -13,14 +13,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { EventCard } from "@/src/components/EventCard";
 import { FilterChip, FilterChipsRow } from "@/src/components/FilterChips";
 import { SearchBar } from "@/src/components/SearchBar";
+import { SearchPanel, SearchPanelSection } from "@/src/components/SearchPanel";
+import { MonthPicker, MonthValue } from "@/src/components/MonthPicker";
 import { useEvents } from "@/src/hooks/useEvents";
 import { geocode, haversineKm, useLocation } from "@/src/hooks/useLocation";
-import { parseEventDate } from "@/src/lib/format";
+import { FI_MONTHS, parseEventDate } from "@/src/lib/format";
 import { colors, spacing, text } from "@/src/lib/theme";
 import type { VikingEvent } from "@/src/types";
 
 type DateFilter = "any" | "this_week" | "this_month" | "next_3_months";
-type LocationFilter = "any" | "near_me" | "text";
 
 export default function HomeScreen() {
   const { events, loading, error, refresh } = useEvents();
@@ -28,8 +29,9 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const [searchText, setSearchText] = useState("");
-  const [locFilter, setLocFilter] = useState<LocationFilter>("any");
+  const [nearMe, setNearMe] = useState(false);
   const [dateFilter, setDateFilter] = useState<DateFilter>("any");
+  const [monthFilter, setMonthFilter] = useState<MonthValue | null>(null);
   const [distances, setDistances] = useState<Record<string, number>>({});
 
   // Recompute distances when GPS or events change.
@@ -49,19 +51,29 @@ export default function HomeScreen() {
     };
   }, [coords, events]);
 
+  async function onTapNearMe() {
+    if (nearMe) {
+      setNearMe(false);
+      return;
+    }
+    const c = coords ?? (await request());
+    if (c) setNearMe(true);
+  }
+
   async function onRefresh() {
     setRefreshing(true);
     await refresh();
     setRefreshing(false);
   }
 
-  async function onTapNearMe() {
-    if (locFilter === "near_me") {
-      setLocFilter("any");
-      return;
-    }
-    const c = coords ?? (await request());
-    if (c) setLocFilter("near_me");
+  // Tapping a date-range chip clears the explicit month picker (and vice versa)
+  function setRange(next: DateFilter) {
+    setDateFilter((cur) => (cur === next ? "any" : next));
+    setMonthFilter(null);
+  }
+  function pickMonth(m: MonthValue | null) {
+    setMonthFilter(m);
+    if (m) setDateFilter("any");
   }
 
   const filtered = useMemo(() => {
@@ -77,7 +89,7 @@ export default function HomeScreen() {
       );
     }
 
-    if (locFilter === "near_me" && coords) {
+    if (nearMe && coords) {
       list = list.filter((e) => (distances[e.id] ?? Infinity) <= 200);
       list = [...list].sort(
         (a, b) => (distances[a.id] ?? 9999) - (distances[b.id] ?? 9999),
@@ -86,7 +98,17 @@ export default function HomeScreen() {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    if (dateFilter !== "any") {
+
+    if (monthFilter) {
+      const startOfMonth = new Date(monthFilter.year, monthFilter.month, 1);
+      const endOfMonth = new Date(monthFilter.year, monthFilter.month + 1, 0);
+      list = list.filter((e: VikingEvent) => {
+        const s = parseEventDate(e.start_date);
+        const ee = parseEventDate(e.end_date) || s;
+        if (!s || !ee) return false;
+        return s <= endOfMonth && ee >= startOfMonth;
+      });
+    } else if (dateFilter !== "any") {
       const limit = new Date(today);
       if (dateFilter === "this_week") limit.setDate(limit.getDate() + 7);
       else if (dateFilter === "this_month") limit.setMonth(limit.getMonth() + 1);
@@ -98,7 +120,18 @@ export default function HomeScreen() {
     }
 
     return list;
-  }, [events, searchText, locFilter, coords, distances, dateFilter]);
+  }, [events, searchText, nearMe, coords, distances, dateFilter, monthFilter]);
+
+  const activeSummary = useMemo(() => {
+    const parts: string[] = [];
+    if (nearMe) parts.push("Lähellä minua");
+    if (monthFilter)
+      parts.push(`${FI_MONTHS[monthFilter.month]} ${monthFilter.year}`);
+    else if (dateFilter === "this_week") parts.push("Tällä viikolla");
+    else if (dateFilter === "this_month") parts.push("Tässä kuussa");
+    else if (dateFilter === "next_3_months") parts.push("3 kk");
+    return parts.join(" · ");
+  }, [nearMe, dateFilter, monthFilter]);
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safe}>
@@ -109,61 +142,67 @@ export default function HomeScreen() {
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           <View>
-            <Text style={text.overline}>Saatavilla {filtered.length}</Text>
+            <Text style={text.overline}>Saatavilla {events.length}</Text>
             <Text style={[text.h1, { marginTop: 4, marginBottom: spacing.lg }]}>
               Tapahtumat
             </Text>
-            <SearchBar
-              testID="home-search"
-              value={searchText}
-              onChangeText={setSearchText}
-              placeholder="Etsi paikkakunnalla tai nimellä…"
-            />
-            <FilterChipsRow>
-              <FilterChip
-                testID="chip-near-me"
-                active={locFilter === "near_me"}
-                onPress={onTapNearMe}
-                icon="location"
-                label={
-                  status === "requesting"
-                    ? "Etsitään…"
-                    : locFilter === "near_me"
-                      ? "Lähellä minua"
-                      : "Lähellä minua"
-                }
-              />
-              <FilterChip
-                testID="chip-week"
-                active={dateFilter === "this_week"}
-                onPress={() =>
-                  setDateFilter(dateFilter === "this_week" ? "any" : "this_week")
-                }
-                icon="calendar"
-                label="Tällä viikolla"
-              />
-              <FilterChip
-                testID="chip-month"
-                active={dateFilter === "this_month"}
-                onPress={() =>
-                  setDateFilter(dateFilter === "this_month" ? "any" : "this_month")
-                }
-                icon="calendar-outline"
-                label="Tässä kuussa"
-              />
-              <FilterChip
-                testID="chip-3mo"
-                active={dateFilter === "next_3_months"}
-                onPress={() =>
-                  setDateFilter(
-                    dateFilter === "next_3_months" ? "any" : "next_3_months",
-                  )
-                }
-                icon="time-outline"
-                label="3 kk"
-              />
-            </FilterChipsRow>
-            {locFilter === "near_me" && status === "denied" ? (
+
+            <SearchPanel title="Hae tapahtumia" resultsCount={filtered.length}>
+              <SearchPanelSection label="Hakusana">
+                <SearchBar
+                  testID="home-search"
+                  value={searchText}
+                  onChangeText={setSearchText}
+                  placeholder="Etsi paikkakunnalla tai nimellä…"
+                />
+              </SearchPanelSection>
+
+              <SearchPanelSection label="Sijainti & ajankohta">
+                <FilterChipsRow>
+                  <FilterChip
+                    testID="chip-near-me"
+                    active={nearMe}
+                    onPress={onTapNearMe}
+                    icon="location"
+                    label={status === "requesting" ? "Etsitään…" : "Lähellä minua"}
+                  />
+                  <FilterChip
+                    testID="chip-week"
+                    active={dateFilter === "this_week"}
+                    onPress={() => setRange("this_week")}
+                    icon="calendar"
+                    label="Tällä viikolla"
+                  />
+                  <FilterChip
+                    testID="chip-month"
+                    active={dateFilter === "this_month"}
+                    onPress={() => setRange("this_month")}
+                    icon="calendar-outline"
+                    label="Tässä kuussa"
+                  />
+                  <FilterChip
+                    testID="chip-3mo"
+                    active={dateFilter === "next_3_months"}
+                    onPress={() => setRange("next_3_months")}
+                    icon="time-outline"
+                    label="3 kk"
+                  />
+                </FilterChipsRow>
+              </SearchPanelSection>
+
+              <SearchPanelSection label="Valitse kuukausi">
+                <MonthPicker value={monthFilter} onChange={pickMonth} />
+              </SearchPanelSection>
+
+              {activeSummary ? (
+                <View style={styles.summary} testID="active-filter-summary">
+                  <Ionicons name="funnel-outline" size={11} color={colors.gold} />
+                  <Text style={styles.summaryText}>{activeSummary}</Text>
+                </View>
+              ) : null}
+            </SearchPanel>
+
+            {nearMe && status === "denied" ? (
               <View style={styles.banner}>
                 <Ionicons name="warning-outline" size={14} color={colors.ember} />
                 <Text style={styles.bannerText}>
@@ -221,6 +260,19 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   bannerText: { color: colors.ember, fontSize: 12, flex: 1 },
+  summary: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xs,
+  },
+  summaryText: {
+    color: colors.gold,
+    fontSize: 11,
+    letterSpacing: 0.6,
+    fontWeight: "600",
+  },
   center: { alignItems: "center", paddingVertical: spacing.xxl },
   empty: {
     alignItems: "center",

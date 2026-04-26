@@ -978,6 +978,19 @@ app.include_router(api_router)
 # Mobile app web build (Expo export served via /api ingress)
 # -----------------------------------------------------------------------------
 _MOBILE_DIST = Path("/app/mobile/dist")
+
+# AI-generated viking event images live in the frontend public folder. Mount
+# them under /api/events-images/* so mobile clients can load them same-origin
+# (avoids ORB / mixed-content / external CDN issues with the original
+# viikinkitapahtumat.fi/pics/*.jpg URLs which now return HTML).
+_EVENTS_IMG_DIR = Path("/app/frontend/public/event-images")
+if _EVENTS_IMG_DIR.exists():
+    app.mount(
+        "/api/events-images",
+        StaticFiles(directory=str(_EVENTS_IMG_DIR)),
+        name="events-images",
+    )
+
 if _MOBILE_DIST.exists() and (_MOBILE_DIST / "index.html").exists():
     # Mount static assets (real files: _expo/, assets/, metadata.json) under /api/mobile-app.
     # We deliberately do NOT use html=True here so that 404s bubble up to the SPA fallback below.
