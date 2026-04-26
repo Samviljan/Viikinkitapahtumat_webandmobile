@@ -2,7 +2,7 @@ import React from "react";
 import { ImageBackground, StyleSheet, View } from "react-native";
 import { colors } from "@/src/lib/theme";
 
-const BG = require("../../assets/bg-viking.png");
+const BG = require("../../assets/bg-viking.jpg");
 
 /**
  * Full-screen viking background (image + dark scrim) used inside every tab
