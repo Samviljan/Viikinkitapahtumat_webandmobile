@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { SectionList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AppBackground } from "@/src/components/AppBackground";
 import { EventCard } from "@/src/components/EventCard";
 import { useEvents } from "@/src/hooks/useEvents";
 import { FI_MONTHS, parseEventDate } from "@/src/lib/format";
@@ -37,26 +38,28 @@ export default function CalendarScreen() {
   }, [events]);
 
   return (
-    <SafeAreaView edges={["top"]} style={styles.safe}>
-      <SectionList
-        sections={sections}
-        keyExtractor={(e) => e.id}
-        renderItem={({ item }) => <EventCard event={item} />}
-        renderSectionHeader={({ section }) => (
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            <Text style={styles.sectionYear}>{section.year}</Text>
-            <View style={styles.sectionLine} />
-          </View>
-        )}
-        contentContainerStyle={styles.list}
-        ListHeaderComponent={
-          <Text style={[text.h1, { marginBottom: spacing.lg }]}>Kalenteri</Text>
-        }
-        stickySectionHeadersEnabled={false}
-        showsVerticalScrollIndicator={false}
-      />
-    </SafeAreaView>
+    <AppBackground>
+      <SafeAreaView edges={["top"]} style={styles.safe}>
+        <SectionList
+          sections={sections}
+          keyExtractor={(e) => e.id}
+          renderItem={({ item }) => <EventCard event={item} />}
+          renderSectionHeader={({ section }) => (
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+              <Text style={styles.sectionYear}>{section.year}</Text>
+              <View style={styles.sectionLine} />
+            </View>
+          )}
+          contentContainerStyle={styles.list}
+          ListHeaderComponent={
+            <Text style={[text.h1, { marginBottom: spacing.lg }]}>Kalenteri</Text>
+          }
+          stickySectionHeadersEnabled={false}
+          showsVerticalScrollIndicator={false}
+        />
+      </SafeAreaView>
+    </AppBackground>
   );
 }
 

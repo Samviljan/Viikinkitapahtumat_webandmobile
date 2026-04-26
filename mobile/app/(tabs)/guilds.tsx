@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AppBackground } from "@/src/components/AppBackground";
 import { LinkListRow, SectionTitle } from "@/src/components/LinkListRow";
 import { useGuilds } from "@/src/hooks/useDirectory";
 import { colors, spacing, text } from "@/src/lib/theme";
@@ -50,51 +51,53 @@ export default function GuildsScreen() {
   }, [sections]);
 
   return (
-    <SafeAreaView edges={["top"]} style={styles.safe}>
-      <FlatList
-        data={rows}
-        keyExtractor={(r) => r.key}
-        contentContainerStyle={styles.list}
-        ListHeaderComponent={
-          <View>
-            <Text style={text.overline}>Yhteisö</Text>
-            <Text style={[text.h1, { marginTop: 4, marginBottom: spacing.sm }]}>
-              Kaartit & yhdistykset
-            </Text>
-            <Text style={styles.intro}>
-              Suomalaiset viikinkiajan, rauta-ajan ja varhaiskeskiajan
-              harrastusyhteisöt. Napauta avataksesi seuran kotisivut.
-            </Text>
-          </View>
-        }
-        renderItem={({ item }) => {
-          if (item.type === "section") {
-            return <SectionTitle label={item.label} />;
-          }
-          return (
-            <LinkListRow
-              testID={`guild-${item.guild.id}`}
-              icon="shield-outline"
-              title={item.guild.name}
-              subtitle={item.guild.region}
-              url={item.guild.url}
-            />
-          );
-        }}
-        ListEmptyComponent={
-          loading ? (
-            <View style={styles.center}>
-              <ActivityIndicator color={colors.gold} />
+    <AppBackground>
+      <SafeAreaView edges={["top"]} style={styles.safe}>
+        <FlatList
+          data={rows}
+          keyExtractor={(r) => r.key}
+          contentContainerStyle={styles.list}
+          ListHeaderComponent={
+            <View>
+              <Text style={text.overline}>Yhteisö</Text>
+              <Text style={[text.h1, { marginTop: 4, marginBottom: spacing.sm }]}>
+                Kaartit & yhdistykset
+              </Text>
+              <Text style={styles.intro}>
+                Suomalaiset viikinkiajan, rauta-ajan ja varhaiskeskiajan
+                harrastusyhteisöt. Napauta avataksesi seuran kotisivut.
+              </Text>
             </View>
-          ) : error ? (
-            <Text style={styles.error}>{error}</Text>
-          ) : (
-            <Text style={styles.empty}>Ei vielä yhdistyksiä.</Text>
-          )
-        }
-        showsVerticalScrollIndicator={false}
-      />
-    </SafeAreaView>
+          }
+          renderItem={({ item }) => {
+            if (item.type === "section") {
+              return <SectionTitle label={item.label} />;
+            }
+            return (
+              <LinkListRow
+                testID={`guild-${item.guild.id}`}
+                icon="shield-outline"
+                title={item.guild.name}
+                subtitle={item.guild.region}
+                url={item.guild.url}
+              />
+            );
+          }}
+          ListEmptyComponent={
+            loading ? (
+              <View style={styles.center}>
+                <ActivityIndicator color={colors.gold} />
+              </View>
+            ) : error ? (
+              <Text style={styles.error}>{error}</Text>
+            ) : (
+              <Text style={styles.empty}>Ei vielä yhdistyksiä.</Text>
+            )
+          }
+          showsVerticalScrollIndicator={false}
+        />
+      </SafeAreaView>
+    </AppBackground>
   );
 }
 

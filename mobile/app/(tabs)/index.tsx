@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AppBackground } from "@/src/components/AppBackground";
 import { EventCard } from "@/src/components/EventCard";
 import { FilterChip, FilterChipsRow } from "@/src/components/FilterChips";
 import { SearchBar } from "@/src/components/SearchBar";
@@ -136,8 +137,9 @@ export default function HomeScreen() {
   }, [nearMe, dateFilter, monthFilter]);
 
   return (
-    <SafeAreaView edges={["top"]} style={styles.safe}>
-      <FlatList
+    <AppBackground>
+      <SafeAreaView edges={["top"]} style={styles.safe}>
+        <FlatList
         data={filtered}
         keyExtractor={(e) => e.id}
         renderItem={({ item }) => <EventCard event={item} />}
@@ -264,7 +266,8 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </AppBackground>
   );
 }
 

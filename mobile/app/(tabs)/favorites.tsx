@@ -3,6 +3,7 @@ import { FlatList, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link } from "expo-router";
+import { AppBackground } from "@/src/components/AppBackground";
 import { EventCard } from "@/src/components/EventCard";
 import { useEvents } from "@/src/hooks/useEvents";
 import { useFavorites } from "@/src/hooks/useFavorites";
@@ -19,40 +20,44 @@ export default function FavoritesScreen() {
 
   if (favEvents.length === 0) {
     return (
-      <SafeAreaView edges={["top"]} style={styles.empty}>
-        <Ionicons name="star-outline" size={48} color={colors.gold} />
-        <Text style={[text.h2, { marginTop: spacing.lg, textAlign: "center" }]}>
-          Ei vielä suosikkeja
-        </Text>
-        <Text style={styles.emptyText}>
-          Tähdellä merkityt tapahtumat tallentuvat tähän puhelimeesi —{"\n"}
-          ne pysyvät offline-tilassakin.
-        </Text>
-        <Link href="/" style={styles.cta}>
-          Selaa tapahtumia
-        </Link>
-      </SafeAreaView>
+      <AppBackground>
+        <SafeAreaView edges={["top"]} style={styles.empty}>
+          <Ionicons name="star-outline" size={48} color={colors.gold} />
+          <Text style={[text.h2, { marginTop: spacing.lg, textAlign: "center" }]}>
+            Ei vielä suosikkeja
+          </Text>
+          <Text style={styles.emptyText}>
+            Tähdellä merkityt tapahtumat tallentuvat tähän puhelimeesi —{"\n"}
+            ne pysyvät offline-tilassakin.
+          </Text>
+          <Link href="/" style={styles.cta}>
+            Selaa tapahtumia
+          </Link>
+        </SafeAreaView>
+      </AppBackground>
     );
   }
 
   return (
-    <SafeAreaView edges={["top"]} style={styles.safe}>
-      <FlatList
-        data={favEvents}
-        keyExtractor={(e) => e.id}
-        renderItem={({ item }) => <EventCard event={item} />}
-        contentContainerStyle={styles.list}
-        ListHeaderComponent={
-          <View>
-            <Text style={text.overline}>{favEvents.length} tallennettua</Text>
-            <Text style={[text.h1, { marginTop: 4, marginBottom: spacing.lg }]}>
-              Suosikit
-            </Text>
-          </View>
-        }
-        showsVerticalScrollIndicator={false}
-      />
-    </SafeAreaView>
+    <AppBackground>
+      <SafeAreaView edges={["top"]} style={styles.safe}>
+        <FlatList
+          data={favEvents}
+          keyExtractor={(e) => e.id}
+          renderItem={({ item }) => <EventCard event={item} />}
+          contentContainerStyle={styles.list}
+          ListHeaderComponent={
+            <View>
+              <Text style={text.overline}>{favEvents.length} tallennettua</Text>
+              <Text style={[text.h1, { marginTop: 4, marginBottom: spacing.lg }]}>
+                Suosikit
+              </Text>
+            </View>
+          }
+          showsVerticalScrollIndicator={false}
+        />
+      </SafeAreaView>
+    </AppBackground>
   );
 }
 
@@ -61,7 +66,7 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xxl },
   empty: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
     padding: spacing.xl,

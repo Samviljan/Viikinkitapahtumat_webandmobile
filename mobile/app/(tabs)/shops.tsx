@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AppBackground } from "@/src/components/AppBackground";
 import { LinkListRow, SectionTitle } from "@/src/components/LinkListRow";
 import { useMerchants } from "@/src/hooks/useDirectory";
 import { colors, spacing, text } from "@/src/lib/theme";
@@ -45,53 +46,55 @@ export default function ShopsScreen() {
   }, [sections]);
 
   return (
-    <SafeAreaView edges={["top"]} style={styles.safe}>
-      <FlatList
-        data={rows}
-        keyExtractor={(r) => r.key}
-        contentContainerStyle={styles.list}
-        ListHeaderComponent={
-          <View>
-            <Text style={text.overline}>Kauppiaat</Text>
-            <Text style={[text.h1, { marginTop: 4, marginBottom: spacing.sm }]}>
-              Kauppiaat & sepät
-            </Text>
-            <Text style={styles.intro}>
-              Varusteita, käsityökaluja ja kankaita viikinkiajan ja
-              keskiajan elävöitykseen. Napauta avataksesi kauppiaan
-              kotisivut.
-            </Text>
-          </View>
-        }
-        renderItem={({ item }) => {
-          if (item.type === "section") {
-            return <SectionTitle label={item.label} />;
-          }
-          const m = item.merchant;
-          return (
-            <LinkListRow
-              testID={`merchant-${m.id}`}
-              icon={m.category === "smith" ? "hammer-outline" : "storefront-outline"}
-              title={m.name}
-              subtitle={m.description || undefined}
-              url={m.url}
-            />
-          );
-        }}
-        ListEmptyComponent={
-          loading ? (
-            <View style={styles.center}>
-              <ActivityIndicator color={colors.gold} />
+    <AppBackground>
+      <SafeAreaView edges={["top"]} style={styles.safe}>
+        <FlatList
+          data={rows}
+          keyExtractor={(r) => r.key}
+          contentContainerStyle={styles.list}
+          ListHeaderComponent={
+            <View>
+              <Text style={text.overline}>Kauppiaat</Text>
+              <Text style={[text.h1, { marginTop: 4, marginBottom: spacing.sm }]}>
+                Kauppiaat & sepät
+              </Text>
+              <Text style={styles.intro}>
+                Varusteita, käsityökaluja ja kankaita viikinkiajan ja
+                keskiajan elävöitykseen. Napauta avataksesi kauppiaan
+                kotisivut.
+              </Text>
             </View>
-          ) : error ? (
-            <Text style={styles.error}>{error}</Text>
-          ) : (
-            <Text style={styles.empty}>Ei vielä kauppiaita.</Text>
-          )
-        }
-        showsVerticalScrollIndicator={false}
-      />
-    </SafeAreaView>
+          }
+          renderItem={({ item }) => {
+            if (item.type === "section") {
+              return <SectionTitle label={item.label} />;
+            }
+            const m = item.merchant;
+            return (
+              <LinkListRow
+                testID={`merchant-${m.id}`}
+                icon={m.category === "smith" ? "hammer-outline" : "storefront-outline"}
+                title={m.name}
+                subtitle={m.description || undefined}
+                url={m.url}
+              />
+            );
+          }}
+          ListEmptyComponent={
+            loading ? (
+              <View style={styles.center}>
+                <ActivityIndicator color={colors.gold} />
+              </View>
+            ) : error ? (
+              <Text style={styles.error}>{error}</Text>
+            ) : (
+              <Text style={styles.empty}>Ei vielä kauppiaita.</Text>
+            )
+          }
+          showsVerticalScrollIndicator={false}
+        />
+      </SafeAreaView>
+    </AppBackground>
   );
 }
 

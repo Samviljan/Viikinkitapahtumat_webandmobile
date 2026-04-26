@@ -194,7 +194,22 @@ See `/app/memory/test_credentials.md`.
 - ✅ APScheduler-job `_scheduled_prod_events_sync` ajetaan automaattisesti 06:00 ja 18:00 Europe/Helsinki.
 - ✅ Env-flag `PROD_SYNC_ENABLED` (default true). Tuotannossa pitää asettaa false.
 
-## Iteration 21 — Admin sync button, mobile bg, header, guilds & shops tabs (2026-04-26)
+## Iteration 21 — Admin sync, mobile bg, header, guilds & shops tabs (2026-04-26)
+- ✅ Admin "Synkkaa nyt" -nappi: `AdminSyncPanel.jsx` + backend `POST /api/admin/sync-prod-events`.
+- ✅ Mobiilin viikinki-taustakuva (Nano Banana, `bg-viking.png`).
+- ✅ Etusivun otsikko "VIIKINKITAPAHTUMAT" + ᚠ-rune.
+- ✅ Uudet välilehdet Kaartit (`/api/guilds`, 21 kpl) ja Kauppiaat (`/api/merchants`, 19 kpl) — 5 alavälilehteä.
+- ✅ Web "Tilaa kalenteri" -tooltip 5 kielelle.
+
+## Iteration 22 — Bleed-through + bg-cover fixes (2026-04-26)
+- ✅ **Welkanperintä-ongelma korjattu** (web-tab-vaihto jätti edellisen näytön sisällön DOM:iin):
+  - Korvattu expo-router `<Tabs>` (joka käyttää `@react-navigation/bottom-tabs` v7 — ei honoraa `unmountOnBlur` web:ssä) omalla `<Slot/>`-pohjaisella routingilla. Slot mounts vain aktiivisen näytön kerrallaan.
+  - Custom-tabBar-komponentti (5 välilehteä) käyttää `usePathname()` aktiivisen tilan tunnistamiseen ja `router.replace()` navigointiin → puhtaat siirtymät, ei DOM-leakkia.
+  - Vahvistettu: ennen korjausta 3 päällekkäistä scroll-containeria välilehden vaihdon jälkeen, korjauksen jälkeen 1 (paitsi etusivulla 2 koska MonthPicker on horizontal ScrollView).
+- ✅ **Tausta-cover-fix**: AppBackground-komponentti laitetaan jokaisen tab-näytön ylimmäksi wrapperiksi (ei root-tasolla); käyttää `<ImageBackground>` + `width: "100%"` jotta täyttää viewportin täysin reunasta reunaan. Scrim-overlay 0.55-opacityllä takaa luettavuuden. Vahvistettu: tausta venyy koko leveydelle (BG-div 768 CSS-px ≥ viewport 414 CSS-px), ei mustia palkkeja reunoilla.
+- ✅ Kaikki tab-näytöt (`index`, `favorites`, `calendar`, `guilds`, `shops`) käyttävät `<AppBackground>`-wrapperia.
+- ✅ `_layout.tsx` siivottu: ei enää ImageBackground rootissa, vain Stack + StatusBar.
+- ✅ TypeScript 0 virhettä, web-export 2.59 MB.
 - ✅ **Admin "Synkkaa nyt"-painike**: uusi komponentti `AdminSyncPanel.jsx` AdminDashboardin alaosaan. Backend `POST /api/admin/sync-prod-events` (admin-only) kutsuu `scripts.sync_prod_events.main()` ja palauttaa `{ok, events_in_db}`. Confirmaatio-dialogi ennen suoritusta + toast-ilmoitus tulosten kanssa.
 - ✅ **Mobiilin viikinki-taustakuva**: generoitu Nano Bananalla (gemini-3.1-flash-image-preview) → `/app/mobile/assets/bg-viking.png` (660 kB). Atmospheerinen yksin matkaava viikinki, sumussa hohtava metsä, ember-pisteet. Skripti `scripts/generate_mobile_bg.py` voidaan ajaa uudelleen kuvan päivittämiseksi.
 - ✅ **RootLayout** (`app/_layout.tsx`) käyttää `<ImageBackground>` + scrim-overlay (`rgba(14,11,9,0.25)`) jotta kuva paistaa läpi mutta sisältö on luettavaa. Kortit (SearchPanel, EventCard, LinkListRow) puoliksi läpinäkyviä `rgba(26,20,17,0.88-0.92)` jotta tausta näkyy reunoilla.
