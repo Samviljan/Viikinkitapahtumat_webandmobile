@@ -148,9 +148,22 @@ See `/app/memory/test_credentials.md`.
 - ✅ Pre-existing iter5 PATCH-speed flake ei toistunut (raja 2 s → 5 s pidetty).
 
 
-## Backlog (priorities)
-- **P1** Native mobile app (React Native / Expo) syncing `/api/events`.
+## Iteration 14 — Native mobile app MVP (vaihe 1) (2026-04-26)
+- ✅ **Uusi projekti** `/app/mobile/` — Expo SDK 52 + React Native 0.76 + TypeScript strict + Expo Router 4.
+- ✅ **3 tab-näyttöä**: Etusivu (lista + tekstihaku + suodatuschipit), Suosikit, Kalenteri (kuukausittain).
+- ✅ **Tapahtumasivu**: iso hero-kuva, lippu, kategoria, "Tapahtuman alkuun N päivää", järjestäjä, **Avaa kartassa** (iOS Maps / Android geo:), **Tallenna**, **Sivusto**-linkki, kuvagalleria.
+- ✅ **Sijaintihaku (4c)**: tekstihaku JA GPS "Lähellä minua" (≤200 km, expo-location, lupakysely, expo-location.geocode).
+- ✅ **Suosikit**: AsyncStorage offline-tilassa, modulaarinen subscriber-malli sync 3 näytön välillä.
+- ✅ **Sama backend** (REACT_APP_BACKEND_URL Expo `extra.apiBaseUrl` -kentässä). resolveImageUrl tukee GridFS-relatiivisia URL:ja.
+- ✅ Sama viikinki-estetiikka kuin sivustolla (musta + ember + kulta + bone).
+- ✅ TypeScript: 0 errors. Asennus + typecheck onnistunut. Käyttöohje `/app/mobile/README.md`.
+
+
 - **P2** Date pickers: replace native `<input type="date">` with shadcn Calendar+Popover for visual consistency.
 - **P2** PWA push, brute-force-rate-limit, OG-tagit, custom favicon, lisämuistutus 1 vrk ennen, admin image-library picker UI.
 - **P2** Add ET/PL event content auto-translation (currently translation_service only fills fi/en/sv).
 - **P3** Production data sync utility (preview admin → prod admin).
+## Backlog (priorities)
+- **P1 (mobile vaihe 2)** Push-notifikaatiot suosikkitapahtumista, käyttäjätilit, premium-versio (lipunmyynti, ennakkotarjoukset), offline-välimuisti.
+- **P2** Shadcn Calendar+Popover date-pickeriksi, PWA push, brute-force-rate-limit, OG-tagit, custom favicon, lisämuistutus 1 vrk ennen, admin "Valitse galleriasta" -kuvavalitsin, ET/PL auto-käännös tapahtumasisällölle, lat/lon-kentät tapahtumiin (Android-geocode-luotettavuus).
+- **P3** Preview→prod data sync utility.

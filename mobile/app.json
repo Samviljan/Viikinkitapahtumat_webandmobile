@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Viikinkitapahtumat",
+    "slug": "viikinkitapahtumat",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "viikinki",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#0E0B09"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "fi.viikinkitapahtumat.mobile",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Käytämme sijaintiasi näyttääksemme lähimmät viikinkitapahtumat."
+      }
+    },
+    "android": {
+      "package": "fi.viikinkitapahtumat.mobile",
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Käytämme sijaintiasi näyttääksemme lähimmät viikinkitapahtumat."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "apiBaseUrl": "https://events-refresh-1.preview.emergentagent.com"
+    }
+  }
+}
