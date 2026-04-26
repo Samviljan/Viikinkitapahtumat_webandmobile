@@ -198,9 +198,12 @@ export default function AdminEventEditDialog({ event, open, onOpenChange, onSave
                 <SelectTrigger data-testid="edit-fight-style" className={fieldClass}><SelectValue /></SelectTrigger>
                 <SelectContent className="bg-viking-surface border-viking-edge text-viking-bone">
                   <SelectItem value="_none">—</SelectItem>
-                  <SelectItem value="Western">Western</SelectItem>
-                  <SelectItem value="Eastern">Eastern</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
+                  <SelectItem value="Western">{t("submit.fight_western")}</SelectItem>
+                  <SelectItem value="Eastern">{t("submit.fight_eastern")}</SelectItem>
+                  <SelectItem value="Western+Eastern">{t("submit.fight_western_eastern")}</SelectItem>
+                  <SelectItem value="Buhurt">{t("submit.fight_buhurt")}</SelectItem>
+                  <SelectItem value="SCA">{t("submit.fight_sca")}</SelectItem>
+                  <SelectItem value="Other">{t("submit.fight_other")}</SelectItem>
                 </SelectContent>
               </Select>
             </Field>

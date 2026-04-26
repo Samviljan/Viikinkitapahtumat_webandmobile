@@ -299,6 +299,15 @@ export default function Submit() {
                   <SelectItem value="Eastern" className="focus:bg-viking-surface2 focus:text-viking-gold">
                     {t("submit.fight_eastern")}
                   </SelectItem>
+                  <SelectItem value="Western+Eastern" className="focus:bg-viking-surface2 focus:text-viking-gold">
+                    {t("submit.fight_western_eastern")}
+                  </SelectItem>
+                  <SelectItem value="Buhurt" className="focus:bg-viking-surface2 focus:text-viking-gold">
+                    {t("submit.fight_buhurt")}
+                  </SelectItem>
+                  <SelectItem value="SCA" className="focus:bg-viking-surface2 focus:text-viking-gold">
+                    {t("submit.fight_sca")}
+                  </SelectItem>
                   <SelectItem value="Other" className="focus:bg-viking-surface2 focus:text-viking-gold">
                     {t("submit.fight_other")}
                   </SelectItem>
