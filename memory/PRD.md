@@ -211,6 +211,17 @@ See `/app/memory/test_credentials.md`.
 - ✅ EventCard PDF-linkki listanäkymässä.
 
 ## Iteration 24 — PDF link only on web (mobile freemium) (2026-04-26)
+- ✅ Mobile EventCard PDF-linkki poistettu (premium feature vaihe 2).
+- ✅ Web EventDetail + CalendarDayCell saaneet PDF-linkin/indikaattorin.
+
+## Iteration 25 — Nordic tagline (2026-04-26)
+- ✅ "Suomen viikinki…" → "Pohjoisen viikinki…" / "Nordic" / "Nordisk" / "Põhjamaade" / "Nordycki" 5 kielelle, mobiili + web + manifest + meta-description.
+
+## Iteration 26 — Mobile Guilds list parity with web (2026-04-26)
+- ✅ **SVTL info -kortti** lisätty mobiilin Kaartit-näyttöön (samanlainen kuin web /guilds): kullainen "SVTL"-eyebrow, virallinen otsikko "Suomen viikinkiaikaisten taistelulajien liitto ry", kuvaus, "SVTL:n verkkosivut" -nappi (avaa https://www.svtl.fi/svtl).
+- ✅ **Kategoria-mappaus korjattu**: aikaisemmin mobiili etsi `category === "svtl"` mutta backend palauttaa `"svtl_member"` ⇒ kategoria oli aina muu / "SVTL_MEMBER" näkyi raakana avaimena. Korjattu käyttämään SECTION_ORDER `["svtl_member", "other"]` joka mappaa suomenkielisiin otsikoihin "SVTL:n jäsenseurat" ja "Muut seurat, kaartit ja yhdistykset".
+- ✅ **Järjestys yhdenmukaistettu webin kanssa**: SVTL-info → SVTL-jäsenseurat → Muut seurat. Sisäinen järjestys per ryhmä noudattaa server-side `order_index`-kenttää.
+- ✅ Verifioitu Playwrightilla: `svtl-info-card` näkyy, `svtl-link` toimii, "SVTL:n jäsenseurat"-otsikko + "Muut seurat" otsikko näkyvissä, ei enää "SVTL_MEMBER"-raakatekstiä.
 - ✅ **Mobiili**: poistettu PDF-ohjelma-linkki `EventCard.tsx`:stä (premium-ominaisuus, jätetään mobiilin maksulliselle versiolle vaihe 2:ssa). Vahvistettu Playwrightilla 0 PDF-linkkiä mobiilissa.
 - ✅ **Web EventDetail**: lisätty näkyvä "Tapahtuman ohjelma" -nappi (kullainen `outline`-tyyli, `<FileText/>`-ikoni) "Sivusto"-napin viereen. Avautuu uudessa välilehdessä.
 - ✅ **Web kalenterinäkymä CalendarDayCell**: lisätty pieni FileText-ikoni tapahtuman otsikon perään kun `program_pdf_url` on asetettu — visuaalinen vihje että ohjelma on saatavilla kun käyttäjä klikkaa tapahtumaa.

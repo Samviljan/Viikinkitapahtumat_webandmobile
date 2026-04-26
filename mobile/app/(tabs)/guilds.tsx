@@ -1,49 +1,71 @@
 import React, { useMemo } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  Linking,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppBackground } from "@/src/components/AppBackground";
 import { LinkListRow, SectionTitle } from "@/src/components/LinkListRow";
 import { useGuilds } from "@/src/hooks/useDirectory";
-import { colors, spacing, text } from "@/src/lib/theme";
+import { colors, radius, spacing, text } from "@/src/lib/theme";
 
-const CATEGORY_LABELS: Record<string, string> = {
-  svtl: "SVTL & jäsenseurat",
-  other: "Muut kaartit & yhdistykset",
+const SVTL_URL = "https://www.svtl.fi/svtl";
+
+// Mirror the website's grouping order on /guilds:
+//   1. SVTL info card (always first)
+//   2. SVTL member clubs (category === "svtl_member")
+//   3. Other clubs / guilds / associations (category === "other")
+const SECTION_ORDER = ["svtl_member", "other"] as const;
+
+const SECTION_LABELS: Record<string, string> = {
+  svtl_member: "SVTL:n jäsenseurat",
+  other: "Muut seurat, kaartit ja yhdistykset",
 };
 
 export default function GuildsScreen() {
   const { data, loading, error } = useGuilds();
 
-  // Group by category preserving server-side ordering inside each group
   const sections = useMemo(() => {
-    const map = new Map<string, typeof data>();
+    const groups: Record<string, typeof data> = {};
     for (const g of data) {
-      const key = g.category || "other";
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(g);
+      const key = SECTION_ORDER.includes(
+        (g.category as (typeof SECTION_ORDER)[number]) ?? "other",
+      )
+        ? g.category
+        : "other";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(g);
     }
-    // Order: svtl first, then alphabetical
-    return Array.from(map.entries()).sort(([a], [b]) => {
-      if (a === "svtl") return -1;
-      if (b === "svtl") return 1;
-      return a.localeCompare(b);
-    });
+    // Preserve server-side order_index inside each group.
+    for (const k of Object.keys(groups)) {
+      groups[k].sort(
+        (a, b) =>
+          (a.order_index ?? 0) - (b.order_index ?? 0) ||
+          a.name.localeCompare(b.name),
+      );
+    }
+    return SECTION_ORDER.filter((k) => groups[k]?.length).map((k) => ({
+      key: k,
+      label: SECTION_LABELS[k],
+      items: groups[k],
+    }));
   }, [data]);
 
-  // Flatten into a single FlatList stream (heading rows + guild rows)
   type Row =
     | { type: "section"; key: string; label: string }
     | { type: "guild"; key: string; guild: (typeof data)[number] };
 
   const rows: Row[] = useMemo(() => {
     const out: Row[] = [];
-    for (const [cat, list] of sections) {
-      out.push({
-        type: "section",
-        key: `s-${cat}`,
-        label: CATEGORY_LABELS[cat] || cat.toUpperCase(),
-      });
-      for (const g of list) {
+    for (const s of sections) {
+      out.push({ type: "section", key: `s-${s.key}`, label: s.label });
+      for (const g of s.items) {
         out.push({ type: "guild", key: `g-${g.id}`, guild: g });
       }
     }
@@ -67,6 +89,28 @@ export default function GuildsScreen() {
                 Suomalaiset viikinkiajan, rauta-ajan ja varhaiskeskiajan
                 harrastusyhteisöt. Napauta avataksesi seuran kotisivut.
               </Text>
+
+              {/* SVTL info card — mirrors the website's hero block */}
+              <View style={styles.svtlCard} testID="svtl-info-card">
+                <Text style={styles.svtlEyebrow}>SVTL</Text>
+                <Text style={styles.svtlTitle}>
+                  Suomen viikinkiaikaisten taistelulajien liitto ry
+                </Text>
+                <Text style={styles.svtlBody}>
+                  SVTL on vuonna 2025 perustettu viikinkiajan taistelutaitojen
+                  harrastajien valtakunnallinen lajiliitto. Liiton jäseniä ovat
+                  viikinkiaikaisia, rautakautisia tai niihin rinnastettavia
+                  taistelulajeja harjoittavat yhteisöt.
+                </Text>
+                <Pressable
+                  testID="svtl-link"
+                  onPress={() => Linking.openURL(SVTL_URL).catch(() => {})}
+                  style={styles.svtlBtn}
+                >
+                  <Text style={styles.svtlBtnText}>SVTL:n verkkosivut</Text>
+                  <Ionicons name="open-outline" size={12} color={colors.gold} />
+                </Pressable>
+              </View>
             </View>
           }
           renderItem={({ item }) => {
@@ -109,6 +153,57 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginBottom: spacing.md,
+  },
+  svtlCard: {
+    backgroundColor: "rgba(26,20,17,0.92)",
+    borderColor: colors.gold,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    shadowColor: colors.gold,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+  },
+  svtlEyebrow: {
+    color: colors.gold,
+    fontSize: 11,
+    letterSpacing: 2.4,
+    fontWeight: "800",
+    marginBottom: spacing.xs,
+  },
+  svtlTitle: {
+    color: colors.bone,
+    fontSize: 18,
+    fontWeight: "700",
+    lineHeight: 24,
+    marginBottom: spacing.sm,
+  },
+  svtlBody: {
+    color: colors.stone,
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: spacing.md,
+  },
+  svtlBtn: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.gold,
+    backgroundColor: "rgba(201,161,74,0.08)",
+  },
+  svtlBtnText: {
+    color: colors.gold,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
   },
   center: { alignItems: "center", paddingVertical: spacing.xxl },
   empty: { color: colors.stone, padding: spacing.lg, textAlign: "center" },
