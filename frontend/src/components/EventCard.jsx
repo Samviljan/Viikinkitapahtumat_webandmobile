@@ -1,9 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, ArrowUpRight } from "lucide-react";
+import { Calendar, MapPin, ArrowUpRight, Hourglass, Clock } from "lucide-react";
 import { useI18n, pickLocalized } from "@/lib/i18n";
 import FavoriteButton from "@/components/FavoriteButton";
 import RemindMeButton from "@/components/RemindMeButton";
+import { flagFor } from "@/lib/countries";
 
 export default function EventCard({ event, compact = false }) {
   const { lang, t } = useI18n();
@@ -12,6 +13,8 @@ export default function EventCard({ event, compact = false }) {
 
   const dateLabel = formatDateRange(event.start_date, event.end_date, lang);
   const categoryLabel = t(`cats.${event.category}`);
+  const flag = flagFor(event.country || "FI");
+  const { daysUntil, durationDays } = computeEventTiming(event.start_date, event.end_date);
 
   return (
     <Link
@@ -28,12 +31,13 @@ export default function EventCard({ event, compact = false }) {
             className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-viking-surface via-viking-surface/40 to-transparent" />
-          {/* Single-color category bar across the image */}
+          {/* Single-color category bar with country flag */}
           <div
             data-testid={`event-card-cat-${event.id}`}
-            className="absolute top-0 left-0 right-0 bg-viking-ember/95 text-viking-bone font-rune uppercase tracking-[0.2em] text-[10px] sm:text-[11px] px-4 py-2 text-center border-b border-viking-gold/40 ember-glow shadow-[0_2px_0_rgba(0,0,0,0.35)]"
+            className="absolute top-0 left-0 right-0 bg-viking-ember/95 text-viking-bone font-rune uppercase tracking-[0.2em] text-[10px] sm:text-[11px] px-4 py-2 flex items-center justify-center gap-2 border-b border-viking-gold/40 ember-glow shadow-[0_2px_0_rgba(0,0,0,0.35)]"
           >
-            {categoryLabel}
+            <span aria-hidden="true" className="text-base leading-none">{flag}</span>
+            <span>{categoryLabel}</span>
           </div>
           {/* Action icons (favorite + remind) bottom-right of image */}
           <div className="absolute bottom-3 right-3 flex items-center gap-2">
@@ -47,9 +51,10 @@ export default function EventCard({ event, compact = false }) {
         {(compact || !event.image_url) && (
           <div
             data-testid={`event-card-cat-${event.id}`}
-            className="-mx-5 sm:-mx-6 -mt-5 sm:-mt-6 mb-1 bg-viking-ember/95 text-viking-bone font-rune uppercase tracking-[0.2em] text-[10px] sm:text-[11px] px-5 sm:px-6 py-2 text-center border-b border-viking-gold/40 ember-glow"
+            className="-mx-5 sm:-mx-6 -mt-5 sm:-mt-6 mb-1 bg-viking-ember/95 text-viking-bone font-rune uppercase tracking-[0.2em] text-[10px] sm:text-[11px] px-5 sm:px-6 py-2 flex items-center justify-center gap-2 border-b border-viking-gold/40 ember-glow"
           >
-            {categoryLabel}
+            <span aria-hidden="true" className="text-base leading-none">{flag}</span>
+            <span>{categoryLabel}</span>
           </div>
         )}
         <h3 className="font-serif text-2xl text-viking-bone leading-tight group-hover:text-viking-gold transition-colors">
@@ -80,6 +85,31 @@ export default function EventCard({ event, compact = false }) {
           )}
         </div>
 
+        {/* Countdown + duration row */}
+        {(daysUntil !== null || durationDays !== null) && (
+          <div
+            data-testid={`event-card-countdown-${event.id}`}
+            className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-[11px] text-viking-bone"
+          >
+            {daysUntil !== null && (
+              <span className="inline-flex items-center gap-1.5">
+                <Hourglass size={12} className="text-viking-ember" />
+                <span className="font-rune tracking-[0.15em] uppercase text-viking-ember">
+                  {countdownLabel(daysUntil, t)}
+                </span>
+              </span>
+            )}
+            {durationDays !== null && durationDays > 1 && (
+              <span className="inline-flex items-center gap-1.5 text-viking-stone">
+                <Clock size={12} className="text-viking-gold" />
+                <span className="font-rune tracking-[0.15em] uppercase">
+                  {durationLabel(durationDays, t)}
+                </span>
+              </span>
+            )}
+          </div>
+        )}
+
         <div className="flex items-center gap-2 pt-1 text-xs font-rune text-viking-ember opacity-0 group-hover:opacity-100 transition-opacity">
           {t("events.view")}
           <ArrowUpRight size={12} />
@@ -87,6 +117,41 @@ export default function EventCard({ event, compact = false }) {
       </div>
     </Link>
   );
+}
+
+/**
+ * Returns:
+ * - daysUntil: integer days until the event STARTS (0 = today, negative = ongoing/past)
+ *   We expose 0 if today is between start and end (event is happening now).
+ *   Returns null if the event has already ended.
+ * - durationDays: total whole days the event spans (1 for single-day, 2 for two-day, …)
+ */
+export function computeEventTiming(start, end) {
+  const s = parseDate(start);
+  if (!s) return { daysUntil: null, durationDays: null };
+  const e = parseDate(end) || s;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  s.setHours(0, 0, 0, 0);
+  e.setHours(0, 0, 0, 0);
+  const ms = 1000 * 60 * 60 * 24;
+  const durationDays = Math.round((e - s) / ms) + 1;
+
+  if (today > e) return { daysUntil: null, durationDays };
+  if (today >= s && today <= e) return { daysUntil: 0, durationDays };
+  const daysUntil = Math.round((s - today) / ms);
+  return { daysUntil, durationDays };
+}
+
+function countdownLabel(days, t) {
+  if (days === 0) return t("events.happening_now");
+  if (days === 1) return t("events.in_one_day");
+  return t("events.in_n_days").replace("{n}", String(days));
+}
+
+function durationLabel(days, t) {
+  if (days === 1) return t("events.duration_one");
+  return t("events.duration_n").replace("{n}", String(days));
 }
 
 export function formatDateRange(start, end, lang) {

@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { CheckCircle2 } from "lucide-react";
 
 const CATS = ["market", "training_camp", "course", "festival", "meetup", "other"];
+const COUNTRIES = ["FI", "SE", "EE", "NO", "DK", "PL", "DE"];
 const fieldClass =
   "bg-viking-surface border-viking-edge rounded-sm text-viking-bone placeholder:text-viking-stone focus:border-viking-ember focus:ring-viking-ember";
 
@@ -34,6 +35,7 @@ export default function Submit() {
     description_en: "",
     description_sv: "",
     category: "market",
+    country: "FI",
     location: "",
     start_date: "",
     end_date: "",
@@ -147,7 +149,7 @@ export default function Submit() {
             </Field>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-5">
+          <div className="grid sm:grid-cols-3 gap-5">
             <Field label={t("submit.category")} required>
               <Select value={form.category} onValueChange={(v) => setForm((p) => ({ ...p, category: v }))}>
                 <SelectTrigger data-testid="field-category" className={fieldClass}>
@@ -161,6 +163,24 @@ export default function Submit() {
                       className="focus:bg-viking-surface2 focus:text-viking-gold"
                     >
                       {t(`cats.${c}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label={t("submit.country")} required>
+              <Select value={form.country} onValueChange={(v) => setForm((p) => ({ ...p, country: v }))}>
+                <SelectTrigger data-testid="field-country" className={fieldClass}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-viking-surface border-viking-edge text-viking-bone">
+                  {COUNTRIES.map((c) => (
+                    <SelectItem
+                      key={c}
+                      value={c}
+                      className="focus:bg-viking-surface2 focus:text-viking-gold"
+                    >
+                      {t(`countries.${c}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>

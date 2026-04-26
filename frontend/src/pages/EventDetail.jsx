@@ -2,11 +2,12 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "@/lib/api";
 import { useI18n, pickLocalized } from "@/lib/i18n";
-import { Calendar, MapPin, User, Mail, Globe, ChevronLeft } from "lucide-react";
+import { Calendar, MapPin, User, Mail, Globe, ChevronLeft, Hourglass, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatDateRange } from "@/components/EventCard";
+import { formatDateRange, computeEventTiming } from "@/components/EventCard";
 import FavoriteButton from "@/components/FavoriteButton";
 import RemindMeButton from "@/components/RemindMeButton";
+import { flagFor } from "@/lib/countries";
 
 export default function EventDetail() {
   const { id } = useParams();
@@ -46,6 +47,9 @@ export default function EventDetail() {
 
   const title = pickLocalized(event, lang, "title");
   const desc = pickLocalized(event, lang, "description");
+  const flag = flagFor(event.country || "FI");
+  const { daysUntil, durationDays } = computeEventTiming(event.start_date, event.end_date);
+  const gallery = Array.isArray(event.gallery) ? event.gallery.filter(Boolean) : [];
 
   return (
     <article className="pb-20" data-testid="event-detail">
@@ -68,8 +72,34 @@ export default function EventDetail() {
         </Link>
 
         <div className="carved-card rounded-sm p-7 sm:p-12">
-          <div className="text-overline mb-4 text-viking-gold">{t(`cats.${event.category}`)}</div>
+          <div className="flex items-center gap-3 mb-4">
+            <span aria-hidden="true" className="text-2xl leading-none">{flag}</span>
+            <span className="text-overline text-viking-gold">{t(`cats.${event.category}`)}</span>
+            <span className="text-overline text-viking-stone">·</span>
+            <span className="text-overline text-viking-stone">{t(`countries.${event.country || "FI"}`)}</span>
+          </div>
           <h1 className="font-serif text-4xl sm:text-5xl text-viking-bone leading-tight mb-6">{title}</h1>
+
+          {/* Countdown / duration banner */}
+          {(daysUntil !== null || (durationDays && durationDays > 1)) && (
+            <div
+              data-testid="event-detail-countdown"
+              className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-6"
+            >
+              {daysUntil !== null && (
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-viking-ember/50 bg-viking-ember/10 text-viking-ember font-rune text-[11px] tracking-[0.15em] uppercase">
+                  <Hourglass size={13} />
+                  {countdownLabelDetail(daysUntil, t)}
+                </span>
+              )}
+              {durationDays && durationDays > 1 && (
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-viking-gold/50 bg-viking-gold/5 text-viking-gold font-rune text-[11px] tracking-[0.15em] uppercase">
+                  <Clock size={13} />
+                  {durationLabelDetail(durationDays, t)}
+                </span>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 py-6 border-y border-viking-edge mb-8">
             <DetailRow icon={Calendar} label={formatDateRange(event.start_date, event.end_date, lang)} />
@@ -85,6 +115,31 @@ export default function EventDetail() {
           </div>
 
           <p className="font-serif text-lg text-viking-bone leading-relaxed whitespace-pre-line">{desc}</p>
+
+          {gallery.length > 0 && (
+            <div className="mt-10" data-testid="event-detail-gallery">
+              <div className="text-overline mb-4 text-viking-stone">{t("events.gallery")}</div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {gallery.map((url, idx) => (
+                  <a
+                    key={`${url}-${idx}`}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`event-detail-gallery-item-${idx}`}
+                    className="group block aspect-[4/3] overflow-hidden rounded-sm border border-viking-edge hover:border-viking-gold/60 transition-colors"
+                  >
+                    <img
+                      src={url}
+                      alt=""
+                      loading="lazy"
+                      className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
+                    />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="mt-10 flex flex-wrap items-center gap-3">
             {event.link && (
@@ -111,4 +166,15 @@ function DetailRow({ icon: Icon, label }) {
       <span>{label}</span>
     </div>
   );
+}
+
+function countdownLabelDetail(days, t) {
+  if (days === 0) return t("events.happening_now");
+  if (days === 1) return t("events.in_one_day");
+  return t("events.in_n_days").replace("{n}", String(days));
+}
+
+function durationLabelDetail(days, t) {
+  if (days === 1) return t("events.duration_one");
+  return t("events.duration_n").replace("{n}", String(days));
 }

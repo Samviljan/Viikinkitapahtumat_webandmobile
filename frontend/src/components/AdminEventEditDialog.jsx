@@ -26,11 +26,13 @@ const fieldClass =
   "bg-viking-surface border-viking-edge rounded-sm text-viking-bone placeholder:text-viking-stone focus:border-viking-ember focus:ring-viking-ember";
 
 const CATS = ["market", "training_camp", "course", "festival", "meetup", "other"];
+const COUNTRIES = ["FI", "SE", "EE", "NO", "DK", "PL", "DE"];
 
 export default function AdminEventEditDialog({ event, open, onOpenChange, onSaved }) {
   const { t } = useI18n();
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [galleryDraft, setGalleryDraft] = useState("");
 
   useEffect(() => {
     if (event) {
@@ -42,6 +44,7 @@ export default function AdminEventEditDialog({ event, open, onOpenChange, onSave
         description_en: event.description_en || "",
         description_sv: event.description_sv || "",
         category: event.category || "other",
+        country: event.country || "FI",
         location: event.location || "",
         start_date: event.start_date || "",
         end_date: event.end_date || "",
@@ -49,9 +52,11 @@ export default function AdminEventEditDialog({ event, open, onOpenChange, onSave
         organizer_email: event.organizer_email || "",
         link: event.link || "",
         image_url: event.image_url || "",
+        gallery: Array.isArray(event.gallery) ? event.gallery : [],
         audience: event.audience || "",
         fight_style: event.fight_style || "",
       });
+      setGalleryDraft("");
     }
   }, [event]);
 
@@ -66,6 +71,7 @@ export default function AdminEventEditDialog({ event, open, onOpenChange, onSave
       const payload = { ...form };
       if (!payload.organizer_email) delete payload.organizer_email;
       if (!payload.end_date) delete payload.end_date;
+      payload.gallery = (payload.gallery || []).filter(Boolean);
       const { data } = await api.put(`/admin/events/${event.id}`, payload);
       toast.success(t("admin.action_ok"));
       onSaved && onSaved(data);
@@ -117,7 +123,7 @@ export default function AdminEventEditDialog({ event, open, onOpenChange, onSave
             </Field>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-3 gap-4">
             <Field label={t("submit.category")} required>
               <Select value={form.category} onValueChange={(v) => setForm((p) => ({ ...p, category: v }))}>
                 <SelectTrigger data-testid="edit-category" className={fieldClass}>
@@ -127,6 +133,20 @@ export default function AdminEventEditDialog({ event, open, onOpenChange, onSave
                   {CATS.map((c) => (
                     <SelectItem key={c} value={c} className="focus:bg-viking-surface2 focus:text-viking-gold">
                       {t(`cats.${c}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label={t("submit.country")} required>
+              <Select value={form.country} onValueChange={(v) => setForm((p) => ({ ...p, country: v }))}>
+                <SelectTrigger data-testid="edit-country" className={fieldClass}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-viking-surface border-viking-edge text-viking-bone">
+                  {COUNTRIES.map((c) => (
+                    <SelectItem key={c} value={c} className="focus:bg-viking-surface2 focus:text-viking-gold">
+                      {t(`countries.${c}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -190,6 +210,63 @@ export default function AdminEventEditDialog({ event, open, onOpenChange, onSave
           </Field>
           <Field label={t("submit.image")}>
             <Input data-testid="edit-image" value={form.image_url} onChange={update("image_url")} className={fieldClass} placeholder="https://" />
+          </Field>
+
+          <Field label={t("submit.gallery")}>
+            <div className="space-y-2" data-testid="edit-gallery">
+              {form.gallery.length === 0 && (
+                <p className="text-xs text-viking-stone italic">{t("submit.gallery_empty")}</p>
+              )}
+              {form.gallery.map((url, idx) => (
+                <div key={`${url}-${idx}`} className="flex items-center gap-2">
+                  <img
+                    src={url}
+                    alt=""
+                    className="h-10 w-14 object-cover rounded-sm border border-viking-edge"
+                    onError={(e) => {
+                      e.currentTarget.style.opacity = "0.3";
+                    }}
+                  />
+                  <span className="flex-1 text-xs text-viking-stone truncate">{url}</span>
+                  <button
+                    type="button"
+                    data-testid={`edit-gallery-remove-${idx}`}
+                    onClick={() =>
+                      setForm((p) => ({
+                        ...p,
+                        gallery: p.gallery.filter((_, i) => i !== idx),
+                      }))
+                    }
+                    className="font-rune text-[10px] tracking-[0.2em] text-viking-stone hover:text-viking-ember uppercase"
+                  >
+                    {t("admin.remove")}
+                  </button>
+                </div>
+              ))}
+              <div className="flex gap-2">
+                <Input
+                  data-testid="edit-gallery-input"
+                  value={galleryDraft}
+                  onChange={(e) => setGalleryDraft(e.target.value)}
+                  className={fieldClass}
+                  placeholder="https://example.com/image.jpg"
+                />
+                <Button
+                  type="button"
+                  data-testid="edit-gallery-add"
+                  onClick={() => {
+                    const v = galleryDraft.trim();
+                    if (!v) return;
+                    setForm((p) => ({ ...p, gallery: [...p.gallery, v] }));
+                    setGalleryDraft("");
+                  }}
+                  variant="outline"
+                  className="border-viking-edge text-viking-bone hover:border-viking-gold hover:text-viking-gold rounded-sm font-rune text-[10px]"
+                >
+                  {t("admin.add")}
+                </Button>
+              </div>
+            </div>
           </Field>
         </div>
 

@@ -31,6 +31,7 @@ from email_service import (
     send_event_reminders as svc_send_event_reminders,
     make_unsubscribe_token,
 )
+from translation_service import fill_missing_translations
 
 
 # -----------------------------------------------------------------------------
@@ -117,6 +118,7 @@ class UserOut(BaseModel):
 
 EventCategory = Literal["market", "training_camp", "course", "festival", "meetup", "other"]
 EventStatus = Literal["pending", "approved", "rejected"]
+EventCountry = Literal["FI", "SE", "EE", "NO", "DK", "PL", "DE"]
 
 
 class EventCreate(BaseModel):
@@ -128,6 +130,7 @@ class EventCreate(BaseModel):
     description_en: Optional[str] = ""
     description_sv: Optional[str] = ""
     category: EventCategory = "other"
+    country: EventCountry = "FI"
     location: str
     start_date: str
     end_date: Optional[str] = None
@@ -135,6 +138,7 @@ class EventCreate(BaseModel):
     organizer_email: Optional[EmailStr] = None
     link: Optional[str] = ""
     image_url: Optional[str] = ""
+    gallery: List[str] = []
     audience: Optional[str] = ""
     fight_style: Optional[str] = ""
 
@@ -148,6 +152,7 @@ class EventOut(BaseModel):
     description_en: str
     description_sv: str
     category: str
+    country: str = "FI"
     location: str
     start_date: str
     end_date: Optional[str] = None
@@ -155,6 +160,7 @@ class EventOut(BaseModel):
     organizer_email: Optional[str] = None
     link: str
     image_url: str
+    gallery: List[str] = []
     status: str
     created_at: str
     audience: Optional[str] = ""
@@ -175,6 +181,7 @@ class EventEdit(BaseModel):
     description_en: Optional[str] = ""
     description_sv: Optional[str] = ""
     category: EventCategory = "other"
+    country: EventCountry = "FI"
     location: str
     start_date: str
     end_date: Optional[str] = None
@@ -182,6 +189,7 @@ class EventEdit(BaseModel):
     organizer_email: Optional[EmailStr] = None
     link: Optional[str] = ""
     image_url: Optional[str] = ""
+    gallery: List[str] = []
     audience: Optional[str] = ""
     fight_style: Optional[str] = ""
 
@@ -296,12 +304,16 @@ async def submit_event(payload: EventCreate, background: BackgroundTasks):
         "description_sv": doc.get("description_sv") or "",
         "link": doc.get("link") or "",
         "image_url": doc.get("image_url") or "",
+        "gallery": doc.get("gallery") or [],
+        "country": doc.get("country") or "FI",
         "audience": doc.get("audience") or "",
         "fight_style": doc.get("fight_style") or "",
     })
     await db.events.insert_one(doc)
     # Fire-and-forget admin notification
     background.add_task(notify_admin_new_event, _serialize_event(doc))
+    # Fill missing translations in the background
+    background.add_task(fill_missing_translations, db, doc["id"])
     return EventOut(**_serialize_event(doc))
 
 
@@ -550,12 +562,15 @@ async def admin_delete_event(event_id: str, _admin: dict = Depends(get_admin_use
 async def admin_edit_event(
     event_id: str,
     payload: EventEdit,
+    background: BackgroundTasks,
     _admin: dict = Depends(get_admin_user),
 ):
     update_doc = payload.model_dump()
     # Normalise empty string-or-null defaults
     for k in ("title_en", "title_sv", "description_en", "description_sv", "link", "image_url", "audience", "fight_style"):
         update_doc[k] = update_doc.get(k) or ""
+    update_doc["gallery"] = update_doc.get("gallery") or []
+    update_doc["country"] = update_doc.get("country") or "FI"
     update_doc["updated_at"] = datetime.now(timezone.utc).isoformat()
     res = await db.events.find_one_and_update(
         {"id": event_id},
@@ -565,6 +580,8 @@ async def admin_edit_event(
     )
     if not res:
         raise HTTPException(status_code=404, detail="Event not found")
+    # Fill any newly-empty translations in the background
+    background.add_task(fill_missing_translations, db, event_id)
     return EventOut(**res)
 
 

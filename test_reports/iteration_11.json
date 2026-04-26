@@ -1,0 +1,43 @@
+{
+  "summary": "Iter 11 (country dropdown + gallery + auto-translation + days-countdown + SVTL text fix) — backend 4/4 new + 101/103 regression pass. Created /app/backend/tests/test_iteration11_country_gallery_translation.py with 4 tests: (1) GET /api/events exposes country (default 'FI') and gallery (default []) on all 11 existing events, (2) PUT /api/admin/events/{id} persists country='SE' + gallery=[two URLs] and is idempotent (overwrite back to country='FI', gallery=[] succeeds and persists), (3) PUT with country='ZZ' returns HTTP 422, (4) translation smoke test — POST /api/events with only Finnish content (title='Iteraatio11 testitapahtuma {uuid}'), wait up to 30s polling /api/admin/events/{id}, then assert title_en/title_sv/description_en/description_sv populated AND not equal to the FI source AND title_en doesn't contain 'testitapahtuma' (proves Claude Haiku 4.5 actually translated). Backend logs confirmed `auto-translated event ... fields=['title_en', 'title_sv', 'description_en', 'description_sv']` typically completes in 4-6s. Frontend SVTL strings verified live on /guilds for FI/EN/SV via lang-switcher → lang-option-{fi|en|sv} dropdown, and svtl-link data-testid stays present in all 3 languages. Public GET /api/events confirms country+gallery exposed on all 11 seeded events.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/events (seed data)", "issue": "Pre-existing seed drift: 'Bonk Pohjalla VII' is now category='meetup' but tests test_iteration4_past_filter::test_training_camp_with_past_includes_bonk and test_seeded_and_new_fields::test_bonk_audience_and_fight_style still expect category='training_camp'. These 2 are unrelated to iter 11 changes (country/gallery/translation) — they were failing before iter 11 country/gallery were added."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration11_country_gallery_translation.py",
+    "/app/test_reports/pytest/iter11_results.xml",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "OPTIONAL: Update seed for 'Bonk Pohjalla VII' to category='training_camp' OR update test_iteration4_past_filter and test_seeded_and_new_fields fixtures to match new category='meetup'. Pre-existing, not iter 11 regression.",
+    "Frontend live frontend testing of EventCard countdown badges (event-card-countdown-{id}) and country flag emoji on category bar was only partially verifiable: clicking the LISTA tab on /events page via Playwright didn't switch the React tab state (KALENTERI default rendered an empty April 2026 calendar). Main agent: please self-verify by visiting https://events-refresh-1.preview.emergentagent.com/events , clicking LISTA tab, and confirming each EventCard shows '🇫🇮 …' in event-card-cat-{id} and 'N päivää jäljellä' in event-card-countdown-{id}. The data flow is verified (backend exposes country/gallery and i18n keys are wired), only the LISTA toggle automation was flaky."
+  ],
+  "critical_code_review_comments": [
+    "translation_service.fill_missing_translations uses _pick_source which prefers fi > en > sv via tuple order, then sorts by -len. Verified correct: only fi populated → src='fi' → translates to en+sv. Backend logs confirm the BackgroundTask runs 4-6s after POST /api/events (LiteLLM completion to claude-haiku-4-5-20251001 via Emergent provider).",
+    "EventCountry Literal['FI','SE','EE','NO','DK','PL','DE'] enforced in EventCreate + EventEdit. Pydantic correctly returns 422 for country='ZZ'.",
+    "admin_edit_event normalizes gallery to [] and country to 'FI' via `update_doc.get(...) or default` — safe pattern for None/empty input.",
+    "Public GET /api/events/{id} requires status='approved'. The translation test correctly polls /api/admin/events/{id} (admin-authed) for pending events.",
+    "EventOut model declares country: str (default 'FI') and gallery: List[str] (default []) — old documents without these fields are normalized via `doc.get('gallery') or []` and `doc.get('country') or 'FI'` at insert time and at admin PUT time. Existing 11 events all expose both fields per public GET."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration11_country_gallery_translation.py (new)"
+  ],
+  "success_rate": {
+    "backend": "100% on iter 11 new tests (4/4); 98% overall (101/103) — 2 pre-existing seed-drift failures unrelated to iter 11",
+    "frontend": "SVTL FI/EN/SV text fixes 100% verified on /guilds. EventCard countdown + flag and EventDetail countdown/gallery NOT fully automated due to LISTA tab toggle automation issue — main agent should self-verify (UI selectors and i18n keys confirmed wired in code)"
+  },
+  "test_credentials": "admin@viikinkitapahtumat.fi / ***REDACTED*** verified via /api/auth/login.",
+  "seed_data_creation": "Translation test creates a TEST_iter11_* event (title='Iteraatio11 testitapahtuma {uuid}') and DELETEs it via /api/admin/events/{id} on teardown. Country+gallery test creates a TEST_iter11 maa+galleria {uuid} event and DELETEs on teardown. No production data touched.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter 11 backend complete. Public URL: https://events-refresh-1.preview.emergentagent.com. Backend test module: /app/backend/tests/test_iteration11_country_gallery_translation.py. Translation BackgroundTask uses claude-haiku-4-5-20251001 via emergentintegrations + EMERGENT_LLM_KEY env — typical latency 4-6s, occasional up to 12s. Allow at least 25-30s of polling on /api/admin/events/{id} before asserting translated fields. Lang-switcher on frontend is a dropdown: data-testid='lang-switcher' (button) → click → reveals data-testid='lang-option-{fi|en|sv}' divs. /events page defaults to KALENTERI (calendar) view; LISTA tab toggle was flaky in Playwright (state didn't always change after click). To list events: GET /api/events returns 11 approved events with country='FI' and gallery=[] defaults. To create+approve a test event: POST /api/events {title_fi,description_fi,category,location,start_date,organizer,organizer_email} → returns 201 with id; PATCH /api/admin/events/{id} {status:'approved'} as admin. Pre-existing seed drift: Bonk Pohjalla VII is meetup not training_camp; 2 tests in test_iteration4_past_filter and test_seeded_and_new_fields still assume training_camp.",
+  "rca of the issue": "No iter 11 issues. Two pre-existing test failures (Bonk Pohjalla VII category) are not regressions caused by iter 11 country/gallery/translation changes — they relate to seed data category drift. Recommend either re-seeding Bonk to training_camp or updating the 2 stale tests to expect category='meetup'."
+}
