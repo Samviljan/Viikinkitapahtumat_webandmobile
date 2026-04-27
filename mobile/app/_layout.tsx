@@ -23,6 +23,7 @@ export default function RootLayout() {
           name="event/[id]"
           options={{ title: "", headerTransparent: true }}
         />
+        <Stack.Screen name="info" options={{ headerShown: false }} />
       </Stack>
     </SafeAreaProvider>
   );

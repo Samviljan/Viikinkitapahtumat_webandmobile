@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { AppBackground } from "@/src/components/AppBackground";
 import { EventCard } from "@/src/components/EventCard";
 import { FilterChip, FilterChipsRow } from "@/src/components/FilterChips";
@@ -27,6 +28,7 @@ import type { VikingEvent } from "@/src/types";
 type DateFilter = "any" | "this_week" | "this_month" | "next_3_months";
 
 export default function HomeScreen() {
+  const router = useRouter();
   const [includePast, setIncludePast] = useState(false);
   const { events, loading, error, refresh } = useEvents(includePast);
   const { coords, status, request } = useLocation();
@@ -178,6 +180,22 @@ export default function HomeScreen() {
                   Pohjoisen viikinki- ja rauta-aikaharrastajien kalenteri
                 </Text>
               </View>
+              <Pressable
+                testID="open-info"
+                onPress={() => router.push("/info" as never)}
+                hitSlop={12}
+                style={({ pressed }) => [
+                  styles.infoBtn,
+                  pressed && { opacity: 0.7 },
+                ]}
+                accessibilityLabel="Tietoa sovelluksesta"
+              >
+                <Ionicons
+                  name="information-circle-outline"
+                  size={22}
+                  color={colors.gold}
+                />
+              </Pressable>
             </View>
 
             <Text style={text.overline}>Saatavilla {events.length}</Text>
@@ -368,6 +386,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 2,
     letterSpacing: 0.4,
+  },
+  infoBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.edge,
+    backgroundColor: "rgba(26,20,17,0.7)",
   },
   list: {
     paddingHorizontal: spacing.lg,

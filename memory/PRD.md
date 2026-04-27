@@ -297,6 +297,16 @@ See `/app/memory/test_credentials.md`.
 - ✅ Verkkosovellus + API + iCal regressio: 200/200/200. Ei vaikutuksia muuhun systeemiin.
 - ✅ README päivitetty (Käyttöönotto-osio): web-preview-ohjeet ensimmäisenä, natiivi Expo Go LAN-setup toissijaisena.
 
+## Iteration — Mobile Tietoa-näyttö viimeistely (2026-02-XX)
+- ✅ **`/info`-näyttö linkitetty navigaatioon**: Lisätty info-ikoni (information-circle-outline) Home-näytön brand-headeriin (oikea yläkulma). Painikkeesta `router.push("/info")`.
+- ✅ **`info`-reitti rekisteröity** root `_layout.tsx`:ään (Stack.Screen, headerShown=false — info-näyttö renderöi oman top-barin chevron-back-painikkeella).
+- ✅ **Sovellusversio päivitetty** `app.json`:ssa: `0.1.0` → `0.2.0`.
+- ✅ Info-näyttö (`/app/mobile/app/info.tsx`) sisältää: brändilohko (rune ᚠ), versiokortti (versio/build/alusta/runtime), verkkosivulinkki (avaa selaimessa), yhteydenottolomake (mailto: avaa käyttäjän sähköpostisovelluksen valmiilla viestillä subject/body — toimii ilman backend-muutoksia tuotannossa), copyright.
+- ✅ TypeScript: `npx tsc --noEmit` puhdas. Olemassa oleva AppBackground + SafeAreaInsets-käyttäytyminen ennallaan.
+- ✅ Mobiilin `apiBaseUrl` osoittaa edelleen tuotantoon (`viikinkitapahtumat.fi`); `mailto:`-strategia ohittaa preview→prod-poikkeaman.
+- 🚧 Beta-testattava seuraavalla EAS-buildilla (Android APK 0.2.0).
+
+
 
 - **P2** Date pickers: replace native `<input type="date">` with shadcn Calendar+Popover for visual consistency.
 - **P2** PWA push, brute-force-rate-limit, OG-tagit, custom favicon, lisämuistutus 1 vrk ennen, admin image-library picker UI.
