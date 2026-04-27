@@ -901,6 +901,15 @@ async def admin_list_subscribers(_admin: dict = Depends(get_admin_user)):
     return docs
 
 
+@api_router.delete("/admin/subscribers/{email}", status_code=204)
+async def admin_delete_subscriber(email: str, _admin: dict = Depends(get_admin_user)):
+    """Hard-delete a newsletter subscriber by email. Returns 404 if not found."""
+    res = await db.newsletter_subscribers.delete_one({"email": email.lower().strip()})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    return Response(status_code=204)
+
+
 class ContactPayload(BaseModel):
     name: str
     email: EmailStr

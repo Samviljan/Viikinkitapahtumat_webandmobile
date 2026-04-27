@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useEffect } from "react";
 import "@/index.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import { I18nProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/auth";
 import Layout from "@/components/Layout";
+import CookieConsentBanner from "@/components/CookieConsentBanner";
+import { initAnalytics } from "@/lib/analytics";
 import Home from "@/pages/Home";
 import Events from "@/pages/Events";
 import EventDetail from "@/pages/EventDetail";
@@ -20,6 +22,9 @@ import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 
 function App() {
+  useEffect(() => {
+    initAnalytics();
+  }, []);
   return (
     <I18nProvider>
       <AuthProvider>
@@ -48,6 +53,7 @@ function App() {
               />
             </Routes>
           </Layout>
+          <CookieConsentBanner />
           <Toaster
             theme="dark"
             position="top-right"

@@ -10,6 +10,7 @@ import AdminMerchantsPanel from "@/components/AdminMerchantsPanel";
 import AdminGuildsPanel from "@/components/AdminGuildsPanel";
 import AdminStatCard from "@/components/admin/AdminStatCard";
 import AdminNewsletterPanel from "@/components/admin/AdminNewsletterPanel";
+import AdminSubscribersPanel from "@/components/admin/AdminSubscribersPanel";
 import AdminWeeklyReportPanel from "@/components/admin/AdminWeeklyReportPanel";
 import AdminSyncPanel from "@/components/admin/AdminSyncPanel";
 import AdminEventRow from "@/components/admin/AdminEventRow";
@@ -86,6 +87,7 @@ export default function AdminDashboard() {
       )}
 
       <AdminNewsletterPanel />
+      <AdminSubscribersPanel />
       <AdminWeeklyReportPanel />
       <AdminSyncPanel />
 

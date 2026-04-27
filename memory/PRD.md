@@ -322,6 +322,20 @@ See `/app/memory/test_credentials.md`.
 
 
 
+## Iteration — Admin newsletter mgmt + GA4 + Cookie consent (2026-04-27)
+- ✅ **Backend**: lisätty `DELETE /api/admin/subscribers/{email}` (admin-auth, 204 onnistuu / 404 ei löydy / 401 ilman authia). Olemassa oleva `GET /api/admin/subscribers` säilytetty.
+- ✅ **AdminSubscribersPanel**: uusi accordion-tyylinen paneeli admin-dashboardissa (`/app/frontend/src/components/admin/AdminSubscribersPanel.jsx`). Sisältää sähköposti-haun, kielisuodattimen, tilaus-listauksen taulukkona (email + lang + status + created), per-rivi poistopainikkeen confirm-vahvistuksella. Käännökset FI/EN/SV (ET/PL fall back EN:ään).
+- ✅ **Google Analytics 4 + Consent Mode v2** (`/app/frontend/src/lib/analytics.js`):
+  - GA Measurement ID `G-EDQGCCY02S` tallennettu `frontend/.env` -tiedoston `REACT_APP_GA_MEASUREMENT_ID` -muuttujaan.
+  - Consent Mode v2 default = denied kaikille signaaleille (GDPR-yhteensopiva baseline).
+  - Käyttäjän hyväksyntä → `analytics_storage: granted` + SPA pageview tracking React Routerin location-vaihteluiden yhteydessä.
+  - Käyttäjän valinta tallennetaan localStorageen (`vk_analytics_consent`) ettei banneri toistu.
+  - `initAnalytics()` kutsutaan App.js:n `useEffect`-hookissa.
+- ✅ **CookieConsentBanner** (`/app/frontend/src/components/CookieConsentBanner.jsx`): Viking-aestetiikan mukainen alapalkki, "Hyväksy / Hylkää" -painikkeet, Privacy-linkki, monikielinen (FI/EN/SV/ET/PL). Renderöityy vain jos GA configurattu eikä käyttäjä ole vielä päättänyt.
+- ✅ Backend testit (curl): list 4 subscribers OK, create + delete + 404 + 401 kaikki vahvistettu. Frontend bundle todennettu sisältämään uudet test-id:t (`subscribers-panel`, `subscribers-toggle`, `cookie-accept`, `cookie-reject`, `EDQGCCY02S`).
+- ✅ Lint puhdas (ESLint + ruff).
+
+
 
 - **P2** Date pickers: replace native `<input type="date">` with shadcn Calendar+Popover for visual consistency.
 - **P2** PWA push, brute-force-rate-limit, OG-tagit, custom favicon, lisämuistutus 1 vrk ennen, admin image-library picker UI.
