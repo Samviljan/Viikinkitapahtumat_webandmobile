@@ -5,6 +5,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -56,6 +57,26 @@ export default function InfoScreen() {
     Linking.openURL(WEB_URL).catch(() =>
       Alert.alert("Linkki ei avautunut", WEB_URL),
     );
+  }
+
+  async function shareApp() {
+    const message =
+      `Pohjoisen viikinki- ja rauta-aikatapahtumat yhdessä paikassa.\n\n` +
+      `Selaa kalenteri ja tallenna suosikit:\n${WEB_URL}\n\n` +
+      `(Beta-vaihe — Android-sovellus tulossa pian.)`;
+    try {
+      await Share.share(
+        {
+          // iOS uses url + message, Android uses message only.
+          message,
+          url: WEB_URL,
+          title: "Viikinkitapahtumat",
+        },
+        { dialogTitle: "Jaa Viikinkitapahtumat" },
+      );
+    } catch {
+      Alert.alert("Jako epäonnistui", "Yritä uudelleen.");
+    }
   }
 
   async function send() {
@@ -168,6 +189,26 @@ export default function InfoScreen() {
               <Text style={styles.linkSub}>{WEB_URL.replace("https://", "")}</Text>
             </View>
             <Ionicons name="open-outline" size={16} color={colors.stone} />
+          </Pressable>
+
+          {/* Share app */}
+          <Pressable
+            testID="share-app"
+            onPress={shareApp}
+            style={({ pressed }) => [
+              styles.linkCard,
+              styles.shareCard,
+              pressed && { opacity: 0.85 },
+            ]}
+          >
+            <Ionicons name="share-social-outline" size={20} color={colors.ember} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.linkTitle}>Jaa sovellus</Text>
+              <Text style={styles.linkSub}>
+                Kutsu kaverit löytämään tapahtumat
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.stone} />
           </Pressable>
 
           {/* Contact form */}
@@ -317,6 +358,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.md,
     padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  shareCard: {
+    borderColor: colors.ember,
     marginBottom: spacing.lg,
   },
   linkTitle: { color: colors.bone, fontSize: 14, fontWeight: "700" },

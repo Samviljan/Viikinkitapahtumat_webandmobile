@@ -304,6 +304,7 @@ See `/app/memory/test_credentials.md`.
 - ✅ Info-näyttö (`/app/mobile/app/info.tsx`) sisältää: brändilohko (rune ᚠ), versiokortti (versio/build/alusta/runtime), verkkosivulinkki (avaa selaimessa), yhteydenottolomake (mailto: avaa käyttäjän sähköpostisovelluksen valmiilla viestillä subject/body — toimii ilman backend-muutoksia tuotannossa), copyright.
 - ✅ TypeScript: `npx tsc --noEmit` puhdas. Olemassa oleva AppBackground + SafeAreaInsets-käyttäytyminen ennallaan.
 - ✅ Mobiilin `apiBaseUrl` osoittaa edelleen tuotantoon (`viikinkitapahtumat.fi`); `mailto:`-strategia ohittaa preview→prod-poikkeaman.
+- ✅ **"Jaa sovellus"-painike** lisätty Tietoa-näytölle (ember-reunustettu kortti web-linkin alle). Käyttää React Nativen sisäänrakennettua `Share.share()`-API:a — avaa natiivin jakodialogin (WhatsApp, SMS, sähköposti, Messenger, jne.) valmiilla viestillä + `viikinkitapahtumat.fi`-linkillä. Ei lisäriippuvuuksia.
 - 🚧 Beta-testattava seuraavalla EAS-buildilla (Android APK 0.2.0).
 
 
