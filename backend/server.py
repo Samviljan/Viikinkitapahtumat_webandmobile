@@ -901,6 +901,53 @@ async def admin_list_subscribers(_admin: dict = Depends(get_admin_user)):
     return docs
 
 
+class ContactPayload(BaseModel):
+    name: str
+    email: EmailStr
+    message: str
+    source: Optional[str] = "mobile-app"
+
+
+@api_router.post("/contact", status_code=201)
+async def submit_contact(payload: ContactPayload):
+    """Public endpoint — anyone (esp. mobile beta testers) can send a
+    feedback / contact message. Persists to `contact_messages` and emails
+    the admin via Resend if configured. Length limits prevent abuse."""
+    name = payload.name.strip()[:120]
+    msg = payload.message.strip()[:4000]
+    if not name or len(msg) < 5:
+        raise HTTPException(status_code=400, detail="Name and message required")
+
+    record = {
+        "id": str(uuid.uuid4()),
+        "name": name,
+        "email": str(payload.email).lower(),
+        "message": msg,
+        "source": (payload.source or "mobile-app")[:40],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.contact_messages.insert_one(record)
+
+    # Email admin (best-effort — never fail the request if Resend is down)
+    admin_email = os.environ.get("ADMIN_EMAIL", "admin@viikinkitapahtumat.fi")
+    safe_msg = msg.replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>")
+    html = (
+        f"<h2 style='font-family:serif'>Uusi yhteydenotto sovelluksesta</h2>"
+        f"<p><strong>Lähde:</strong> {record['source']}</p>"
+        f"<p><strong>Nimi:</strong> {name}<br>"
+        f"<strong>Sähköposti:</strong> <a href='mailto:{record['email']}'>{record['email']}</a></p>"
+        f"<hr><p style='font-family:sans-serif;line-height:1.5'>{safe_msg}</p>"
+    )
+    try:
+        from email_service import send_email
+        await send_email(admin_email, f"Yhteydenotto: {name}", html)
+        record["email_sent"] = True
+    except Exception as e:  # noqa: BLE001
+        logger.warning("Contact email send failed: %s", e)
+        record["email_sent"] = False
+    return {"ok": True, "id": record["id"], "email_sent": record["email_sent"]}
+
+
 @api_router.post("/admin/sync-prod-events")
 async def admin_sync_prod_events(_admin: dict = Depends(get_admin_user)):
     """Manually trigger the prod → preview events sync. Returns count."""
