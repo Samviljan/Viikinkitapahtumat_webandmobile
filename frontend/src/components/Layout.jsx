@@ -272,13 +272,22 @@ export default function Layout({ children }) {
           <span>
             © {new Date().getFullYear()} {t("site.name")} · {t("footer.rights")}
           </span>
-          <Link
-            to="/admin/login"
-            data-testid="admin-login-link"
-            className="text-[10px] font-rune hover:text-viking-gold transition-colors"
-          >
-            {t("nav.admin")}
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              to="/privacy"
+              data-testid="footer-privacy-link"
+              className="text-[10px] font-rune hover:text-viking-gold transition-colors uppercase tracking-[0.2em]"
+            >
+              {t("footer.privacy")}
+            </Link>
+            <Link
+              to="/admin/login"
+              data-testid="admin-login-link"
+              className="text-[10px] font-rune hover:text-viking-gold transition-colors"
+            >
+              {t("nav.admin")}
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

@@ -275,6 +275,7 @@ const TRANSLATIONS = {
     footer: {
       contact: "admin@viikinkitapahtumat.fi",
       rights: "Kaikki oikeudet pidätetään.",
+      privacy: "Tietosuoja",
     },
     fav: {
       add: "Lisää suosikkeihin",
@@ -563,7 +564,7 @@ const TRANSLATIONS = {
       unsub_invalid_title: "Invalid link",
       unsub_invalid_body: "This unsubscribe link has expired or is invalid.",
     },
-    footer: { contact: "admin@viikinkitapahtumat.fi", rights: "All rights reserved." },
+    footer: { contact: "admin@viikinkitapahtumat.fi", rights: "All rights reserved.", privacy: "Privacy" },
     fav: {
       add: "Add to favorites",
       remove: "Remove from favorites",
@@ -850,7 +851,7 @@ const TRANSLATIONS = {
       unsub_invalid_title: "Ogiltig länk",
       unsub_invalid_body: "Denna avregistreringslänk har gått ut eller är ogiltig.",
     },
-    footer: { contact: "admin@viikinkitapahtumat.fi", rights: "Alla rättigheter förbehållna." },
+    footer: { contact: "admin@viikinkitapahtumat.fi", rights: "Alla rättigheter förbehållna.", privacy: "Integritet" },
     fav: {
       add: "Spara som favorit",
       remove: "Ta bort från favoriter",
@@ -1156,7 +1157,8 @@ const TRANSLATIONS = {
     },
     "footer": {
         "contact": "admin@viikingialised.ee",
-        "rights": "Kõik õigused reserveeritud."
+        "rights": "Kõik õigused reserveeritud.",
+        "privacy": "Privaatsus"
     },
     "fav": {
         "add": "Lisa lemmikutesse",
@@ -1463,7 +1465,8 @@ const TRANSLATIONS = {
     },
     "footer": {
         "contact": "admin@viikinkitapahtumat.fi",
-        "rights": "Wszelkie prawa zastrzeżone."
+        "rights": "Wszelkie prawa zastrzeżone.",
+        "privacy": "Prywatność"
     },
     "fav": {
         "add": "Dodaj do ulubionych",

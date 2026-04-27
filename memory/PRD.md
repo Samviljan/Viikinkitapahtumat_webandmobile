@@ -307,6 +307,20 @@ See `/app/memory/test_credentials.md`.
 - ✅ **"Jaa sovellus"-painike** lisätty Tietoa-näytölle (ember-reunustettu kortti web-linkin alle). Käyttää React Nativen sisäänrakennettua `Share.share()`-API:a — avaa natiivin jakodialogin (WhatsApp, SMS, sähköposti, Messenger, jne.) valmiilla viestillä + `viikinkitapahtumat.fi`-linkillä. Ei lisäriippuvuuksia.
 - ✅ **EAS Android APK -build käynnistetty** (versio 0.2.0, versionCode 2): build-id `e90cd8d8-c615-42ea-bf68-0591949cf610`. `eas.json` `appVersionSource` vaihdettu `"remote"` → `"local"`, `app.json` android.versionCode = 2.
 
+## Iteration — Play Store -valmistelu (2026-04-27)
+- ✅ **SVTL-URL korjattu** web (`/app/frontend/src/pages/Guilds.jsx`) ja mobiili (`/app/mobile/app/(tabs)/guilds.tsx`): `https://www.svtl.fi/svtl` → `https://www.svtl.fi/`. Bundle todennettu: vain uusi URL esiintyy.
+- ✅ **EAS production AAB -build käynnistetty** (`5c2111e4-e313-4d56-86f5-efb97e5e5b15`, versio 0.2.0, versionCode 3 autoIncrement). `eas.json` `appVersionSource` vahvistettu `"local"`. AAB sisältää info-näytön + Jaa sovellus + SVTL-fix.
+- ✅ **Android keystore varmuuskopioitu** käyttäjän Google Driveen + salasanahallintaan. Sormenjäljet (säilytä Play Console -käyttöön): SHA-1 `96:25:57:2D:5B:F5:40:C0:28:38:4A:B6:F0:F7:08:F5:B0:E3:90:2B`, SHA-256 `DD:63:50:90:86:7A:CF:CC:B1:D3:D6:81:40:A2:7C:11:51:11:4D:E1:47:A2:70:A9:C9:DF:3F:94:3D:39:D2:A2`. Keystore + salasanat tallennettu `/app/mobile/.secrets/` (gitignored).
+- ✅ **Privacy Policy -sivu luotu** (`/app/frontend/src/pages/Privacy.jsx`): suomi/englanti/ruotsi-kielinen kattava GDPR-yhteensopiva tietosuojakäytäntö. Polku `/privacy`. Footer-linkki lisätty (`footer.privacy` -käännösavain kaikkiin viiteen kieleen). ET/PL fall back EN:ään.
+- ✅ **Google Play Store -listausmateriaalit** (`/app/mobile/.store-assets/`):
+  - `play-store-listing.md` — sovelluksen nimi, lyhyt + pitkä kuvaus FI/EN/SV, hakusanat, kategoriat, Data Safety -lomakkeen valmiit vastaukset.
+  - `play-store-checklist.md` — vaiheittainen julkaisuopas Play Consoleen, Internal testing → Production-rollout, EAS Submit -automatisoinnin ohjeet.
+  - `feature-graphic.png` (1024×500, 663 kB) — Nano Bananalla generoitu cinematic banner: kullainen ᚠ-rune kilvessä + 2 viikinkisiluettia nuotion edessä, hennot revontulet.
+  - `icon-512.png` ja `icon-1024.png` — Play Store -listausikoni: ᚠ-rune kullatussa metallikilvessä Norse-knotwork-reunalla, ember-glow halo, dark wood-grain tausta.
+- ✅ Asset-paketti pakattu `/app/play-store-assets.tar.gz` -tiedostoon ja toimitettu käyttäjälle.
+- 🚧 Käyttäjä jatkaa Play Console -puolelta: lataa AAB Internal testingiin kun build valmistuu, täyttää store listing -tekstit ja Data Safety -lomakkeen valmiilla vastauksilla.
+
+
 
 
 - **P2** Date pickers: replace native `<input type="date">` with shadcn Calendar+Popover for visual consistency.
