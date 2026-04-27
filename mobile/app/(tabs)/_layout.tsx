@@ -2,6 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Slot, usePathname, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/src/lib/theme";
 import { useFavorites } from "@/src/hooks/useFavorites";
 
@@ -35,13 +36,20 @@ export default function TabsLayout() {
   const pathname = usePathname() || "/";
   const router = useRouter();
   const { count } = useFavorites();
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.root}>
       <View style={styles.scene}>
         <Slot />
       </View>
-      <View style={styles.tabBar} testID="bottom-tabbar">
+      <View
+        style={[
+          styles.tabBar,
+          { paddingBottom: 8 + Math.max(insets.bottom, 4) },
+        ]}
+        testID="bottom-tabbar"
+      >
         {TABS.map((t) => {
           const active =
             t.href === "/"
@@ -87,9 +95,7 @@ const styles = StyleSheet.create({
   scene: { flex: 1, width: "100%" },
   tabBar: {
     flexDirection: "row",
-    height: 64,
     paddingTop: 8,
-    paddingBottom: 8,
     backgroundColor: "rgba(14,11,9,0.95)",
     borderTopColor: colors.edge,
     borderTopWidth: 1,
@@ -99,6 +105,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 4,
+    minHeight: 48,
   },
   tabLabel: { fontSize: 10, letterSpacing: 0.5, fontWeight: "600" },
   badge: {

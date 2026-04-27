@@ -52,7 +52,7 @@
       "baseUrl": "/api/mobile-app"
     },
     "extra": {
-      "apiBaseUrl": "https://events-refresh-1.preview.emergentagent.com",
+      "apiBaseUrl": "https://viikinkitapahtumat.fi",
       "router": {},
       "eas": {
         "projectId": "73281723-f172-4938-8fc0-c1feee70bc51"
