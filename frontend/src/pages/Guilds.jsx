@@ -4,7 +4,7 @@ import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { ExternalLink } from "lucide-react";
 
-const SVTL_LINK = "https://www.svtl.fi/svtl";
+const SVTL_LINK = "https://www.svtl.fi/";
 
 function GuildCard({ g, testid }) {
   return (

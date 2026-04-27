@@ -15,7 +15,7 @@ import { LinkListRow, SectionTitle } from "@/src/components/LinkListRow";
 import { useGuilds } from "@/src/hooks/useDirectory";
 import { colors, radius, spacing, text } from "@/src/lib/theme";
 
-const SVTL_URL = "https://www.svtl.fi/svtl";
+const SVTL_URL = "https://www.svtl.fi/";
 
 // Mirror the website's grouping order on /guilds:
 //   1. SVTL info card (always first)
