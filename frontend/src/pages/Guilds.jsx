@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { ExternalLink } from "lucide-react";
 
 const SVTL_LINK = "https://www.svtl.fi/";
+const VANGUARD_NAME = "Finnish Vanguards";
 
 function GuildCard({ g, testid }) {
   return (
@@ -27,6 +28,23 @@ function GuildCard({ g, testid }) {
   );
 }
 
+function FeaturedGuildCard({ eyebrow, title, body, linkLabel, url, testid }) {
+  return (
+    <div className="carved-card rounded-sm p-7 sm:p-10" data-testid={testid}>
+      <div className="text-overline mb-3 text-viking-gold">{eyebrow}</div>
+      <h2 className="font-serif text-3xl text-viking-bone mb-4">{title}</h2>
+      <p className="text-base text-viking-stone leading-relaxed mb-6">{body}</p>
+      {url ? (
+        <a href={url} target="_blank" rel="noopener noreferrer" data-testid={`${testid}-link`}>
+          <span className="inline-flex items-center gap-2 font-rune text-xs text-viking-gold border border-viking-gold/50 rounded-sm px-4 py-2 hover:bg-viking-gold/10 transition-colors">
+            {linkLabel} <ExternalLink size={12} />
+          </span>
+        </a>
+      ) : null}
+    </div>
+  );
+}
+
 export default function Guilds() {
   const { t } = useI18n();
   const [items, setItems] = useState([]);
@@ -36,23 +54,27 @@ export default function Guilds() {
   }, []);
 
   const svtl = items.filter((g) => g.category === "svtl_member");
-  const others = items.filter((g) => g.category === "other");
+  // Pull Finnish Vanguards out of the "other" bucket so it can be highlighted.
+  const vanguard = items.find(
+    (g) => g.category === "other" && g.name === VANGUARD_NAME,
+  );
+  const others = items.filter(
+    (g) => g.category === "other" && g.name !== VANGUARD_NAME,
+  );
 
   return (
     <>
       <PageHero eyebrow="ᛗᛁᛖᚺᛖᛏ" title={t("guilds.title")} sub={t("guilds.sub")} />
 
       <section className="mx-auto max-w-5xl px-4 sm:px-8 py-12 space-y-14">
-        <div className="carved-card rounded-sm p-7 sm:p-10">
-          <div className="text-overline mb-3 text-viking-gold">SVTL</div>
-          <h2 className="font-serif text-3xl text-viking-bone mb-4">{t("guilds.svtl_title")}</h2>
-          <p className="text-base text-viking-stone leading-relaxed mb-6">{t("guilds.svtl_body")}</p>
-          <a href={SVTL_LINK} target="_blank" rel="noopener noreferrer" data-testid="svtl-link">
-            <span className="inline-flex items-center gap-2 font-rune text-xs text-viking-gold border border-viking-gold/50 rounded-sm px-4 py-2 hover:bg-viking-gold/10 transition-colors">
-              {t("guilds.svtl_link")} <ExternalLink size={12} />
-            </span>
-          </a>
-        </div>
+        <FeaturedGuildCard
+          testid="svtl-card"
+          eyebrow="SVTL"
+          title={t("guilds.svtl_title")}
+          body={t("guilds.svtl_body")}
+          linkLabel={t("guilds.svtl_link")}
+          url={SVTL_LINK}
+        />
 
         <div>
           <h3 className="font-serif text-2xl text-viking-bone mb-5">{t("guilds.members_title")}</h3>
@@ -62,6 +84,17 @@ export default function Guilds() {
             ))}
           </div>
         </div>
+
+        {vanguard ? (
+          <FeaturedGuildCard
+            testid="vanguard-card"
+            eyebrow="MAAJOUKKUE"
+            title={t("guilds.vanguard_title")}
+            body={t("guilds.vanguard_body")}
+            linkLabel={t("guilds.vanguard_link")}
+            url={vanguard.url}
+          />
+        ) : null}
 
         <div>
           <h3 className="font-serif text-2xl text-viking-bone mb-5">{t("guilds.others_title")}</h3>

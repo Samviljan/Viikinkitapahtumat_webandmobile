@@ -205,6 +205,10 @@ const TRANSLATIONS = {
       svtl_link: "SVTL:n verkkosivut",
       members_title: "SVTL:n jäsenseurat",
       others_title: "Muut seurat, kaartit ja yhdistykset",
+      vanguard_title: "Finnish Vanguards",
+      vanguard_body:
+        "Finnish Vanguards on suomalaisten viikinkitaistelijoiden yhteenliittymä, joka kokoaa Suomen parhaat osaajat edustamaan maata kansainvälisissä turnauksissa ja tapahtumissa. Yhteenliittymä toimii kaartien rajat ylittävänä joukkueena ulkomaisten kutsutapahtumien yhteydessä.",
+      vanguard_link: "Finnish Vanguards -verkkosivut",
     },
     shops: {
       title: "Kaupat ja käsityöläiset",
@@ -499,6 +503,10 @@ const TRANSLATIONS = {
       svtl_link: "SVTL website",
       members_title: "SVTL member clubs",
       others_title: "Other clubs, guilds and associations",
+      vanguard_title: "Finnish Vanguards",
+      vanguard_body:
+        "Finnish Vanguards is a coalition of Finnish viking fighters that brings the country's strongest reenactors together to represent Finland at international tournaments and invitational events. The coalition works as a cross-guild team for foreign engagements.",
+      vanguard_link: "Finnish Vanguards website",
     },
     shops: {
       title: "Shops & craftspeople",
@@ -787,6 +795,10 @@ const TRANSLATIONS = {
       svtl_link: "SVTL webbplats",
       members_title: "SVTL:s medlemsföreningar",
       others_title: "Övriga föreningar, gillen och sällskap",
+      vanguard_title: "Finnish Vanguards",
+      vanguard_body:
+        "Finnish Vanguards är en koalition av finska vikingakrigare som samlar landets starkaste reenactors för att representera Finland i internationella turneringar och inbjudningsevenemang. Koalitionen fungerar som ett gilleöverskridande lag för utländska tävlingar.",
+      vanguard_link: "Finnish Vanguards webbplats",
     },
     shops: {
       title: "Butiker & hantverkare",
@@ -1100,7 +1112,10 @@ const TRANSLATIONS = {
         "svtl_body": "SVTL on 2025. aastal asutatud vikingiajastu võitlusviiside harrastajate riiklik liit. Liidu liikmeid on vikingiajastu, rauda-ajastu või neile sarnaseid võitlusviiside ühendusi.",
         "svtl_link": "SVTL veebisaidid",
         "members_title": "SVTL liikmeseltid",
-        "others_title": "Muud seltid, kaardid ja ühendused"
+        "others_title": "Muud seltid, kaardid ja ühendused",
+        "vanguard_title": "Finnish Vanguards",
+        "vanguard_body": "Finnish Vanguards on Soome vikingivõitlejate koalitsioon, mis ühendab riigi tugevamaid harrastajaid esindama Soomet rahvusvahelistel turniiridel ja kutsetel. Koalitsioon toimib kaartideülese meeskonnana välismaistel võistlustel.",
+        "vanguard_link": "Finnish Vanguards veebisait"
     },
     "shops": {
         "title": "Kauplused ja käsitöölised",
@@ -1408,7 +1423,10 @@ const TRANSLATIONS = {
         "svtl_body": "SVTL to narodowa federacja sportowa założona w 2025 roku dla pasjonatów sztuk walki z epoki Wikingów. Członkami federacji są wspólnoty uprawiające sztuki walki z epoki Wikingów, epoki żelaza lub im podobne.",
         "svtl_link": "Strona internetowa SVTL",
         "members_title": "Bractwami członkowskie SVTL",
-        "others_title": "Inne karty, bractwami i stowarzyszenia"
+        "others_title": "Inne karty, bractwami i stowarzyszenia",
+        "vanguard_title": "Finnish Vanguards",
+        "vanguard_body": "Finnish Vanguards to koalicja fińskich wojowników wikingowskich, która zrzesza najsilniejszych rekonstruktorów kraju, by reprezentować Finlandię na międzynarodowych turniejach i wydarzeniach na zaproszenie. Koalicja działa jako drużyna ponadbracka na zagraniczne starcia.",
+        "vanguard_link": "Strona Finnish Vanguards"
     },
     "shops": {
         "title": "Sklepy i rzemieślnicy",
