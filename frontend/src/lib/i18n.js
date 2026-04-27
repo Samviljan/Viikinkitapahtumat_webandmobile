@@ -207,7 +207,7 @@ const TRANSLATIONS = {
       others_title: "Muut seurat, kaartit ja yhdistykset",
       vanguard_title: "Finnish Vanguards",
       vanguard_body:
-        "Finnish Vanguards on suomalaisten viikinkitaistelijoiden yhteenliittymä, joka kokoaa Suomen parhaat osaajat edustamaan maata kansainvälisissä turnauksissa ja tapahtumissa. Yhteenliittymä toimii kaartien rajat ylittävänä joukkueena ulkomaisten kutsutapahtumien yhteydessä.",
+        "The Coalition of Finnish Viking Fighters for Foreign Events!",
       vanguard_link: "Finnish Vanguards -verkkosivut",
     },
     shops: {
@@ -505,7 +505,7 @@ const TRANSLATIONS = {
       others_title: "Other clubs, guilds and associations",
       vanguard_title: "Finnish Vanguards",
       vanguard_body:
-        "Finnish Vanguards is a coalition of Finnish viking fighters that brings the country's strongest reenactors together to represent Finland at international tournaments and invitational events. The coalition works as a cross-guild team for foreign engagements.",
+        "The Coalition of Finnish Viking Fighters for Foreign Events!",
       vanguard_link: "Finnish Vanguards website",
     },
     shops: {
@@ -797,7 +797,7 @@ const TRANSLATIONS = {
       others_title: "Övriga föreningar, gillen och sällskap",
       vanguard_title: "Finnish Vanguards",
       vanguard_body:
-        "Finnish Vanguards är en koalition av finska vikingakrigare som samlar landets starkaste reenactors för att representera Finland i internationella turneringar och inbjudningsevenemang. Koalitionen fungerar som ett gilleöverskridande lag för utländska tävlingar.",
+        "The Coalition of Finnish Viking Fighters for Foreign Events!",
       vanguard_link: "Finnish Vanguards webbplats",
     },
     shops: {
@@ -1114,7 +1114,7 @@ const TRANSLATIONS = {
         "members_title": "SVTL liikmeseltid",
         "others_title": "Muud seltid, kaardid ja ühendused",
         "vanguard_title": "Finnish Vanguards",
-        "vanguard_body": "Finnish Vanguards on Soome vikingivõitlejate koalitsioon, mis ühendab riigi tugevamaid harrastajaid esindama Soomet rahvusvahelistel turniiridel ja kutsetel. Koalitsioon toimib kaartideülese meeskonnana välismaistel võistlustel.",
+        "vanguard_body": "The Coalition of Finnish Viking Fighters for Foreign Events!",
         "vanguard_link": "Finnish Vanguards veebisait"
     },
     "shops": {
@@ -1425,7 +1425,7 @@ const TRANSLATIONS = {
         "members_title": "Bractwami członkowskie SVTL",
         "others_title": "Inne karty, bractwami i stowarzyszenia",
         "vanguard_title": "Finnish Vanguards",
-        "vanguard_body": "Finnish Vanguards to koalicja fińskich wojowników wikingowskich, która zrzesza najsilniejszych rekonstruktorów kraju, by reprezentować Finlandię na międzynarodowych turniejach i wydarzeniach na zaproszenie. Koalicja działa jako drużyna ponadbracka na zagraniczne starcia.",
+        "vanguard_body": "The Coalition of Finnish Viking Fighters for Foreign Events!",
         "vanguard_link": "Strona Finnish Vanguards"
     },
     "shops": {

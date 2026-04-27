@@ -31,7 +31,7 @@ function GuildCard({ g, testid }) {
 function FeaturedGuildCard({ eyebrow, title, body, linkLabel, url, testid }) {
   return (
     <div className="carved-card rounded-sm p-7 sm:p-10" data-testid={testid}>
-      <div className="text-overline mb-3 text-viking-gold">{eyebrow}</div>
+      {eyebrow ? <div className="text-overline mb-3 text-viking-gold">{eyebrow}</div> : null}
       <h2 className="font-serif text-3xl text-viking-bone mb-4">{title}</h2>
       <p className="text-base text-viking-stone leading-relaxed mb-6">{body}</p>
       {url ? (
@@ -88,7 +88,6 @@ export default function Guilds() {
         {vanguard ? (
           <FeaturedGuildCard
             testid="vanguard-card"
-            eyebrow="MAAJOUKKUE"
             title={t("guilds.vanguard_title")}
             body={t("guilds.vanguard_body")}
             linkLabel={t("guilds.vanguard_link")}
