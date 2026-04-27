@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import "@/index.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
@@ -7,6 +7,13 @@ import { AuthProvider } from "@/lib/auth";
 import Layout from "@/components/Layout";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import { initAnalytics } from "@/lib/analytics";
+
+// Initialise GA + Consent Mode at module import time, before React renders.
+// Doing this in App's useEffect was racy: child useEffects (CookieConsentBanner)
+// run BEFORE the parent's useEffect, so trackPageView could fire while
+// window.dataLayer was still undefined.
+initAnalytics();
+
 import Home from "@/pages/Home";
 import Events from "@/pages/Events";
 import EventDetail from "@/pages/EventDetail";
@@ -22,9 +29,6 @@ import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 
 function App() {
-  useEffect(() => {
-    initAnalytics();
-  }, []);
   return (
     <I18nProvider>
       <AuthProvider>

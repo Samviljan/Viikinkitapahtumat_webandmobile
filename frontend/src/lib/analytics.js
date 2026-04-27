@@ -23,14 +23,18 @@
 const MEASUREMENT_ID = process.env.REACT_APP_GA_MEASUREMENT_ID;
 const CONSENT_KEY = "vk_analytics_consent"; // "granted" | "denied" | null
 
-function pushArgs(...args) {
+// Ensure window.dataLayer exists at module-import time. React effects run
+// child-first, so a child component (e.g. CookieConsentBanner) may call
+// trackPageView() BEFORE App.useEffect runs initAnalytics(). Initialising
+// the array here means gtag() never crashes on undefined dataLayer.
+if (typeof window !== "undefined") {
   window.dataLayer = window.dataLayer || [];
-  // eslint-disable-next-line prefer-rest-params
-  window.dataLayer.push(args);
 }
 
 function gtag() {
   // GA4 expects unwrapped arguments object; we mimic the official snippet.
+  if (typeof window === "undefined") return;
+  window.dataLayer = window.dataLayer || [];
   // eslint-disable-next-line prefer-rest-params
   window.dataLayer.push(arguments);
 }
@@ -46,6 +50,9 @@ export function hasConsentDecision() {
 
 export function initAnalytics() {
   if (!MEASUREMENT_ID) return;
+  if (typeof window === "undefined") return;
+  if (window.__vkAnalyticsInited) return; // idempotent
+  window.__vkAnalyticsInited = true;
 
   // Set Consent Mode v2 defaults BEFORE loading the script — this is the
   // GDPR-required pattern. Anything tagged in GA4 will respect these flags.
@@ -99,6 +106,8 @@ export function denyConsent() {
 
 export function trackPageView(path) {
   if (!MEASUREMENT_ID) return;
+  if (typeof window === "undefined") return;
+  if (!window.__vkAnalyticsInited) return; // gtag.js script not yet injected
   if (getConsent() !== "granted") return;
   gtag("event", "page_view", {
     page_path: path,
