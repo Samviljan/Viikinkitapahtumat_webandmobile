@@ -305,7 +305,7 @@ See `/app/memory/test_credentials.md`.
 - ✅ TypeScript: `npx tsc --noEmit` puhdas. Olemassa oleva AppBackground + SafeAreaInsets-käyttäytyminen ennallaan.
 - ✅ Mobiilin `apiBaseUrl` osoittaa edelleen tuotantoon (`viikinkitapahtumat.fi`); `mailto:`-strategia ohittaa preview→prod-poikkeaman.
 - ✅ **"Jaa sovellus"-painike** lisätty Tietoa-näytölle (ember-reunustettu kortti web-linkin alle). Käyttää React Nativen sisäänrakennettua `Share.share()`-API:a — avaa natiivin jakodialogin (WhatsApp, SMS, sähköposti, Messenger, jne.) valmiilla viestillä + `viikinkitapahtumat.fi`-linkillä. Ei lisäriippuvuuksia.
-- 🚧 Beta-testattava seuraavalla EAS-buildilla (Android APK 0.2.0).
+- ✅ **EAS Android APK -build käynnistetty** (versio 0.2.0, versionCode 2): build-id `e90cd8d8-c615-42ea-bf68-0591949cf610`. `eas.json` `appVersionSource` vaihdettu `"remote"` → `"local"`, `app.json` android.versionCode = 2.
 
 
 
