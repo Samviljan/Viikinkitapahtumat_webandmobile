@@ -166,7 +166,10 @@ class UserOut(BaseModel):
 
 
 USER_TYPES = {"reenactor", "fighter", "merchant", "organizer"}
-VALID_COUNTRIES = {"FI", "SE", "EE", "NO", "DK", "PL", "DE", "IS", "LV", "LT"}
+VALID_COUNTRIES = {
+    "FI", "SE", "EE", "NO", "DK", "PL", "DE", "IS", "LV", "LT",
+    "SI", "HR", "UA", "NL", "GB", "IE", "BE", "FR", "ES", "PT", "IT",
+}
 
 
 class RegisterRequest(BaseModel):
@@ -241,7 +244,10 @@ class SendMessageRequest(BaseModel):
 
 EventCategory = Literal["market", "training_camp", "course", "festival", "meetup", "other"]
 EventStatus = Literal["pending", "approved", "rejected"]
-EventCountry = Literal["FI", "SE", "EE", "NO", "DK", "PL", "DE", "IS", "LV", "LT"]
+EventCountry = Literal[
+    "FI", "SE", "EE", "NO", "DK", "PL", "DE", "IS", "LV", "LT",
+    "SI", "HR", "UA", "NL", "GB", "IE", "BE", "FR", "ES", "PT", "IT",
+]
 
 
 class EventCreate(BaseModel):

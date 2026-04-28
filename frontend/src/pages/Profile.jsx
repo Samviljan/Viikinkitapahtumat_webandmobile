@@ -20,7 +20,7 @@ const ALL_TYPES = ["reenactor", "fighter", "merchant", "organizer"];
 
 // ISO-3166 alpha-2 codes valid for the user `country` field.
 // Must stay in sync with VALID_COUNTRIES on the backend.
-const COUNTRIES = ["FI", "SE", "EE", "NO", "DK", "PL", "DE", "IS", "LV", "LT"];
+const COUNTRIES = ["FI", "SE", "EE", "NO", "DK", "PL", "DE", "IS", "LV", "LT", "SI", "HR", "UA", "NL", "GB", "IE", "BE", "FR", "ES", "PT", "IT"];
 
 export default function Profile() {
   const { user, loading, updateProfile, logout, refresh } = useAuth();

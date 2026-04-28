@@ -482,6 +482,11 @@ See `/app/memory/test_credentials.md`.
   - Includes all 2026-04-28 features: profile image+PDF uploads, association/country fields, dynamic submit language, RSVP-restricted messaging w/ target categories, mobile "My events" tab, push-token diagnostics on web admin.
   - User downloads `.aab` from above URL once build finishes (~10-15 min) and uploads to Play Console **Release → Closed testing → Create new release**.
 
+## Iteration — Privacy + Data Safety + 11 maan lisäys (2026-04-28b)
+- ✅ **Tietosuojaseloste päivitetty** (`Privacy.jsx`) kattamaan: käyttäjätilit, profiilikuva (GridFS), SVTL-taistelijapassi & varustepassi (PDFt), RSVP, Expo Push -laitetokenit, viestiloki, salasanan palautus -tokenit, tilin poiston cascade-sääntö. **DA & DE** kirjoitettu täysin natiivisti (aiemmin fallback EN); ET/PL fallback EN kuten ennen.
+- ✅ **Play Console Data Safety -mappaus** generoitu: `/app/docs/PLAY_CONSOLE_DATA_SAFETY.md`. Sisältää: 14 datakategorian täydellinen taulukko, 10 kerätyn datatyypin yhteenveto Play Consolen lomaketta varten, koodirefrenssit (mistä endpointista jokainen tieto tulee), päivitysmuistutus tuleville integraatiomuutoksille (Stripe, analytiikka).
+- ✅ **Maa-vaihtoehdot laajennettu 10 → 21 maahan**: lisätty SI Slovenia, HR Kroatia, UA Ukraina, NL Alankomaat, GB Iso-Britannia, IE Irlanti, BE Belgia, FR Ranska, ES Espanja, PT Portugali, IT Italia. Päivitetty kaikkialle: backend `VALID_COUNTRIES` & `EventCountry` Literal, frontend `countries.js` (lipuilla), 3× COUNTRIES-listaa (Profile, Submit, AdminEventEditDialog), `SavedSearchEditor.jsx` COUNTRY_KEYS, mobile `countries.ts` ja `types.ts`. Käännökset 7 kielessä: top-level `countries.{CODE}` ja `account.country_opt_{CODE}`. Validoitu API-kutsulla: `IT` hyväksytään, virheellinen `XX` palauttaa 400.
+
 ## Backlog (priorities)
 - **P1** Stripe integration for paid messaging (currently admin manually toggles `paid_messaging_enabled`).
 - **P1** Mobile DA/DE/ET/PL native dictionaries (currently fall back to EN; covers ~80 string keys vs 250 on web).

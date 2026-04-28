@@ -108,7 +108,18 @@
     "DE": "Saksamaa",
     "IS": "Iirimaa",
     "LV": "Läti",
-    "LT": "Leedu"
+    "LT": "Leedu",
+    "SI": "Sloveenia",
+    "HR": "Horvaatia",
+    "UA": "Ukraina",
+    "NL": "Holland",
+    "GB": "Suurbritannia",
+    "IE": "Iirimaa",
+    "BE": "Belgia",
+    "FR": "Prantsusmaa",
+    "ES": "Hispaania",
+    "PT": "Portugal",
+    "IT": "Itaalia"
   },
   "upload": {
     "choose": "Laadi pilt üles",
@@ -378,7 +389,18 @@
     "doc_removed": "Dokument eemaldatud",
     "doc_pdf_only": "Toetatud on ainult PDF-failid",
     "doc_too_large": "Fail on liiga suur (max 8 MB)",
-    "doc_confirm_remove": "Eemalda dokument jäädavalt?"
+    "doc_confirm_remove": "Eemalda dokument jäädavalt?",
+    "country_opt_SI": "Sloveenia",
+    "country_opt_HR": "Horvaatia",
+    "country_opt_UA": "Ukraina",
+    "country_opt_NL": "Holland",
+    "country_opt_GB": "Suurbritannia",
+    "country_opt_IE": "Iirimaa",
+    "country_opt_BE": "Belgia",
+    "country_opt_FR": "Prantsusmaa",
+    "country_opt_ES": "Hispaania",
+    "country_opt_PT": "Portugal",
+    "country_opt_IT": "Itaalia"
   },
   "messaging": {
     "targets": "Sihtgrupp",

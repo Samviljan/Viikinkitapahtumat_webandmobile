@@ -9,6 +9,17 @@ export const COUNTRY_FLAGS: Record<string, string> = {
   IS: "🇮🇸",
   LV: "🇱🇻",
   LT: "🇱🇹",
+  SI: "🇸🇮",
+  HR: "🇭🇷",
+  UA: "🇺🇦",
+  NL: "🇳🇱",
+  GB: "🇬🇧",
+  IE: "🇮🇪",
+  BE: "🇧🇪",
+  FR: "🇫🇷",
+  ES: "🇪🇸",
+  PT: "🇵🇹",
+  IT: "🇮🇹",
 };
 
 export const COUNTRY_NAMES: Record<string, string> = {
@@ -22,6 +33,17 @@ export const COUNTRY_NAMES: Record<string, string> = {
   IS: "Islanti",
   LV: "Latvia",
   LT: "Liettua",
+  SI: "Slovenia",
+  HR: "Kroatia",
+  UA: "Ukraina",
+  NL: "Alankomaat",
+  GB: "Iso-Britannia",
+  IE: "Irlanti",
+  BE: "Belgia",
+  FR: "Ranska",
+  ES: "Espanja",
+  PT: "Portugali",
+  IT: "Italia",
 };
 
 export const COUNTRY_CODES = Object.keys(COUNTRY_FLAGS);

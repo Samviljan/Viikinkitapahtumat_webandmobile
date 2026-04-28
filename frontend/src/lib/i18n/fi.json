@@ -108,7 +108,18 @@
     "DE": "Saksa",
     "IS": "Islanti",
     "LV": "Latvia",
-    "LT": "Liettua"
+    "LT": "Liettua",
+    "SI": "Slovenia",
+    "HR": "Kroatia",
+    "UA": "Ukraina",
+    "NL": "Alankomaat",
+    "GB": "Iso-Britannia",
+    "IE": "Irlanti",
+    "BE": "Belgia",
+    "FR": "Ranska",
+    "ES": "Espanja",
+    "PT": "Portugali",
+    "IT": "Italia"
   },
   "upload": {
     "choose": "Lataa kuva",
@@ -375,7 +386,18 @@
     "doc_removed": "Asiakirja poistettu",
     "doc_pdf_only": "Vain PDF-tiedostot ovat tuettuja",
     "doc_too_large": "Tiedosto on liian suuri (max 8 MB)",
-    "doc_confirm_remove": "Poistetaanko tämä asiakirja pysyvästi?"
+    "doc_confirm_remove": "Poistetaanko tämä asiakirja pysyvästi?",
+    "country_opt_SI": "Slovenia",
+    "country_opt_HR": "Kroatia",
+    "country_opt_UA": "Ukraina",
+    "country_opt_NL": "Alankomaat",
+    "country_opt_GB": "Iso-Britannia",
+    "country_opt_IE": "Irlanti",
+    "country_opt_BE": "Belgia",
+    "country_opt_FR": "Ranska",
+    "country_opt_ES": "Espanja",
+    "country_opt_PT": "Portugali",
+    "country_opt_IT": "Italia"
   },
   "attend": {
     "mark_attending": "Merkitse osallistuvaksi",

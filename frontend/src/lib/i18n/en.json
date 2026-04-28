@@ -107,7 +107,18 @@
     "DE": "Germany",
     "IS": "Iceland",
     "LV": "Latvia",
-    "LT": "Lithuania"
+    "LT": "Lithuania",
+    "SI": "Slovenia",
+    "HR": "Croatia",
+    "UA": "Ukraine",
+    "NL": "Netherlands",
+    "GB": "United Kingdom",
+    "IE": "Ireland",
+    "BE": "Belgium",
+    "FR": "France",
+    "ES": "Spain",
+    "PT": "Portugal",
+    "IT": "Italy"
   },
   "upload": {
     "choose": "Upload image",
@@ -374,7 +385,18 @@
     "doc_removed": "Document removed",
     "doc_pdf_only": "Only PDF files are supported",
     "doc_too_large": "File is too large (max 8 MB)",
-    "doc_confirm_remove": "Permanently remove this document?"
+    "doc_confirm_remove": "Permanently remove this document?",
+    "country_opt_SI": "Slovenia",
+    "country_opt_HR": "Croatia",
+    "country_opt_UA": "Ukraine",
+    "country_opt_NL": "Netherlands",
+    "country_opt_GB": "United Kingdom",
+    "country_opt_IE": "Ireland",
+    "country_opt_BE": "Belgium",
+    "country_opt_FR": "France",
+    "country_opt_ES": "Spain",
+    "country_opt_PT": "Portugal",
+    "country_opt_IT": "Italy"
   },
   "attend": {
     "mark_attending": "Mark as attending",

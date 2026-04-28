@@ -27,7 +27,7 @@ const CATEGORY_LABEL = {
   fight_western: { fi: "Western-taistelu", en: "Western fight", sv: "Western-strid", et: "Western", pl: "Walka western" },
   fight_eastern: { fi: "Eastern-taistelu", en: "Eastern fight", sv: "Eastern-strid", et: "Eastern", pl: "Walka eastern" },
 };
-const COUNTRY_KEYS = ["fi", "se", "no", "dk", "ee", "lv", "is"];
+const COUNTRY_KEYS = ["fi", "se", "no", "dk", "ee", "lv", "is", "lt", "pl", "de", "si", "hr", "ua", "nl", "gb", "ie", "be", "fr", "es", "pt", "it"];
 
 export default function SavedSearchEditor() {
   const { user, updateProfile } = useAuth();

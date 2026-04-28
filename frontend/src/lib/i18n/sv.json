@@ -107,7 +107,18 @@
     "DE": "Tyskland",
     "IS": "Island",
     "LV": "Lettland",
-    "LT": "Litauen"
+    "LT": "Litauen",
+    "SI": "Slovenien",
+    "HR": "Kroatien",
+    "UA": "Ukraina",
+    "NL": "Nederländerna",
+    "GB": "Storbritannien",
+    "IE": "Irland",
+    "BE": "Belgien",
+    "FR": "Frankrike",
+    "ES": "Spanien",
+    "PT": "Portugal",
+    "IT": "Italien"
   },
   "upload": {
     "choose": "Ladda upp bild",
@@ -352,7 +363,18 @@
     "doc_removed": "Dokumentet borttaget",
     "doc_pdf_only": "Endast PDF-filer stöds",
     "doc_too_large": "Filen är för stor (max 8 MB)",
-    "doc_confirm_remove": "Ta bort dokumentet permanent?"
+    "doc_confirm_remove": "Ta bort dokumentet permanent?",
+    "country_opt_SI": "Slovenien",
+    "country_opt_HR": "Kroatien",
+    "country_opt_UA": "Ukraina",
+    "country_opt_NL": "Nederländerna",
+    "country_opt_GB": "Storbritannien",
+    "country_opt_IE": "Irland",
+    "country_opt_BE": "Belgien",
+    "country_opt_FR": "Frankrike",
+    "country_opt_ES": "Spanien",
+    "country_opt_PT": "Portugal",
+    "country_opt_IT": "Italien"
   },
   "attend": {
     "mark_attending": "Markera deltagande",

@@ -108,7 +108,18 @@
     "DE": "Niemcy",
     "IS": "Islandia",
     "LV": "Łotwa",
-    "LT": "Litwa"
+    "LT": "Litwa",
+    "SI": "Słowenia",
+    "HR": "Chorwacja",
+    "UA": "Ukraina",
+    "NL": "Holandia",
+    "GB": "Wielka Brytania",
+    "IE": "Irlandia",
+    "BE": "Belgia",
+    "FR": "Francja",
+    "ES": "Hiszpania",
+    "PT": "Portugalia",
+    "IT": "Włochy"
   },
   "upload": {
     "choose": "Prześlij zdjęcie",
@@ -378,7 +389,18 @@
     "doc_removed": "Dokument usunięty",
     "doc_pdf_only": "Obsługiwane są tylko pliki PDF",
     "doc_too_large": "Plik jest za duży (maks. 8 MB)",
-    "doc_confirm_remove": "Usunąć dokument na stałe?"
+    "doc_confirm_remove": "Usunąć dokument na stałe?",
+    "country_opt_SI": "Słowenia",
+    "country_opt_HR": "Chorwacja",
+    "country_opt_UA": "Ukraina",
+    "country_opt_NL": "Holandia",
+    "country_opt_GB": "Wielka Brytania",
+    "country_opt_IE": "Irlandia",
+    "country_opt_BE": "Belgia",
+    "country_opt_FR": "Francja",
+    "country_opt_ES": "Hiszpania",
+    "country_opt_PT": "Portugalia",
+    "country_opt_IT": "Włochy"
   },
   "messaging": {
     "targets": "Grupa docelowa",

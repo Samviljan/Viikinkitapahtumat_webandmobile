@@ -107,7 +107,18 @@
     "DE": "Deutschland",
     "IS": "Island",
     "LV": "Lettland",
-    "LT": "Litauen"
+    "LT": "Litauen",
+    "SI": "Slowenien",
+    "HR": "Kroatien",
+    "UA": "Ukraine",
+    "NL": "Niederlande",
+    "GB": "Vereinigtes Königreich",
+    "IE": "Irland",
+    "BE": "Belgien",
+    "FR": "Frankreich",
+    "ES": "Spanien",
+    "PT": "Portugal",
+    "IT": "Italien"
   },
   "upload": {
     "choose": "Bild hochladen",
@@ -374,7 +385,18 @@
     "doc_removed": "Dokument entfernt",
     "doc_pdf_only": "Nur PDF-Dateien werden unterstützt",
     "doc_too_large": "Datei ist zu groß (max. 8 MB)",
-    "doc_confirm_remove": "Dokument dauerhaft entfernen?"
+    "doc_confirm_remove": "Dokument dauerhaft entfernen?",
+    "country_opt_SI": "Slowenien",
+    "country_opt_HR": "Kroatien",
+    "country_opt_UA": "Ukraine",
+    "country_opt_NL": "Niederlande",
+    "country_opt_GB": "Vereinigtes Königreich",
+    "country_opt_IE": "Irland",
+    "country_opt_BE": "Belgien",
+    "country_opt_FR": "Frankreich",
+    "country_opt_ES": "Spanien",
+    "country_opt_PT": "Portugal",
+    "country_opt_IT": "Italien"
   },
   "attend": {
     "mark_attending": "Als teilnehmend markieren",

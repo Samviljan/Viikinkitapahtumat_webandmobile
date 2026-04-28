@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { CheckCircle2 } from "lucide-react";
 
 const CATS = ["market", "training_camp", "course", "festival", "meetup", "other"];
-const COUNTRIES = ["FI", "SE", "EE", "NO", "DK", "PL", "DE", "IS", "LV", "LT"];
+const COUNTRIES = ["FI", "SE", "EE", "NO", "DK", "PL", "DE", "IS", "LV", "LT", "SI", "HR", "UA", "NL", "GB", "IE", "BE", "FR", "ES", "PT", "IT"];
 const fieldClass =
   "bg-viking-surface border-viking-edge rounded-sm text-viking-bone placeholder:text-viking-stone focus:border-viking-ember focus:ring-viking-ember";
 

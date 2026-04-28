@@ -7,7 +7,8 @@ export type EventCategory =
   | "other";
 
 export type CountryCode =
-  | "FI" | "SE" | "EE" | "NO" | "DK" | "PL" | "DE" | "IS" | "LV" | "LT";
+  | "FI" | "SE" | "EE" | "NO" | "DK" | "PL" | "DE" | "IS" | "LV" | "LT"
+  | "SI" | "HR" | "UA" | "NL" | "GB" | "IE" | "BE" | "FR" | "ES" | "PT" | "IT";
 
 export interface VikingEvent {
   id: string;
