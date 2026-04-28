@@ -464,7 +464,13 @@ See `/app/memory/test_credentials.md`.
 - ✅ **Admin: add admin user + GDPR-delete user** — `POST /api/admin/users` (creates role=admin) and `DELETE /api/admin/users/{id}` (cascades RSVPs + email reminders + newsletter subscriptions; anonymises message_log sender_id; refuses to delete self / last admin). New `AdminUserCreateDialog.jsx` + trash icon column on users table.
 - ✅ **i18n refactor**: 2113-line `i18n.js` → 7 per-language JSON files (`/app/frontend/src/lib/i18n/{fi,en,sv,et,pl,da,de}.json`) + 75-line provider that statically imports them. CRA bundles JSONs at build time.
 - ✅ **DA & DE full translation** via Claude Haiku 4.5 over Emergent LLM Key. Was: stubs (~20 keys, fallback EN). Now: full ~250 keys per language (every section: home, events, submit, courses, guilds, shops, sword, contact, newsletter, admin, profile, attend, messaging). Verified end-to-end via Playwright on /events, /home, /admin.
-- ✅ **Mobile prep for Play Console**: `app.json` version 0.3.0 → 0.4.0, versionCode 5 → 6. `eas.json production.android.buildType: "app-bundle"` produces .aab for Play Console upload. EAS-BUILD.md rewritten for AAB workflow + EXPO_TOKEN CI usage.
+- ✅ **Mobile prep for Play Console**: `app.json` version 0.3.0 → 0.4.0, versionCode 5 → 6 (auto-incremented to 7 on EAS build). `eas.json production.android.buildType: "app-bundle"` produces .aab for Play Console upload. EAS-BUILD.md rewritten for AAB workflow + EXPO_TOKEN CI usage.
+- ✅ **Mobile production AAB build kicked off** via EAS:
+  - Build ID `8353a9a3-9499-43ca-8849-095bdc63cecb`
+  - Logs / artifact: https://expo.dev/accounts/samviljan/projects/viikinkitapahtumat/builds/8353a9a3-9499-43ca-8849-095bdc63cecb
+  - SDK 54, Version 0.4.0, versionCode 7
+  - Owner: `samviljan` (authenticated via `EXPO_TOKEN`)
+  - User downloads `.aab` from above URL when Expo finishes (~10-15 min) and uploads to Play Console manually.
 
 
 ## Backlog (priorities)
