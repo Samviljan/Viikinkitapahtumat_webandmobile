@@ -11,6 +11,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Literal
 
 import bcrypt
+import httpx
 import jwt
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, Query, BackgroundTasks, UploadFile, File
 from fastapi.responses import PlainTextResponse, RedirectResponse, FileResponse
@@ -86,9 +87,15 @@ async def get_current_user(request: Request) -> dict:
         payload = jwt.decode(token, get_jwt_secret(), algorithms=[JWT_ALGORITHM])
         if payload.get("type") != "access":
             raise HTTPException(status_code=401, detail="Invalid token type")
-        user = await db.users.find_one({"id": payload["sub"]}, {"_id": 0, "password_hash": 0})
+        user = await db.users.find_one({"id": payload["sub"]}, {"_id": 0})
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
+        # has_password: True for legacy admin + email/password users; False for
+        # Google-only users so the frontend can hide the "change password" link.
+        user["has_password"] = bool(user.get("password_hash"))
+        user.pop("password_hash", None)
+        user.setdefault("nickname", None)
+        user.setdefault("user_types", [])
         return user
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
@@ -115,6 +122,28 @@ class UserOut(BaseModel):
     email: EmailStr
     name: str
     role: str
+    nickname: Optional[str] = None
+    user_types: List[str] = []
+    has_password: bool = True
+
+
+USER_TYPES = {"reenactor", "fighter", "merchant", "organizer"}
+
+
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str
+    nickname: str
+    user_types: List[str] = []
+
+
+class ProfileUpdate(BaseModel):
+    nickname: Optional[str] = None
+    user_types: Optional[List[str]] = None
+
+
+class GoogleSessionRequest(BaseModel):
+    session_id: str
 
 
 EventCategory = Literal["market", "training_camp", "course", "festival", "meetup", "other"]
@@ -255,7 +284,9 @@ class ReminderRequest(BaseModel):
 async def login(payload: LoginRequest, response: Response):
     email = payload.email.lower()
     user = await db.users.find_one({"email": email})
-    if not user or not verify_password(payload.password, user["password_hash"]):
+    if not user or not user.get("password_hash") or not verify_password(
+        payload.password, user["password_hash"]
+    ):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     token = create_access_token(user["id"], email)
     response.set_cookie(
@@ -272,6 +303,144 @@ async def login(payload: LoginRequest, response: Response):
         "email": user["email"],
         "name": user["name"],
         "role": user["role"],
+        "nickname": user.get("nickname"),
+        "user_types": user.get("user_types", []),
+        "has_password": True,
+        "token": token,
+    }
+
+
+@api_router.post("/auth/register", status_code=201)
+async def register(payload: RegisterRequest, response: Response):
+    """End-user registration. Distinct from the seeded admin account: new users
+    always receive role="user". An existing email returns 409 so the client can
+    redirect to the login flow instead.
+    """
+    email = payload.email.lower().strip()
+    nick = payload.nickname.strip()
+    if len(payload.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    if not nick:
+        raise HTTPException(status_code=400, detail="Nickname is required")
+    bad = [t for t in payload.user_types if t not in USER_TYPES]
+    if bad:
+        raise HTTPException(status_code=400, detail=f"Invalid user_type(s): {bad}")
+
+    existing = await db.users.find_one({"email": email})
+    if existing:
+        raise HTTPException(status_code=409, detail="Email already registered")
+
+    user_id = f"user_{uuid.uuid4().hex[:12]}"
+    doc = {
+        "id": user_id,
+        "email": email,
+        "name": nick,
+        "nickname": nick,
+        "role": "user",
+        "user_types": list(set(payload.user_types)),
+        "password_hash": hash_password(payload.password),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.users.insert_one(doc)
+
+    token = create_access_token(user_id, email)
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=7 * 24 * 3600,
+        path="/",
+    )
+    return {
+        "id": user_id,
+        "email": email,
+        "name": nick,
+        "nickname": nick,
+        "role": "user",
+        "user_types": doc["user_types"],
+        "has_password": True,
+        "token": token,
+    }
+
+
+@api_router.post("/auth/google-session")
+async def google_session(payload: GoogleSessionRequest, response: Response):
+    """Exchange a one-time Emergent Auth session_id for our own JWT.
+
+    Calls Emergent's session-data endpoint server-side, then either creates a
+    new user (Google-only, no password_hash) or LINKS the Google profile to an
+    existing email/password user. Returns the same shape as /auth/login so the
+    frontend can use one auth context.
+    """
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(
+                "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
+                headers={"X-Session-ID": payload.session_id},
+            )
+        if r.status_code != 200:
+            raise HTTPException(status_code=401, detail="Invalid session")
+        data = r.json()
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=502, detail=f"Auth provider unavailable: {e}")
+
+    email = (data.get("email") or "").lower().strip()
+    name = data.get("name") or email.split("@")[0]
+    google_id = data.get("id")
+    if not email or not google_id:
+        raise HTTPException(status_code=400, detail="Incomplete profile from auth provider")
+
+    user = await db.users.find_one({"email": email})
+    if user:
+        # Link Google id if missing.
+        if not user.get("google_id"):
+            await db.users.update_one(
+                {"id": user["id"]}, {"$set": {"google_id": google_id}}
+            )
+        user_id = user["id"]
+        role = user["role"]
+        nickname = user.get("nickname") or user.get("name") or name
+        user_types = user.get("user_types", [])
+        has_password = bool(user.get("password_hash"))
+    else:
+        user_id = f"user_{uuid.uuid4().hex[:12]}"
+        nickname = name
+        user_types = []
+        role = "user"
+        has_password = False
+        await db.users.insert_one(
+            {
+                "id": user_id,
+                "email": email,
+                "name": name,
+                "nickname": nickname,
+                "google_id": google_id,
+                "role": role,
+                "user_types": user_types,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+
+    token = create_access_token(user_id, email)
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=7 * 24 * 3600,
+        path="/",
+    )
+    return {
+        "id": user_id,
+        "email": email,
+        "name": nickname,
+        "nickname": nickname,
+        "role": role,
+        "user_types": user_types,
+        "has_password": has_password,
         "token": token,
     }
 
@@ -279,6 +448,33 @@ async def login(payload: LoginRequest, response: Response):
 @api_router.get("/auth/me", response_model=UserOut)
 async def me(user: dict = Depends(get_current_user)):
     return UserOut(**user)
+
+
+@api_router.patch("/auth/profile", response_model=UserOut)
+async def update_profile(
+    payload: ProfileUpdate, user: dict = Depends(get_current_user)
+):
+    update: dict = {}
+    if payload.nickname is not None:
+        nick = payload.nickname.strip()
+        if not nick:
+            raise HTTPException(status_code=400, detail="Nickname cannot be empty")
+        update["nickname"] = nick
+        update["name"] = nick  # keep `name` (legacy) in sync for compatibility
+    if payload.user_types is not None:
+        bad = [t for t in payload.user_types if t not in USER_TYPES]
+        if bad:
+            raise HTTPException(status_code=400, detail=f"Invalid user_type(s): {bad}")
+        update["user_types"] = list(set(payload.user_types))
+    if not update:
+        return UserOut(**user)
+    await db.users.update_one({"id": user["id"]}, {"$set": update})
+    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    fresh["has_password"] = bool(fresh.get("password_hash"))
+    fresh.pop("password_hash", None)
+    fresh.setdefault("nickname", None)
+    fresh.setdefault("user_types", [])
+    return UserOut(**fresh)
 
 
 @api_router.post("/auth/logout")

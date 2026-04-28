@@ -60,6 +60,10 @@ interface Dict {
     section_filters: string;
     section_near_me: string;
     section_about: string;
+    section_profile: string;
+    nav_profile: string;
+    nav_search: string;
+    nav_about: string;
     language_auto: string;
     save_defaults: string;
     saved_toast: string;
@@ -71,6 +75,34 @@ interface Dict {
     default_countries: string;
     default_near_me: string;
     open_about: string;
+  };
+  auth: {
+    signed_out_title: string;
+    signed_out_sub: string;
+    sign_in: string;
+    sign_up: string;
+    sign_out: string;
+    google_sign_in: string;
+    or: string;
+    email: string;
+    password: string;
+    password_min: string;
+    nickname: string;
+    user_types_label: string;
+    user_types_help: string;
+    type_reenactor: string;
+    type_fighter: string;
+    type_merchant: string;
+    type_organizer: string;
+    have_account: string;
+    no_account: string;
+    error_invalid: string;
+    error_duplicate: string;
+    error_generic: string;
+    profile_title: string;
+    profile_save: string;
+    profile_saved: string;
+    confirm_sign_out: string;
   };
   info: {
     title: string;
@@ -164,6 +196,10 @@ export const translations: Record<Lang, Dict> = {
       section_filters: "Oletushakufiltterit",
       section_near_me: "Lähellä minua",
       section_about: "Sovelluksesta",
+      section_profile: "Profiili",
+      nav_profile: "Profiili",
+      nav_search: "Hakuasetukset",
+      nav_about: "Tietoa sovelluksesta",
       language_auto: "Tunnista automaattisesti",
       save_defaults: "Tallenna oletukseksi",
       saved_toast: "Tallennettu",
@@ -176,6 +212,35 @@ export const translations: Record<Lang, Dict> = {
       default_countries: "Oletus maat",
       default_near_me: "Lähellä minua oletuksena päällä",
       open_about: "Tietoa sovelluksesta",
+    },
+    auth: {
+      signed_out_title: "Kirjaudu sisään",
+      signed_out_sub:
+        "Kirjautuminen on vapaaehtoista. Sen avulla voit tallentaa profiilisi ja saada jatkossa lisätoimintoja.",
+      sign_in: "Kirjaudu",
+      sign_up: "Luo tili",
+      sign_out: "Kirjaudu ulos",
+      google_sign_in: "Jatka Googlella",
+      or: "tai",
+      email: "Sähköposti",
+      password: "Salasana",
+      password_min: "Vähintään 8 merkkiä",
+      nickname: "Nimimerkki",
+      user_types_label: "Olen…",
+      user_types_help: "Voit valita yhden tai useamman.",
+      type_reenactor: "Elävöittäjä",
+      type_fighter: "Taistelija",
+      type_merchant: "Kauppias",
+      type_organizer: "Tapahtumajärjestäjä",
+      have_account: "Onko jo tili? Kirjaudu",
+      no_account: "Ei tiliä? Luo tili",
+      error_invalid: "Virheellinen sähköposti tai salasana.",
+      error_duplicate: "Sähköposti on jo käytössä.",
+      error_generic: "Toiminto epäonnistui. Yritä uudelleen.",
+      profile_title: "Profiili",
+      profile_save: "Tallenna",
+      profile_saved: "Profiili tallennettu",
+      confirm_sign_out: "Kirjaudutaanko ulos?",
     },
     info: {
       title: "Tietoa sovelluksesta",
@@ -265,6 +330,10 @@ export const translations: Record<Lang, Dict> = {
       section_filters: "Default search filters",
       section_near_me: "Near me",
       section_about: "About",
+      section_profile: "Profile",
+      nav_profile: "Profile",
+      nav_search: "Search settings",
+      nav_about: "About the app",
       language_auto: "Auto-detect",
       save_defaults: "Save as default",
       saved_toast: "Saved",
@@ -277,6 +346,35 @@ export const translations: Record<Lang, Dict> = {
       default_countries: "Default countries",
       default_near_me: "Near me on by default",
       open_about: "About the app",
+    },
+    auth: {
+      signed_out_title: "Sign in",
+      signed_out_sub:
+        "Sign-in is optional. It lets you save your profile and unlock more features later.",
+      sign_in: "Sign in",
+      sign_up: "Create account",
+      sign_out: "Sign out",
+      google_sign_in: "Continue with Google",
+      or: "or",
+      email: "Email",
+      password: "Password",
+      password_min: "At least 8 characters",
+      nickname: "Nickname",
+      user_types_label: "I am a…",
+      user_types_help: "Pick one or more.",
+      type_reenactor: "Reenactor",
+      type_fighter: "Fighter",
+      type_merchant: "Merchant",
+      type_organizer: "Event organizer",
+      have_account: "Have an account? Sign in",
+      no_account: "No account? Create one",
+      error_invalid: "Invalid email or password.",
+      error_duplicate: "Email is already registered.",
+      error_generic: "Something went wrong. Try again.",
+      profile_title: "Profile",
+      profile_save: "Save",
+      profile_saved: "Profile saved",
+      confirm_sign_out: "Sign out?",
     },
     info: {
       title: "About the app",
@@ -365,6 +463,10 @@ export const translations: Record<Lang, Dict> = {
       section_filters: "Förvalda sökfilter",
       section_near_me: "Nära mig",
       section_about: "Om",
+      section_profile: "Profil",
+      nav_profile: "Profil",
+      nav_search: "Sökinställningar",
+      nav_about: "Om appen",
       language_auto: "Autoidentifiera",
       save_defaults: "Spara som förval",
       saved_toast: "Sparat",
@@ -377,6 +479,35 @@ export const translations: Record<Lang, Dict> = {
       default_countries: "Förvalda länder",
       default_near_me: "Nära mig som förval",
       open_about: "Om appen",
+    },
+    auth: {
+      signed_out_title: "Logga in",
+      signed_out_sub:
+        "Inloggning är valfri. Den låter dig spara din profil och få fler funktioner senare.",
+      sign_in: "Logga in",
+      sign_up: "Skapa konto",
+      sign_out: "Logga ut",
+      google_sign_in: "Fortsätt med Google",
+      or: "eller",
+      email: "E-post",
+      password: "Lösenord",
+      password_min: "Minst 8 tecken",
+      nickname: "Smeknamn",
+      user_types_label: "Jag är…",
+      user_types_help: "Välj en eller flera.",
+      type_reenactor: "Återskapare",
+      type_fighter: "Krigare",
+      type_merchant: "Handlare",
+      type_organizer: "Evenemangsarrangör",
+      have_account: "Har du konto? Logga in",
+      no_account: "Inget konto? Skapa ett",
+      error_invalid: "Ogiltig e-post eller lösenord.",
+      error_duplicate: "E-posten är redan registrerad.",
+      error_generic: "Något gick fel. Försök igen.",
+      profile_title: "Profil",
+      profile_save: "Spara",
+      profile_saved: "Profil sparad",
+      confirm_sign_out: "Logga ut?",
     },
     info: {
       title: "Om appen",

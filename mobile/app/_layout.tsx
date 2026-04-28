@@ -5,29 +5,35 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { colors } from "@/src/lib/theme";
 import { SettingsProvider } from "@/src/lib/i18n";
+import { AuthProvider } from "@/src/lib/auth";
 
 export default function RootLayout() {
   return (
     <SettingsProvider>
-      <SafeAreaProvider>
-        <StatusBar style="light" />
-        <Stack
-          screenOptions={{
-            contentStyle: { backgroundColor: colors.bg },
-            headerStyle: { backgroundColor: colors.bg },
-            headerTintColor: colors.bone,
-            headerTitleStyle: { color: colors.bone, fontWeight: "700" },
-            headerShadowVisible: false,
-          }}
-        >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="event/[id]"
-            options={{ title: "", headerTransparent: true }}
-          />
-          <Stack.Screen name="info" options={{ headerShown: false }} />
-        </Stack>
-      </SafeAreaProvider>
+      <AuthProvider>
+        <SafeAreaProvider>
+          <StatusBar style="light" />
+          <Stack
+            screenOptions={{
+              contentStyle: { backgroundColor: colors.bg },
+              headerStyle: { backgroundColor: colors.bg },
+              headerTintColor: colors.bone,
+              headerTitleStyle: { color: colors.bone, fontWeight: "700" },
+              headerShadowVisible: false,
+            }}
+          >
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="event/[id]"
+              options={{ title: "", headerTransparent: true }}
+            />
+            <Stack.Screen name="info" options={{ headerShown: false }} />
+            <Stack.Screen name="settings/profile" options={{ headerShown: false }} />
+            <Stack.Screen name="settings/search" options={{ headerShown: false }} />
+            <Stack.Screen name="settings/auth" options={{ headerShown: false }} />
+          </Stack>
+        </SafeAreaProvider>
+      </AuthProvider>
     </SettingsProvider>
   );
 }
