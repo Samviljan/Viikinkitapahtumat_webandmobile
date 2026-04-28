@@ -473,6 +473,15 @@ See `/app/memory/test_credentials.md`.
   - User downloads `.aab` from above URL when Expo finishes (~10-15 min) and uploads to Play Console manually.
 
 
+## Iteration — Push verification + Mobile build 0.4.1 (2026-04-28)
+- ✅ **Admin Push Health card verified** at `/admin/messages` — shows `EXPO_ACCESS_TOKEN: Yes`, `users_with_push_token: 0`, with explanatory help text and "Send test" button. Card is rendered by `AdminPushHealthCard.jsx` and powered by `GET /api/admin/push/health` + `POST /api/admin/push/test`. Confirms previous push send returned `sent_push:0` because nobody has a registered Expo token (expected — testing was on web, not mobile).
+- ✅ **Mobile production AAB build 0.4.1 kicked off** via EAS for Play Console closed testing track:
+  - Build ID `3a72772a-4c1c-43f7-8060-1ad2974751db`
+  - Logs / artifact: https://expo.dev/accounts/samviljan/projects/viikinkitapahtumat/builds/3a72772a-4c1c-43f7-8060-1ad2974751db
+  - SDK 54, Version 0.4.1, versionCode 10 (auto-incremented from 9)
+  - Includes all 2026-04-28 features: profile image+PDF uploads, association/country fields, dynamic submit language, RSVP-restricted messaging w/ target categories, mobile "My events" tab, push-token diagnostics on web admin.
+  - User downloads `.aab` from above URL once build finishes (~10-15 min) and uploads to Play Console **Release → Closed testing → Create new release**.
+
 ## Backlog (priorities)
 - **P1** Stripe integration for paid messaging (currently admin manually toggles `paid_messaging_enabled`).
 - **P1** Mobile DA/DE/ET/PL native dictionaries (currently fall back to EN; covers ~80 string keys vs 250 on web).
