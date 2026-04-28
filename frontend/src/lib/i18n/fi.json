@@ -417,7 +417,10 @@
     "send_btn": "Lähetä",
     "sent_toast": "Viesti lähetetty",
     "result": "Tulos",
-    "result_text": "Push-viestejä lähetetty: {push}, sähköposteja lähetetty: {email}, ehdot täyttäviä vastaanottajia: {recipients}."
+    "result_text": "Push-viestejä lähetetty: {push}, sähköposteja lähetetty: {email}, ehdot täyttäviä vastaanottajia: {recipients}.",
+    "targets": "Kohderyhmä",
+    "targets_help_all": "Tyhjä = viesti lähetetään kaikille suostumuksen antaneille osallistujille.",
+    "targets_help_some": "Viesti rajataan vain valittuihin kategorioihin kuuluville osallistujille."
   },
   "courses": {
     "title": "Kurssit ja työpajat",

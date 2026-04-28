@@ -416,7 +416,10 @@
     "send_btn": "Send",
     "sent_toast": "Message sent",
     "result": "Result",
-    "result_text": "Push sent: {push}, emails sent: {email}, eligible recipients: {recipients}."
+    "result_text": "Push sent: {push}, emails sent: {email}, eligible recipients: {recipients}.",
+    "targets": "Target audience",
+    "targets_help_all": "Empty = message goes to all consenting attendees.",
+    "targets_help_some": "Message is limited to attendees in the selected categories only."
   },
   "courses": {
     "title": "Courses & workshops",

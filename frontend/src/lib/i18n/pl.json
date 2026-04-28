@@ -368,5 +368,10 @@
     "doc_pdf_only": "Obsługiwane są tylko pliki PDF",
     "doc_too_large": "Plik jest za duży (maks. 8 MB)",
     "doc_confirm_remove": "Usunąć dokument na stałe?"
+  },
+  "messaging": {
+    "targets": "Grupa docelowa",
+    "targets_help_all": "Puste = wiadomość trafi do wszystkich uczestników, którzy wyrazili zgodę.",
+    "targets_help_some": "Wiadomość ograniczona do uczestników z wybranych kategorii."
   }
 }

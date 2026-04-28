@@ -473,5 +473,10 @@
     "col_created": "Prenumererat",
     "delete_btn": "Ta bort prenumerant",
     "confirm_delete": "Ta bort prenumerant {email}? Detta kan inte ångras."
+  },
+  "messaging": {
+    "targets": "Målgrupp",
+    "targets_help_all": "Tomt = meddelandet skickas till alla samtyckande deltagare.",
+    "targets_help_some": "Meddelandet begränsas till deltagare i de valda kategorierna."
   }
 }

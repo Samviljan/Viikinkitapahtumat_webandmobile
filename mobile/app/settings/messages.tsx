@@ -35,6 +35,9 @@ interface Event {
 const CHANNELS = ["both", "push", "email"] as const;
 type Channel = (typeof CHANNELS)[number];
 
+const TARGET_CATEGORIES = ["reenactor", "fighter", "merchant", "organizer"] as const;
+type Target = (typeof TARGET_CATEGORIES)[number];
+
 interface SendResult {
   sent_push: number;
   sent_email: number;
@@ -50,21 +53,33 @@ export default function MessagesScreen() {
   const [channel, setChannel] = useState<Channel>("both");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [targets, setTargets] = useState<Target[]>([]);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<SendResult | null>(null);
 
   const types = user?.user_types || [];
+  const isAdmin = user?.role === "admin";
   const allowed =
-    !!user?.paid_messaging_enabled &&
-    (types.includes("merchant") || types.includes("organizer"));
+    isAdmin ||
+    (!!user?.paid_messaging_enabled &&
+      (types.includes("merchant") || types.includes("organizer")));
 
+  // Admins see all events (site-wide announcements). Merchants/organizers only
+  // see events they have RSVPed to — backend enforces the same gate.
   useEffect(() => {
     if (!allowed) return;
+    const url = isAdmin ? "/events?limit=200" : "/users/me/attending";
     api
-      .get<Event[]>("/events?limit=200")
+      .get<Event[]>(url)
       .then((r) => setEvents(r.data || []))
       .catch(() => setEvents([]));
-  }, [allowed]);
+  }, [allowed, isAdmin]);
+
+  function toggleTarget(c: Target) {
+    setTargets((prev) =>
+      prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
+    );
+  }
 
   async function send() {
     if (!eventId || !subject.trim() || !body.trim()) return;
@@ -76,16 +91,23 @@ export default function MessagesScreen() {
         channel,
         subject: subject.trim(),
         body: body.trim(),
+        target_categories: targets,
       });
       setResult(data);
       setSubject("");
       setBody("");
       Alert.alert(t("messaging.sent_toast"));
     } catch (e: unknown) {
-      const status = (e as { response?: { status?: number } })?.response?.status;
-      Alert.alert(
-        status === 402 ? t("messaging.blocked_title") : t("auth.error_generic"),
-      );
+      const errResp = (e as { response?: { status?: number; data?: { detail?: string } } })?.response;
+      const status = errResp?.status;
+      const detail = errResp?.data?.detail;
+      if (status === 403 && typeof detail === "string") {
+        Alert.alert(detail);
+      } else if (status === 402) {
+        Alert.alert(t("messaging.blocked_title"));
+      } else {
+        Alert.alert(t("auth.error_generic"));
+      }
     } finally {
       setSending(false);
     }
@@ -188,6 +210,35 @@ export default function MessagesScreen() {
                   );
                 })}
               </View>
+
+              {/* Target categories */}
+              <Text style={[styles.label, { marginTop: spacing.lg }]}>
+                {t("messaging.targets")}
+              </Text>
+              <View style={styles.chipRow}>
+                {TARGET_CATEGORIES.map((c) => {
+                  const active = targets.includes(c);
+                  return (
+                    <Pressable
+                      key={c}
+                      testID={`msg-target-${c}`}
+                      onPress={() => toggleTarget(c)}
+                      style={[styles.chip, active && styles.chipActive]}
+                    >
+                      <Text
+                        style={[styles.chipText, active && styles.chipTextActive]}
+                      >
+                        {t(`account.type_${c}`)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Text style={styles.help}>
+                {targets.length === 0
+                  ? t("messaging.targets_help_all")
+                  : t("messaging.targets_help_some")}
+              </Text>
 
               {/* Subject */}
               <Text style={[styles.label, { marginTop: spacing.lg }]}>

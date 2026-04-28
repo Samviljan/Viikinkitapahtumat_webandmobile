@@ -25,6 +25,7 @@ const fieldClass =
   "bg-viking-surface border-viking-edge rounded-sm text-viking-bone placeholder:text-viking-stone focus:border-viking-ember focus:ring-viking-ember";
 
 const CHANNELS = ["both", "push", "email"];
+const TARGET_CATEGORIES = ["reenactor", "fighter", "merchant", "organizer"];
 
 export default function SendMessage() {
   const { user, loading } = useAuth();
@@ -34,15 +35,18 @@ export default function SendMessage() {
   const [channel, setChannel] = useState("both");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [targets, setTargets] = useState([]);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState(null);
 
-  // Load all approved events so user can pick one of "their" events
-  // (loose gating — backend further validates consent).
+  // Load only events the user is RSVPed to (admins see ALL events because they
+  // send site-wide). Backend further enforces this gate; we pre-filter for UX.
   useEffect(() => {
     if (!user) return;
+    const isAdmin = user.role === "admin";
+    const url = isAdmin ? "/events?limit=200" : "/users/me/attending";
     api
-      .get("/events?limit=200")
+      .get(url)
       .then((r) => setEvents(r.data || []))
       .catch(() => setEvents([]));
   }, [user]);
@@ -83,6 +87,7 @@ export default function SendMessage() {
         channel,
         subject: subject.trim(),
         body: body.trim(),
+        target_categories: targets,
       });
       setResult(data);
       toast.success(t("messaging.sent_toast"));
@@ -90,7 +95,10 @@ export default function SendMessage() {
       setBody("");
     } catch (err) {
       const status = err.response?.status;
-      if (status === 402) {
+      const detail = err.response?.data?.detail;
+      if (status === 403 && typeof detail === "string") {
+        toast.error(detail);
+      } else if (status === 402) {
         toast.error(t("messaging.blocked_title"));
       } else {
         toast.error(t("account.error_generic"));
@@ -98,6 +106,12 @@ export default function SendMessage() {
     } finally {
       setSending(false);
     }
+  }
+
+  function toggleTarget(c) {
+    setTargets((prev) =>
+      prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]
+    );
   }
 
   return (
@@ -161,6 +175,36 @@ export default function SendMessage() {
               );
             })}
           </div>
+        </div>
+
+        {/* Target categories */}
+        <div className="space-y-2">
+          <Label className="text-overline">{t("messaging.targets")}</Label>
+          <div className="flex flex-wrap gap-2">
+            {TARGET_CATEGORIES.map((c) => {
+              const active = targets.includes(c);
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  data-testid={`msg-target-${c}`}
+                  onClick={() => toggleTarget(c)}
+                  className={`px-3 py-2 rounded-sm text-xs font-rune border transition-colors ${
+                    active
+                      ? "border-viking-gold text-viking-gold bg-viking-gold/10"
+                      : "border-viking-edge text-viking-stone hover:border-viking-gold/60"
+                  }`}
+                >
+                  {t(`account.type_${c}`)}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[11px] text-viking-stone italic">
+            {targets.length === 0
+              ? t("messaging.targets_help_all")
+              : t("messaging.targets_help_some")}
+          </p>
         </div>
 
         {/* Subject */}

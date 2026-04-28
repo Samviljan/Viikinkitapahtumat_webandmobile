@@ -156,6 +156,9 @@ interface Dict {
     ch_both: string;
     ch_push: string;
     ch_email: string;
+    targets: string;
+    targets_help_all: string;
+    targets_help_some: string;
     subject: string;
     body: string;
     body_hint: string;
@@ -363,6 +366,9 @@ export const translations: Partial<Record<Lang, Dict>> = {
       ch_both: "Push + sähköposti",
       ch_push: "Vain push",
       ch_email: "Vain sähköposti",
+      targets: "Kohderyhmä",
+      targets_help_all: "Tyhjä = viesti kaikille suostumuksen antaneille osallistujille.",
+      targets_help_some: "Viesti rajataan vain valittuihin kategorioihin.",
       subject: "Otsikko",
       body: "Viesti",
       body_hint: "Push-viesteissä näkyy vain ensimmäiset ~160 merkkiä.",
@@ -567,6 +573,9 @@ export const translations: Partial<Record<Lang, Dict>> = {
       ch_both: "Push + email",
       ch_push: "Push only",
       ch_email: "Email only",
+      targets: "Target audience",
+      targets_help_all: "Empty = message goes to all consenting attendees.",
+      targets_help_some: "Message limited to attendees in the selected categories.",
       subject: "Subject",
       body: "Message",
       body_hint: "Push notifications only show the first ~160 characters.",
@@ -768,6 +777,9 @@ export const translations: Partial<Record<Lang, Dict>> = {
       ch_both: "Push + e-post",
       ch_push: "Endast push",
       ch_email: "Endast e-post",
+      targets: "Målgrupp",
+      targets_help_all: "Tomt = meddelande till alla samtyckande deltagare.",
+      targets_help_some: "Meddelandet begränsas till valda kategorier.",
       subject: "Ämne",
       body: "Meddelande",
       body_hint: "Push-meddelanden visar bara ~160 tecken.",

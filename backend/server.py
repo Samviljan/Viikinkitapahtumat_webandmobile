@@ -226,14 +226,17 @@ class PaidMessagingToggle(BaseModel):
 
 
 class SendMessageRequest(BaseModel):
-    """Organizer/merchant sends a single message to all attendees of one of
-    their events. Channel = "push", "email", or "both". Recipients are
-    filtered by the appropriate consent flag and `notify_*` per-RSVP."""
+    """Organizer/merchant sends a single message to attendees of an event they
+    are also attending. Channel = "push", "email", or "both". Recipients are
+    filtered by the appropriate consent flag and `notify_*` per-RSVP, AND
+    optionally by `target_categories` (a subset of user_types: reenactor /
+    fighter / merchant / organizer). Empty `target_categories` means "all"."""
 
     event_id: str
     channel: Literal["push", "email", "both"] = "both"
     subject: str
     body: str
+    target_categories: List[Literal["reenactor", "fighter", "merchant", "organizer"]] = []
 
 
 EventCategory = Literal["market", "training_camp", "course", "festival", "meetup", "other"]
@@ -959,6 +962,20 @@ async def send_message_to_attendees(
     if not ev:
         raise HTTPException(status_code=404, detail="Event not found")
 
+    # Sender must be RSVPed to this event (admin bypasses for site-wide).
+    # This prevents spam from random merchants spamming events they have no
+    # connection to: only people committed to attending may send messages.
+    if not is_admin:
+        own_rsvp = await db.event_attendees.find_one(
+            {"event_id": payload.event_id, "user_id": user["id"]},
+            {"_id": 1},
+        )
+        if not own_rsvp:
+            raise HTTPException(
+                status_code=403,
+                detail="You can only message attendees of events you yourself attend",
+            )
+
     # Pick the consent filter matching the sender. Admins reach everyone who has
     # given EITHER consent (site-wide announcements). Merchants/organizers stay
     # bound to their respective consent flag.
@@ -974,6 +991,13 @@ async def send_message_to_attendees(
     else:
         consent_filter = {"consent_merchant_offers": True}
 
+    # Optional category filter: limit recipients whose user_types intersect
+    # with the sender's selected target_categories. Empty = no filter.
+    target_categories = list(payload.target_categories or [])
+    user_filter: dict = dict(consent_filter)
+    if target_categories:
+        user_filter["user_types"] = {"$in": target_categories}
+
     rows = await db.event_attendees.find(
         {"event_id": payload.event_id}, {"_id": 0}
     ).to_list(5000)
@@ -982,7 +1006,7 @@ async def send_message_to_attendees(
 
     user_ids = [r["user_id"] for r in rows]
     consenters = await db.users.find(
-        {"id": {"$in": user_ids}, **consent_filter},
+        {"id": {"$in": user_ids}, **user_filter},
         {"_id": 0, "id": 1, "email": 1},
     ).to_list(5000)
     consenter_ids = {u["id"] for u in consenters}
@@ -1048,6 +1072,7 @@ async def send_message_to_attendees(
             "channel": payload.channel,
             "subject": payload.subject[:200],
             "body_preview": payload.body[:200],
+            "target_categories": target_categories,
             "sent_push": sent_push,
             "sent_email": sent_email,
             "recipients": len(consenter_ids),

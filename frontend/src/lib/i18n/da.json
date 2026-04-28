@@ -416,7 +416,10 @@
     "send_btn": "Send",
     "sent_toast": "Besked sendt",
     "result": "Resultat",
-    "result_text": "Push sendt: {push}, emails sendt: {email}, berettigede modtagere: {recipients}."
+    "result_text": "Push sendt: {push}, emails sendt: {email}, berettigede modtagere: {recipients}.",
+    "targets": "Målgruppe",
+    "targets_help_all": "Tomt = beskeden sendes til alle samtykkende deltagere.",
+    "targets_help_some": "Beskeden begrænses til deltagere i de valgte kategorier."
   },
   "courses": {
     "title": "Kurser & workshops",

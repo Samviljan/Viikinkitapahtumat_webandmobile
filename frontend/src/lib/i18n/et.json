@@ -368,5 +368,10 @@
     "doc_pdf_only": "Toetatud on ainult PDF-failid",
     "doc_too_large": "Fail on liiga suur (max 8 MB)",
     "doc_confirm_remove": "Eemalda dokument jäädavalt?"
+  },
+  "messaging": {
+    "targets": "Sihtgrupp",
+    "targets_help_all": "Tühi = sõnum saadetakse kõigile nõusoleku andnud osalejatele.",
+    "targets_help_some": "Sõnum saadetakse ainult valitud kategooriate osalejatele."
   }
 }
