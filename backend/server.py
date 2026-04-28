@@ -15,7 +15,7 @@ from typing import Optional, List, Literal
 import bcrypt
 import httpx
 import jwt
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, Query, BackgroundTasks, UploadFile, File
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, Query, BackgroundTasks, UploadFile, File, Form
 from fastapi.responses import PlainTextResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
@@ -107,6 +107,8 @@ async def get_current_user(request: Request) -> dict:
         user.setdefault("association_name", None)
         user.setdefault("country", None)
         user.setdefault("profile_image_url", None)
+        user.setdefault("fighter_card_url", None)
+        user.setdefault("equipment_passport_url", None)
         user.setdefault("consent_organizer_messages", False)
         user.setdefault("consent_merchant_offers", False)
         user.setdefault("saved_search", None)
@@ -155,6 +157,8 @@ class UserOut(BaseModel):
     association_name: Optional[str] = None
     country: Optional[str] = None
     profile_image_url: Optional[str] = None
+    fighter_card_url: Optional[str] = None
+    equipment_passport_url: Optional[str] = None
     consent_organizer_messages: bool = False
     consent_merchant_offers: bool = False
     saved_search: Optional[SavedSearch] = None
@@ -184,6 +188,8 @@ class ProfileUpdate(BaseModel):
     association_name: Optional[str] = None
     country: Optional[str] = None
     profile_image_url: Optional[str] = None
+    fighter_card_url: Optional[str] = None
+    equipment_passport_url: Optional[str] = None
     consent_organizer_messages: Optional[bool] = None
     consent_merchant_offers: Optional[bool] = None
     saved_search: Optional[SavedSearch] = None
@@ -237,12 +243,24 @@ EventCountry = Literal["FI", "SE", "EE", "NO", "DK", "PL", "DE", "IS", "LV", "LT
 
 class EventCreate(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    title_fi: str
+    # Localized fields — at least one title_* AND one description_* required.
+    # Validated below in `model_post_init`. Submitter typically fills the field
+    # for their active UI language; the translator background task fills the
+    # rest.
+    title_fi: Optional[str] = ""
     title_en: Optional[str] = ""
     title_sv: Optional[str] = ""
-    description_fi: str
+    title_da: Optional[str] = ""
+    title_de: Optional[str] = ""
+    title_et: Optional[str] = ""
+    title_pl: Optional[str] = ""
+    description_fi: Optional[str] = ""
     description_en: Optional[str] = ""
     description_sv: Optional[str] = ""
+    description_da: Optional[str] = ""
+    description_de: Optional[str] = ""
+    description_et: Optional[str] = ""
+    description_pl: Optional[str] = ""
     category: EventCategory = "other"
     country: EventCountry = "FI"
     location: str
@@ -256,6 +274,15 @@ class EventCreate(BaseModel):
     audience: Optional[str] = ""
     fight_style: Optional[str] = ""
     program_pdf_url: Optional[str] = ""
+
+    def model_post_init(self, _ctx) -> None:
+        langs = ("fi", "en", "sv", "da", "de", "et", "pl")
+        has_title = any((getattr(self, f"title_{lg}") or "").strip() for lg in langs)
+        has_desc = any((getattr(self, f"description_{lg}") or "").strip() for lg in langs)
+        if not has_title:
+            raise ValueError("title is required (in at least one language)")
+        if not has_desc:
+            raise ValueError("description is required (in at least one language)")
 
 
 class EventOut(BaseModel):
@@ -402,6 +429,8 @@ async def login(payload: LoginRequest, response: Response):
         "association_name": user.get("association_name"),
         "country": user.get("country"),
         "profile_image_url": user.get("profile_image_url"),
+        "fighter_card_url": user.get("fighter_card_url"),
+        "equipment_passport_url": user.get("equipment_passport_url"),
         "consent_organizer_messages": bool(user.get("consent_organizer_messages", False)),
         "consent_merchant_offers": bool(user.get("consent_merchant_offers", False)),
         "saved_search": user.get("saved_search"),
@@ -630,6 +659,18 @@ async def update_profile(
                 status_code=400, detail="Invalid profile image URL"
             )
         update["profile_image_url"] = url or None
+    for field, prefix in (
+        ("fighter_card_url", "/api/uploads/profile-docs/"),
+        ("equipment_passport_url", "/api/uploads/profile-docs/"),
+    ):
+        val = getattr(payload, field, None)
+        if val is not None:
+            url = val.strip()
+            if url and not url.startswith(prefix):
+                raise HTTPException(
+                    status_code=400, detail=f"Invalid URL for {field}"
+                )
+            update[field] = url or None
     if payload.consent_organizer_messages is not None:
         update["consent_organizer_messages"] = bool(payload.consent_organizer_messages)
     if payload.consent_merchant_offers is not None:
@@ -1588,6 +1629,102 @@ async def serve_profile_image(filename: str):
         content=data,
         media_type=ctype,
         headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
+
+
+# -----------------------------------------------------------------------------
+# Profile DOCUMENT upload (PDFs only): SVTL fighter card + equipment passport.
+# Stored in their own GridFS bucket; URLs persisted onto the user document on
+# the matching field (`fighter_card_url` or `equipment_passport_url`).
+# -----------------------------------------------------------------------------
+_profile_doc_bucket: Optional[AsyncIOMotorGridFSBucket] = None
+
+
+def _profile_doc_bucket_get() -> AsyncIOMotorGridFSBucket:
+    global _profile_doc_bucket
+    if _profile_doc_bucket is None:
+        _profile_doc_bucket = AsyncIOMotorGridFSBucket(db, bucket_name="profile_docs")
+    return _profile_doc_bucket
+
+
+MAX_PROFILE_DOC_BYTES = 8 * 1024 * 1024  # 8 MB — generous but bounded
+PROFILE_DOC_KINDS = {
+    "fighter_card": "fighter_card_url",
+    "equipment_passport": "equipment_passport_url",
+}
+
+
+@api_router.post("/uploads/profile-doc", status_code=201)
+async def upload_profile_doc(
+    kind: str = Form(...),
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_user),
+):
+    """Upload a profile PDF document (fighter card OR equipment passport).
+
+    `kind` must be one of `fighter_card` / `equipment_passport`. Returns the
+    public URL and saves it onto the user's matching field automatically.
+    Rejects non-PDF content (the use case is documents — images are uploaded
+    via /uploads/profile-image).
+    """
+    field = PROFILE_DOC_KINDS.get(kind)
+    if not field:
+        raise HTTPException(status_code=400, detail=f"Invalid kind: {kind}")
+
+    ctype = (file.content_type or "").lower()
+    ext = (Path(file.filename or "").suffix or "").lower()
+    if ctype != "application/pdf" and ext != ".pdf":
+        raise HTTPException(
+            status_code=415, detail="Only PDF files are supported for this document"
+        )
+    body = await file.read()
+    if len(body) == 0:
+        raise HTTPException(status_code=400, detail="Empty file")
+    if len(body) > MAX_PROFILE_DOC_BYTES:
+        raise HTTPException(status_code=413, detail="Document too large (max 8 MB)")
+
+    filename = f"{user['id']}_{kind}_{uuid.uuid4().hex[:8]}.pdf"
+    await _profile_doc_bucket_get().upload_from_stream(
+        filename,
+        body,
+        metadata={
+            "content_type": "application/pdf",
+            "owner_id": user["id"],
+            "kind": kind,
+            "original_name": file.filename or filename,
+        },
+    )
+    url = f"/api/uploads/profile-docs/{filename}"
+    await db.users.update_one({"id": user["id"]}, {"$set": {field: url}})
+    return {"url": url, "kind": kind}
+
+
+@api_router.get("/uploads/profile-docs/{filename}")
+async def serve_profile_doc(filename: str, user: dict = Depends(get_current_user)):
+    """Stream a profile PDF. Auth required AND only the owning user (or admin)
+    may read it — these are personal documents (fighter cards, equipment
+    passports), so anonymous /api access is forbidden.
+    """
+    doc = await db["profile_docs.files"].find_one(
+        {"filename": filename}, {"_id": 1, "metadata": 1}
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    md = doc.get("metadata") or {}
+    if user.get("role") != "admin" and md.get("owner_id") != user["id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    stream = await _profile_doc_bucket_get().open_download_stream_by_name(filename)
+    data = await stream.read()
+    # `inline` disposition so PDF opens in the browser tab (the user clicked
+    # a link). Filename keeps the original name for browser "Save as".
+    safe_orig = (md.get("original_name") or filename).replace('"', "")
+    return Response(
+        content=data,
+        media_type="application/pdf",
+        headers={
+            "Cache-Control": "private, max-age=300",
+            "Content-Disposition": f'inline; filename="{safe_orig}"',
+        },
     )
 
 

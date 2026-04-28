@@ -27,7 +27,7 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { href: "/", labelKey: "tab.home", icon: "home", testID: "tab-home" },
-  { href: "/favorites", labelKey: "tab.favorites", icon: "star", testID: "tab-favs", showBadge: true },
+  { href: "/favorites", labelKey: "tab.myevents", icon: "bookmarks", testID: "tab-myevents", showBadge: true },
   { href: "/calendar", labelKey: "tab.calendar", icon: "calendar", testID: "tab-cal" },
   { href: "/shops", labelKey: "tab.shops", icon: "storefront", testID: "tab-shops" },
   { href: "/settings", labelKey: "tab.settings", icon: "settings-sharp", testID: "tab-settings" },

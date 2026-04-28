@@ -95,7 +95,8 @@
     "fight_none": "Nie wybrano",
     "submit_btn": "Wyślij do zatwierdzenia",
     "success": "Dziękuję! Twoje wydarzenie zostało wysłane do zatwierdzenia.",
-    "error": "Wysłanie nie powiodło się"
+    "error": "Wysłanie nie powiodło się",
+    "autotranslate_hint": "Wpisz tytuł i opis w swoim języku — automatycznie przetłumaczymy je na wszystkie obsługiwane języki."
   },
   "countries": {
     "FI": "Finlandia",
@@ -349,6 +350,23 @@
     "country_opt_DE": "Niemcy",
     "country_opt_IS": "Islandia",
     "country_opt_LV": "Łotwa",
-    "country_opt_LT": "Litwa"
+    "country_opt_LT": "Litwa",
+    "docs_title": "Dokumenty",
+    "docs_sub": "Karta wojownika SVTL i Paszport sprzętu (PDF). Tylko Ty i administratorzy możecie je otworzyć.",
+    "fighter_card_label": "Karta wojownika SVTL",
+    "fighter_card_help": "Wgraj PDF — możesz otworzyć go później w razie potrzeby.",
+    "fighter_card_upload": "Wgraj kartę wojownika",
+    "equipment_passport_label": "Paszport sprzętu",
+    "equipment_passport_help": "Wgraj PDF paszportu sprzętu — przydatny podczas kontroli wyposażenia.",
+    "equipment_passport_upload": "Wgraj paszport sprzętu",
+    "doc_view": "Otwórz",
+    "doc_replace": "Zastąp",
+    "doc_upload": "Wgraj",
+    "doc_remove": "Usuń",
+    "doc_saved": "Dokument zapisany",
+    "doc_removed": "Dokument usunięty",
+    "doc_pdf_only": "Obsługiwane są tylko pliki PDF",
+    "doc_too_large": "Plik jest za duży (maks. 8 MB)",
+    "doc_confirm_remove": "Usunąć dokument na stałe?"
   }
 }

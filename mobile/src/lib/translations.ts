@@ -11,7 +11,7 @@ export type Lang = (typeof SUPPORTED_LANGS)[number];
 
 interface Dict {
   brand: { title: string; tagline: string };
-  tab: { home: string; favorites: string; calendar: string; shops: string; settings: string };
+  tab: { home: string; favorites: string; myevents: string; calendar: string; shops: string; settings: string };
   home: {
     title: string;
     near_me: string;
@@ -50,6 +50,13 @@ interface Dict {
   };
   event: { back: string; favorite: string; unfavorite: string; share: string };
   favorites: { title: string; empty: string; browse: string };
+  myevents: {
+    eyebrow: string;
+    title: string;
+    attending_section: string;
+    favourites_section: string;
+    empty: string;
+  };
   calendar: { title: string };
   shops: { title: string; empty: string };
   settings: {
@@ -190,6 +197,7 @@ export const translations: Partial<Record<Lang, Dict>> = {
     tab: {
       home: "Etusivu",
       favorites: "Suosikit",
+      myevents: "Tapahtumani",
       calendar: "Kalenteri",
       shops: "Kauppiaat",
       settings: "Asetukset",
@@ -240,6 +248,14 @@ export const translations: Partial<Record<Lang, Dict>> = {
       title: "Suosikit",
       empty: "Et ole vielä lisännyt tapahtumia suosikkeihin.",
       browse: "Selaa tapahtumia",
+    },
+    myevents: {
+      eyebrow: "Omat",
+      title: "Tapahtumani",
+      attending_section: "Olen ilmoittautunut",
+      favourites_section: "Suosikit",
+      empty:
+        "Et ole vielä ilmoittautunut tai lisännyt suosikkeihin yhtään tapahtumaa.",
     },
     calendar: { title: "Kalenteri" },
     shops: { title: "Kauppiaat ja sepät", empty: "Ei kauppiaita listattuna." },
@@ -390,6 +406,7 @@ export const translations: Partial<Record<Lang, Dict>> = {
     tab: {
       home: "Home",
       favorites: "Favorites",
+      myevents: "My events",
       calendar: "Calendar",
       shops: "Merchants",
       settings: "Settings",
@@ -435,6 +452,14 @@ export const translations: Partial<Record<Lang, Dict>> = {
       title: "Favorites",
       empty: "You haven't favorited any events yet.",
       browse: "Browse events",
+    },
+    myevents: {
+      eyebrow: "Mine",
+      title: "My events",
+      attending_section: "I'm attending",
+      favourites_section: "Favourites",
+      empty:
+        "You haven't attended or favourited any events yet.",
     },
     calendar: { title: "Calendar" },
     shops: { title: "Merchants & smiths", empty: "No merchants listed." },
@@ -584,6 +609,7 @@ export const translations: Partial<Record<Lang, Dict>> = {
     tab: {
       home: "Hem",
       favorites: "Favoriter",
+      myevents: "Mina evenemang",
       calendar: "Kalender",
       shops: "Handlare",
       settings: "Inställningar",
@@ -629,6 +655,14 @@ export const translations: Partial<Record<Lang, Dict>> = {
       title: "Favoriter",
       empty: "Du har inte sparat några favoriter ännu.",
       browse: "Bläddra i evenemang",
+    },
+    myevents: {
+      eyebrow: "Mina",
+      title: "Mina evenemang",
+      attending_section: "Jag deltar",
+      favourites_section: "Favoriter",
+      empty:
+        "Du har inte anmält dig eller favoriserat några evenemang än.",
     },
     calendar: { title: "Kalender" },
     shops: { title: "Handlare & smeder", empty: "Inga handlare listade." },

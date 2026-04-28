@@ -95,7 +95,8 @@
     "fight_none": "Valimata",
     "submit_btn": "Saada ülevaatamiseks",
     "success": "Tänan! Teie üritust kontrollitakse.",
-    "error": "Saatmine ebaõnnestus"
+    "error": "Saatmine ebaõnnestus",
+    "autotranslate_hint": "Kirjuta pealkiri ja kirjeldus oma keeles — tõlgime need automaatselt kõikidesse toetatud keeltesse."
   },
   "countries": {
     "FI": "Soome",
@@ -349,6 +350,23 @@
     "country_opt_DE": "Saksamaa",
     "country_opt_IS": "Island",
     "country_opt_LV": "Läti",
-    "country_opt_LT": "Leedu"
+    "country_opt_LT": "Leedu",
+    "docs_title": "Dokumendid",
+    "docs_sub": "SVTL Võitlejakaart ja Varustuspass (PDF). Vaid sina ja administraatorid saavad neid avada.",
+    "fighter_card_label": "SVTL Võitlejakaart",
+    "fighter_card_help": "Laadi PDF üles — saad selle hiljem avada.",
+    "fighter_card_upload": "Laadi võitlejakaart",
+    "equipment_passport_label": "Varustuspass",
+    "equipment_passport_help": "Laadi varustuspassi PDF üles — kasulik varustuse kontrollis.",
+    "equipment_passport_upload": "Laadi varustuspass",
+    "doc_view": "Ava",
+    "doc_replace": "Asenda",
+    "doc_upload": "Laadi",
+    "doc_remove": "Eemalda",
+    "doc_saved": "Dokument salvestatud",
+    "doc_removed": "Dokument eemaldatud",
+    "doc_pdf_only": "Toetatud on ainult PDF-failid",
+    "doc_too_large": "Fail on liiga suur (max 8 MB)",
+    "doc_confirm_remove": "Eemalda dokument jäädavalt?"
   }
 }

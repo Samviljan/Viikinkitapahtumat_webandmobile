@@ -10,6 +10,7 @@ import { LogOut, Check, Shield, Camera, Trash2 } from "lucide-react";
 import { ConsentBlock } from "@/pages/Register";
 import AttendingList from "@/components/AttendingList";
 import SavedSearchEditor from "@/components/SavedSearchEditor";
+import ProfileDocField from "@/components/ProfileDocField";
 import { api } from "@/lib/api";
 
 const fieldClass =
@@ -31,6 +32,8 @@ export default function Profile() {
   const [associationName, setAssociationName] = useState("");
   const [country, setCountry] = useState("");
   const [profileImageUrl, setProfileImageUrl] = useState("");
+  const [fighterCardUrl, setFighterCardUrl] = useState("");
+  const [equipmentPassportUrl, setEquipmentPassportUrl] = useState("");
   const [consentOrganizer, setConsentOrganizer] = useState(false);
   const [consentMerchant, setConsentMerchant] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -46,6 +49,8 @@ export default function Profile() {
       setAssociationName(user.association_name || "");
       setCountry(user.country || "");
       setProfileImageUrl(user.profile_image_url || "");
+      setFighterCardUrl(user.fighter_card_url || "");
+      setEquipmentPassportUrl(user.equipment_passport_url || "");
       setConsentOrganizer(!!user.consent_organizer_messages);
       setConsentMerchant(!!user.consent_merchant_offers);
     }
@@ -324,6 +329,37 @@ export default function Profile() {
             <p className="text-[11px] text-viking-stone italic">
               {t("account.country_help")}
             </p>
+          </div>
+
+          <div className="pt-4 border-t border-viking-edge/60 space-y-5" data-testid="profile-docs-section">
+            <div>
+              <h3 className="font-serif text-base text-viking-bone">
+                {t("account.docs_title")}
+              </h3>
+              <p className="text-xs text-viking-stone mt-1">
+                {t("account.docs_sub")}
+              </p>
+            </div>
+            <ProfileDocField
+              kind="fighter_card"
+              field="fighter_card_url"
+              labelKey="account.fighter_card_label"
+              helpKey="account.fighter_card_help"
+              uploadCtaKey="account.fighter_card_upload"
+              testIdPrefix="profile-fighter-card"
+              url={fighterCardUrl}
+              onChange={setFighterCardUrl}
+            />
+            <ProfileDocField
+              kind="equipment_passport"
+              field="equipment_passport_url"
+              labelKey="account.equipment_passport_label"
+              helpKey="account.equipment_passport_help"
+              uploadCtaKey="account.equipment_passport_upload"
+              testIdPrefix="profile-equipment-passport"
+              url={equipmentPassportUrl}
+              onChange={setEquipmentPassportUrl}
+            />
           </div>
 
           <ConsentBlock

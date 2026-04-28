@@ -25,17 +25,16 @@ const fieldClass =
   "bg-viking-surface border-viking-edge rounded-sm text-viking-bone placeholder:text-viking-stone focus:border-viking-ember focus:ring-viking-ember";
 
 export default function Submit() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const nav = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  // Single title/description fields — user types in their UI language and the
+  // backend translation service auto-fills the other 6. We carry the language
+  // tag along to the payload key.
   const [form, setForm] = useState({
-    title_fi: "",
-    title_en: "",
-    title_sv: "",
-    description_fi: "",
-    description_en: "",
-    description_sv: "",
+    title: "",
+    description: "",
     category: "market",
     country: "FI",
     location: "",
@@ -56,7 +55,14 @@ export default function Submit() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const payload = { ...form };
+      // Post the user's text into the field matching the active UI language,
+      // so the auto-translator picks the right source language.
+      const { title, description, ...rest } = form;
+      const payload = {
+        ...rest,
+        [`title_${lang}`]: title,
+        [`description_${lang}`]: description,
+      };
       if (!payload.organizer_email) delete payload.organizer_email;
       if (!payload.end_date) delete payload.end_date;
       if (!payload.audience) delete payload.audience;
@@ -95,9 +101,9 @@ export default function Submit() {
           <Field label={t("submit.title_field")} required>
             <Input
               required
-              data-testid="field-title-fi"
-              value={form.title_fi}
-              onChange={update("title_fi")}
+              data-testid="field-title"
+              value={form.title}
+              onChange={update("title")}
               className={fieldClass}
             />
           </Field>
@@ -105,10 +111,10 @@ export default function Submit() {
           <Field label={t("submit.desc_field")} required>
             <Textarea
               required
-              data-testid="field-desc-fi"
+              data-testid="field-desc"
               rows={5}
-              value={form.description_fi}
-              onChange={update("description_fi")}
+              value={form.description}
+              onChange={update("description")}
               className={fieldClass}
             />
             <p
