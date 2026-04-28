@@ -42,6 +42,8 @@ interface SendResult {
   sent_push: number;
   sent_email: number;
   recipients: number;
+  push_eligible?: number;
+  email_eligible?: number;
 }
 
 export default function MessagesScreen() {
@@ -298,6 +300,13 @@ export default function MessagesScreen() {
                       recipients: String(result.recipients ?? 0),
                     })}
                   </Text>
+                  {(channel === "push" || channel === "both") &&
+                  (result.sent_push ?? 0) === 0 &&
+                  (result.push_eligible ?? 0) === 0 ? (
+                    <Text style={styles.resultWarn} testID="msg-no-push-tokens">
+                      {t("messaging.no_push_tokens")}
+                    </Text>
+                  ) : null}
                 </View>
               ) : null}
             </>
@@ -438,4 +447,11 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   resultText: { color: colors.bone, fontSize: 13, lineHeight: 19 },
+  resultWarn: {
+    color: colors.ember,
+    fontSize: 12,
+    fontStyle: "italic",
+    lineHeight: 17,
+    marginTop: spacing.sm,
+  },
 });

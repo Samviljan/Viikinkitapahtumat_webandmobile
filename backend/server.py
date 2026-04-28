@@ -1063,6 +1063,10 @@ async def send_message_to_attendees(
         "sent_push": sent_push,
         "sent_email": sent_email,
         "recipients": len(consenter_ids),
+        # Diagnostic counters so the UI can explain why a channel produced 0
+        # without leaking PII (no names/emails/tokens).
+        "push_eligible": len(push_user_ids),
+        "email_eligible": len(email_recipients),
     }
     # Audit trail — used by /admin/stats/messages.
     await db.message_log.insert_one(
@@ -1080,6 +1084,49 @@ async def send_message_to_attendees(
         }
     )
     return return_payload
+
+
+@api_router.get(
+    "/admin/push/health",
+    dependencies=[Depends(get_admin_user)],
+)
+async def admin_push_health():
+    """Diagnostic: do we have an Expo access token + how many users have a
+    push token registered? Used by the admin dashboard to explain why a push
+    send returned 0 recipients."""
+    has_token = bool(os.environ.get("EXPO_ACCESS_TOKEN"))
+    users_with_token = await db.users.count_documents(
+        {"expo_push_tokens": {"$exists": True, "$ne": []}}
+    )
+    total_tokens = 0
+    async for u in db.users.find(
+        {"expo_push_tokens": {"$exists": True, "$ne": []}},
+        {"_id": 0, "expo_push_tokens": 1},
+    ):
+        total_tokens += len(u.get("expo_push_tokens") or [])
+    return {
+        "expo_access_token_set": has_token,
+        "users_with_push_token": users_with_token,
+        "total_active_tokens": total_tokens,
+    }
+
+
+@api_router.post(
+    "/admin/push/test",
+    dependencies=[Depends(get_admin_user)],
+)
+async def admin_push_test(admin: dict = Depends(get_admin_user)):
+    """Send a test push to the calling admin's own registered device tokens.
+    Returns delivery summary. If 0 recipients → admin has no token registered
+    on any device (they need to install the mobile app and sign in)."""
+    result = await push_send_to_users(
+        db,
+        [admin["id"]],
+        title="Viikinkitapahtumat — testi",
+        body="Tämä on testi push-notifikaatio. Jos näet sen, kaikki toimii oikein.",
+        data={"test": True},
+    )
+    return result
 
 
 # -----------------------------------------------------------------------------

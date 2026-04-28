@@ -222,6 +222,17 @@
     "messages": {
       "compose_title": "Wyślij wiadomość do uczestników",
       "compose_help": "Jako administrator możesz wysyłać wiadomości do wszystkich uczestników, którzy wyrazili zgodę. Otwiera stronę wiadomości."
+    },
+    "push": {
+      "title": "Status powiadomień push",
+      "token_set": "Token Expo ustawiony",
+      "users_with_token": "Użytkownicy z tokenem",
+      "yes": "Tak",
+      "no": "Nie",
+      "test_btn": "Wyślij test",
+      "test_sent": "Test wysłany do {n} urządzeń",
+      "test_no_token": "Nie masz jeszcze zarejestrowanego tokenu push. Zainstaluj aplikację i zaloguj się.",
+      "empty_help": "Wiadomości push nie docierają do nikogo, bo żaden użytkownik nie zarejestrował jeszcze tokenu push w aplikacji mobilnej. Zainstaluj aplikację, zaloguj się, zezwól na powiadomienia — aplikacja zarejestruje token automatycznie."
     }
   },
   "courses": {
@@ -372,6 +383,7 @@
   "messaging": {
     "targets": "Grupa docelowa",
     "targets_help_all": "Puste = wiadomość trafi do wszystkich uczestników, którzy wyrazili zgodę.",
-    "targets_help_some": "Wiadomość ograniczona do uczestników z wybranych kategorii."
+    "targets_help_some": "Wiadomość ograniczona do uczestników z wybranych kategorii.",
+    "no_push_tokens": "Odbiorcy push: 0. Żaden z uczestników nie aktywował jeszcze powiadomień push w aplikacji mobilnej. E-mail nadal działa, jeśli wybrano kanał „E-mail\" lub „Push + E-mail\"."
   }
 }

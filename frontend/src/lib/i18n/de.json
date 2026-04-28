@@ -265,6 +265,17 @@
     "messages": {
       "compose_title": "Nachricht an Teilnehmer senden",
       "compose_help": "Als Admin kannst du Nachrichten an alle Teilnehmer senden, die ihre Zustimmung gegeben haben. Öffnet die Nachrichtenseite."
+    },
+    "push": {
+      "title": "Push-Benachrichtigungen Status",
+      "token_set": "Expo-Token gesetzt",
+      "users_with_token": "Benutzer mit Token",
+      "yes": "Ja",
+      "no": "Nein",
+      "test_btn": "Test senden",
+      "test_sent": "Test an {n} Gerät(e) gesendet",
+      "test_no_token": "Du hast noch kein Push-Token registriert. Installiere die mobile App und melde dich an.",
+      "empty_help": "Push-Nachrichten erreichen niemanden, da noch kein Benutzer einen Push-Token über die App registriert hat. Installiere die App, melde dich an, erlaube Benachrichtigungen — die App registriert das Token automatisch."
     }
   },
   "account": {
@@ -419,7 +430,8 @@
     "result_text": "Push versendet: {push}, E-Mails versendet: {email}, berechtigte Empfänger: {recipients}.",
     "targets": "Zielgruppe",
     "targets_help_all": "Leer = Nachricht geht an alle einwilligenden Teilnehmer.",
-    "targets_help_some": "Nachricht wird auf Teilnehmer der gewählten Kategorien beschränkt."
+    "targets_help_some": "Nachricht wird auf Teilnehmer der gewählten Kategorien beschränkt.",
+    "no_push_tokens": "Push-Empfänger: 0. Keiner der Teilnehmer hat bisher Push-Benachrichtigungen in der mobilen App aktiviert. E-Mails funktionieren weiterhin, wenn der Kanal \"E-Mail\" oder \"Push + E-Mail\" ist."
   },
   "courses": {
     "title": "Kurse & Workshops",

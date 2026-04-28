@@ -261,6 +261,17 @@ export default function SendMessage() {
                 .replace("{email}", String(result.sent_email ?? 0))
                 .replace("{recipients}", String(result.recipients ?? 0))}
             </p>
+            {/* Diagnostic explanation: push selected but no devices reachable */}
+            {(channel === "push" || channel === "both") &&
+            (result.sent_push ?? 0) === 0 &&
+            (result.push_eligible ?? 0) === 0 ? (
+              <p
+                data-testid="msg-no-push-tokens"
+                className="text-xs text-viking-ember mt-2 italic leading-relaxed"
+              >
+                {t("messaging.no_push_tokens")}
+              </p>
+            ) : null}
           </div>
         ) : null}
       </div>

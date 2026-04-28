@@ -159,6 +159,7 @@ interface Dict {
     targets: string;
     targets_help_all: string;
     targets_help_some: string;
+    no_push_tokens: string;
     subject: string;
     body: string;
     body_hint: string;
@@ -369,6 +370,7 @@ export const translations: Partial<Record<Lang, Dict>> = {
       targets: "Kohderyhmä",
       targets_help_all: "Tyhjä = viesti kaikille suostumuksen antaneille osallistujille.",
       targets_help_some: "Viesti rajataan vain valittuihin kategorioihin.",
+      no_push_tokens: "Push-vastaanottajia: 0. Yksikään valitsemistasi vastaanottajista ei ole vielä ottanut käyttöön mobiilisovelluksen push-notifikaatioita. Sähköpostit menevät silti perille jos kanavana on 'Sähköposti' tai 'Push + Sähköposti'.",
       subject: "Otsikko",
       body: "Viesti",
       body_hint: "Push-viesteissä näkyy vain ensimmäiset ~160 merkkiä.",
@@ -576,6 +578,7 @@ export const translations: Partial<Record<Lang, Dict>> = {
       targets: "Target audience",
       targets_help_all: "Empty = message goes to all consenting attendees.",
       targets_help_some: "Message limited to attendees in the selected categories.",
+      no_push_tokens: "Push recipients: 0. None of the matching attendees have enabled push notifications via the mobile app yet. Email still works if you used 'Email' or 'Push + Email' as the channel.",
       subject: "Subject",
       body: "Message",
       body_hint: "Push notifications only show the first ~160 characters.",
@@ -780,6 +783,7 @@ export const translations: Partial<Record<Lang, Dict>> = {
       targets: "Målgrupp",
       targets_help_all: "Tomt = meddelande till alla samtyckande deltagare.",
       targets_help_some: "Meddelandet begränsas till valda kategorier.",
+      no_push_tokens: "Push-mottagare: 0. Ingen av deltagarna har aktiverat push-notiser i mobilappen ännu. E-post fungerar fortfarande om du valt 'E-post' eller 'Push + E-post'.",
       subject: "Ämne",
       body: "Meddelande",
       body_hint: "Push-meddelanden visar bara ~160 tecken.",

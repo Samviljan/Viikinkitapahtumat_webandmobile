@@ -265,6 +265,17 @@
     "messages": {
       "compose_title": "Send a message to attendees",
       "compose_help": "As an admin you can message any attendee of any event who has given consent. Opens the messaging page."
+    },
+    "push": {
+      "title": "Push notifications status",
+      "token_set": "Expo token set",
+      "users_with_token": "Users with token",
+      "yes": "Yes",
+      "no": "No",
+      "test_btn": "Send test",
+      "test_sent": "Test sent to {n} device(s)",
+      "test_no_token": "You don't have a push token registered yet. Install the mobile app and sign in.",
+      "empty_help": "Push messages can't reach anyone yet because no user has registered a push token via the mobile app. Install the app, sign in, allow notifications — the app will register the token automatically."
     }
   },
   "account": {
@@ -419,7 +430,8 @@
     "result_text": "Push sent: {push}, emails sent: {email}, eligible recipients: {recipients}.",
     "targets": "Target audience",
     "targets_help_all": "Empty = message goes to all consenting attendees.",
-    "targets_help_some": "Message is limited to attendees in the selected categories only."
+    "targets_help_some": "Message is limited to attendees in the selected categories only.",
+    "no_push_tokens": "Push recipients: 0. None of the matching attendees have enabled push notifications via the mobile app yet. Email still works if you used \"Email\" or \"Push + Email\" as the channel."
   },
   "courses": {
     "title": "Courses & workshops",

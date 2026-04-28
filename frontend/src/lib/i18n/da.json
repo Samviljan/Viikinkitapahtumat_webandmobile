@@ -265,6 +265,17 @@
     "messages": {
       "compose_title": "Send besked til deltagere",
       "compose_help": "Som admin kan du sende beskeder til alle deltagere, der har givet samtykke. Åbner beskedsiden."
+    },
+    "push": {
+      "title": "Push-notifikationer status",
+      "token_set": "Expo-token sat",
+      "users_with_token": "Brugere med token",
+      "yes": "Ja",
+      "no": "Nej",
+      "test_btn": "Send test",
+      "test_sent": "Test sendt til {n} enhed(er)",
+      "test_no_token": "Du har endnu ikke registreret en push-token. Installer mobilappen og log ind.",
+      "empty_help": "Push-beskeder når ingen endnu, da ingen har registreret en push-token via mobilappen. Installer appen, log ind, tillad notifikationer — appen registrerer token automatisk."
     }
   },
   "account": {
@@ -419,7 +430,8 @@
     "result_text": "Push sendt: {push}, emails sendt: {email}, berettigede modtagere: {recipients}.",
     "targets": "Målgruppe",
     "targets_help_all": "Tomt = beskeden sendes til alle samtykkende deltagere.",
-    "targets_help_some": "Beskeden begrænses til deltagere i de valgte kategorier."
+    "targets_help_some": "Beskeden begrænses til deltagere i de valgte kategorier.",
+    "no_push_tokens": "Push-modtagere: 0. Ingen af deltagerne har endnu aktiveret push-notifikationer i mobilappen. E-mail fungerer stadig hvis du har valgt \"E-mail\" eller \"Push + E-mail\"."
   },
   "courses": {
     "title": "Kurser & workshops",

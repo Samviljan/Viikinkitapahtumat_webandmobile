@@ -222,6 +222,17 @@
     "messages": {
       "compose_title": "Saada sõnum osalejatele",
       "compose_help": "Administraatorina saad saata sõnumeid kõigile osalejatele, kes on andnud nõusoleku. Avab sõnumilehe."
+    },
+    "push": {
+      "title": "Push-teadete olek",
+      "token_set": "Expo token määratud",
+      "users_with_token": "Kasutajaid tokeniga",
+      "yes": "Jah",
+      "no": "Ei",
+      "test_btn": "Saada test",
+      "test_sent": "Test saadetud {n} seadmesse",
+      "test_no_token": "Sul pole veel push-tokenit registreeritud. Paigalda mobiilirakendus ja logi sisse.",
+      "empty_help": "Push-sõnumid ei jõua kelleltki, kuna keegi pole veel mobiilirakenduse kaudu push-tokenit registreerinud. Paigalda rakendus, logi sisse, luba teated — rakendus registreerib tokeni automaatselt."
     }
   },
   "courses": {
@@ -372,6 +383,7 @@
   "messaging": {
     "targets": "Sihtgrupp",
     "targets_help_all": "Tühi = sõnum saadetakse kõigile nõusoleku andnud osalejatele.",
-    "targets_help_some": "Sõnum saadetakse ainult valitud kategooriate osalejatele."
+    "targets_help_some": "Sõnum saadetakse ainult valitud kategooriate osalejatele.",
+    "no_push_tokens": "Push-saajaid: 0. Ükski osaleja pole veel mobiilirakenduses push-teateid aktiveerinud. E-post toimib endiselt, kui valisid \"E-post\" või \"Push + E-post\"."
   }
 }

@@ -243,6 +243,17 @@
     "messages": {
       "compose_title": "Skicka meddelande till deltagare",
       "compose_help": "Som admin kan du skicka meddelanden till alla deltagare som gett samtycke. Öppnar meddelandesidan."
+    },
+    "push": {
+      "title": "Push-notiser status",
+      "token_set": "Expo-token inställd",
+      "users_with_token": "Användare med token",
+      "yes": "Ja",
+      "no": "Nej",
+      "test_btn": "Skicka test",
+      "test_sent": "Test skickat till {n} enhet(er)",
+      "test_no_token": "Du har ingen push-token registrerad ännu. Installera mobilappen och logga in.",
+      "empty_help": "Push-notiser når ingen ännu eftersom ingen har registrerat en push-token via mobilappen. Installera appen, logga in, tillåt notiser — appen registrerar token automatiskt."
     }
   },
   "account": {
@@ -477,6 +488,7 @@
   "messaging": {
     "targets": "Målgrupp",
     "targets_help_all": "Tomt = meddelandet skickas till alla samtyckande deltagare.",
-    "targets_help_some": "Meddelandet begränsas till deltagare i de valda kategorierna."
+    "targets_help_some": "Meddelandet begränsas till deltagare i de valda kategorierna.",
+    "no_push_tokens": "Push-mottagare: 0. Ingen av deltagarna har aktiverat push-notiser i mobilappen ännu. E-post fungerar fortfarande om du valt \"E-post\" eller \"Push + E-post\"."
   }
 }
