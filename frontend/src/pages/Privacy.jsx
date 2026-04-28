@@ -308,11 +308,11 @@ export default function Privacy() {
           {data.last_updated}
         </p>
         {data.blocks.map((b, i) => (
-          <section key={i} className="space-y-3">
+          <section key={b.h || `block-${i}`} className="space-y-3">
             <h2 className="font-serif text-2xl text-viking-bone">{b.h}</h2>
             {b.p?.map((para, j) => (
               <p
-                key={`p-${j}`}
+                key={`${b.h}-p-${j}`}
                 className="text-base text-viking-stone leading-relaxed"
               >
                 {para}

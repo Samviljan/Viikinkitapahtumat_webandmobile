@@ -10,7 +10,7 @@
  * to English first, then to the canonical Finnish source. `t()` always
  * returns a non-empty value (or the key as a last resort).
  */
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import fi from "./i18n/fi.json";
 import en from "./i18n/en.json";
 import sv from "./i18n/sv.json";
@@ -58,7 +58,8 @@ export function I18nProvider({ children }) {
     [lang]
   );
 
-  return <I18nContext.Provider value={{ lang, setLang, t }}>{children}</I18nContext.Provider>;
+  const value = useMemo(() => ({ lang, setLang, t }), [lang, setLang, t]);
+  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 
 export function useI18n() {

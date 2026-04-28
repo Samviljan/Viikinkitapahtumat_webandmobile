@@ -2,10 +2,11 @@
 Covers: health, auth (login/me/logout), public events (submit/list/detail/filter),
 admin events (list/get/patch/delete), admin stats, and authorization checks.
 """
+import os
 import pytest
 
-ADMIN_EMAIL = "admin@viikinkitapahtumat.fi"
-ADMIN_PASSWORD = "***REDACTED***"
+ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "admin@viikinkitapahtumat.fi")
+ADMIN_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD", "***REDACTED***")
 
 
 # ---------- Health ----------

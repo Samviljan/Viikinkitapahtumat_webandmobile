@@ -15,8 +15,8 @@ if not BASE_URL:
 
 BASE_URL = (BASE_URL or "").rstrip("/")
 
-ADMIN_EMAIL = "admin@viikinkitapahtumat.fi"
-ADMIN_PASSWORD = "***REDACTED***"
+ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "admin@viikinkitapahtumat.fi")
+ADMIN_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD", "***REDACTED***")
 
 
 @pytest.fixture(scope="session")

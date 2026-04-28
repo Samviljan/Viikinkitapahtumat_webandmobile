@@ -9,8 +9,8 @@ import uuid
 import requests
 import pytest
 
-ADMIN_EMAIL = "admin@viikinkitapahtumat.fi"
-ADMIN_PASSWORD = "***REDACTED***"
+ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "admin@viikinkitapahtumat.fi")
+ADMIN_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD", "***REDACTED***")
 
 # The frontend domain serves /event-images/<slug>.png
 FRONTEND_DOMAIN = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
