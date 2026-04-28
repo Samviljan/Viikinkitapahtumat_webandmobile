@@ -3,13 +3,14 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { useFavorites } from "@/lib/favorites";
-import { Menu, X, Globe2, Shield, LogOut, Star } from "lucide-react";
+import { Menu, X, Globe2, Shield, LogOut, Star, User, UserCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NewsletterSignup from "@/components/NewsletterSignup";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -117,6 +118,86 @@ function FavoritesNavLink() {
   );
 }
 
+function AccountMenu() {
+  const { t } = useI18n();
+  const { user, logout } = useAuth();
+
+  // Anonymous: show a simple "Sign in" button.
+  if (!user || !user.role) {
+    return (
+      <Link to="/login" data-testid="nav-account">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-viking-bone hover:text-viking-gold hover:bg-viking-surface2 hidden md:inline-flex"
+        >
+          <User size={14} className="mr-2" />
+          {t("account.sign_in")}
+        </Button>
+      </Link>
+    );
+  }
+
+  const initial = (user.nickname || user.name || user.email || "?").charAt(0).toUpperCase();
+
+  // Authenticated: avatar dropdown with profile / admin / sign-out.
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          data-testid="account-menu-trigger"
+          aria-label={t("account.my_account")}
+          className="hidden md:inline-flex h-9 w-9 items-center justify-center rounded-sm border border-viking-edge text-viking-gold hover:border-viking-gold transition-colors font-serif text-sm"
+        >
+          {initial}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        className="bg-viking-surface border-viking-edge text-viking-bone min-w-[200px]"
+      >
+        <div className="px-2 py-2 text-[11px] text-viking-stone border-b border-viking-edge/60">
+          <div className="text-viking-bone truncate font-rune">
+            {user.nickname || user.name}
+          </div>
+          <div className="truncate">{user.email}</div>
+        </div>
+        <DropdownMenuItem asChild>
+          <Link
+            to="/profile"
+            data-testid="account-menu-profile"
+            className="cursor-pointer focus:bg-viking-surface2 focus:text-viking-gold"
+          >
+            <UserCircle2 size={14} className="mr-2" />
+            {t("account.profile")}
+          </Link>
+        </DropdownMenuItem>
+        {user.role === "admin" && (
+          <DropdownMenuItem asChild>
+            <Link
+              to="/admin"
+              data-testid="account-menu-admin"
+              className="cursor-pointer focus:bg-viking-surface2 focus:text-viking-gold"
+            >
+              <Shield size={14} className="mr-2" />
+              {t("nav.admin")}
+            </Link>
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuSeparator className="bg-viking-edge/60" />
+        <DropdownMenuItem
+          data-testid="account-menu-logout"
+          onClick={logout}
+          className="cursor-pointer text-viking-ember focus:bg-viking-surface2 focus:text-viking-ember"
+        >
+          <LogOut size={14} className="mr-2" />
+          {t("account.sign_out")}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export default function Layout({ children }) {
   const [open, setOpen] = useState(false);
   const { t } = useI18n();
@@ -152,29 +233,7 @@ export default function Layout({ children }) {
           <div className="flex items-center gap-2">
             <FavoritesNavLink />
             <LanguageSwitcher />
-            {user && user.role === "admin" ? (
-              <>
-                <Link to="/admin" data-testid="nav-admin">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-viking-gold hover:text-viking-bone hover:bg-viking-surface2 hidden md:inline-flex"
-                  >
-                    <Shield size={14} className="mr-2" />
-                    {t("nav.admin")}
-                  </Button>
-                </Link>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  data-testid="logout-btn"
-                  onClick={logout}
-                  className="text-viking-stone hover:text-viking-ember hidden md:inline-flex"
-                >
-                  <LogOut size={14} />
-                </Button>
-              </>
-            ) : null}
+            <AccountMenu />
             <button
               data-testid="mobile-menu-toggle"
               onClick={() => setOpen((o) => !o)}
@@ -220,25 +279,52 @@ export default function Layout({ children }) {
                 <Star size={14} />
                 {t("nav.favorites")}
               </NavLink>
-              {user && user.role === "admin" && (
+              {user && user.role ? (
                 <>
                   <NavLink
-                    to="/admin"
+                    to="/profile"
                     onClick={() => setOpen(false)}
-                    className="font-rune text-xs px-3 py-3 text-viking-gold"
+                    data-testid="mnav-profile"
+                    className={({ isActive }) =>
+                      `font-rune text-xs px-3 py-3 rounded-sm border-b border-viking-edge/40 inline-flex items-center gap-2 ${
+                        isActive ? "text-viking-gold" : "text-viking-bone hover:text-viking-gold"
+                      }`
+                    }
                   >
-                    {t("nav.admin")}
+                    <User size={14} />
+                    {t("account.profile")}
                   </NavLink>
+                  {user.role === "admin" && (
+                    <NavLink
+                      to="/admin"
+                      onClick={() => setOpen(false)}
+                      data-testid="mnav-admin"
+                      className="font-rune text-xs px-3 py-3 text-viking-gold border-b border-viking-edge/40"
+                    >
+                      {t("nav.admin")}
+                    </NavLink>
+                  )}
                   <button
                     onClick={() => {
                       setOpen(false);
                       logout();
                     }}
+                    data-testid="mnav-logout"
                     className="font-rune text-xs px-3 py-3 text-left text-viking-ember"
                   >
-                    {t("admin.logout")}
+                    {t("account.sign_out")}
                   </button>
                 </>
+              ) : (
+                <NavLink
+                  to="/login"
+                  onClick={() => setOpen(false)}
+                  data-testid="mnav-login"
+                  className="font-rune text-xs px-3 py-3 rounded-sm border-b border-viking-edge/40 inline-flex items-center gap-2 text-viking-bone hover:text-viking-gold"
+                >
+                  <User size={14} />
+                  {t("account.sign_in")}
+                </NavLink>
               )}
             </div>
           </div>

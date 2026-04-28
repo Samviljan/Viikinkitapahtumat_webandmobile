@@ -27,6 +27,9 @@ import Privacy from "@/pages/Privacy";
 import Unsubscribe from "@/pages/Unsubscribe";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import Profile from "@/pages/Profile";
 
 function App() {
   return (
@@ -49,6 +52,9 @@ function App() {
               <Route path="/unsubscribe" element={<Unsubscribe />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/profile" element={<Profile />} />
               <Route
                 path="*"
                 element={

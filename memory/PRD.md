@@ -348,6 +348,21 @@ See `/app/memory/test_credentials.md`.
 - ✅ **expo-localization** lisätty riippuvuuksiin (yarn add).
 - 🚧 **Seuraavaksi**: Uusi EAS production AAB-build (0.3.0/4) → Closed beta -track päivitys.
 
+## Iteration — User Auth & Profile (Web + Mobile, 2026-04-28)
+- ✅ **Backend käyttäjäauth** (jo aiemmin): `POST /api/auth/register`, `GET /api/auth/me`, `PATCH /api/auth/profile`, `POST /api/auth/google-session`. `users`-kokoelma laajennettu kentillä `nickname` ja `user_types: List[str]` (validoidut arvot: `reenactor`, `fighter`, `merchant`, `organizer`). Olemassa olevat admin-flowit ennallaan (`role="admin"` vs `role="user"`).
+- ✅ **Mobiili — TypeScript korjattu**: `expo-web-browser` lisätty riippuvuuksiin (settings/auth.tsx käyttää sitä Google-OAuth-flown WebViewiin). `npx tsc --noEmit` puhdas.
+- ✅ **Mobiili — Auth-konteksti**: `/app/mobile/src/lib/auth.tsx` — JWT tallennetaan AsyncStorageen (`vk_auth_token`), Axios-interceptor lisää `Authorization: Bearer ...`-headerin automaattisesti. `signUp` / `signIn` / `signInWithGoogleSession` / `signOut` / `updateProfile`. Wrapped `_layout.tsx`:ssä SettingsProviderin sisällä.
+- ✅ **Mobiili — Settings-hub** (`/app/mobile/app/(tabs)/settings.tsx`): kolme korttia → Profiili, Hakuasetukset, Tietoa sovelluksesta. Anonyymi käyttäjä näkee "Kirjaudu sisään" -kehotteen profiilikortissa.
+- ✅ **Mobiili — Auth/Profile -näytöt**: `/app/mobile/app/settings/{auth,profile,search}.tsx`. Sisältää sähköposti+salasana+nimimerkki+käyttäjätyypit (chips), Google-sign-in-painike, profiilin muokkaus + uloskirjautuminen.
+- ✅ **Web — Käyttäjien rekisteröinti & kirjautuminen**: uudet sivut `/app/frontend/src/pages/{Login,Register,Profile}.jsx`. Reitit `/login`, `/register`, `/profile` rekisteröity App.js:ään ilman olemassa olevan `/admin/login`-flown rikkomista.
+- ✅ **Web — AccountMenu** (`Layout.jsx`): anonyymeille "Kirjaudu" -painike, kirjautuneille pyöreä avatar-painike → dropdown (nimimerkki/email + Profiili + (admin) Ylläpito + Kirjaudu ulos). Mobiili-hampurilaismenu päivitetty vastaavasti.
+- ✅ **Web — i18n**: uusi `account`-namespace (sign_in, register_title, user_types_label, type_reenactor/.../organizer, profile_title, profile_save, error_invalid/duplicate/generic, …) lisätty FI/EN/SV-sanakirjoihin. ET/PL fall back EN:ään automaattisesti i18n.js:n fallback-ketjun (lang→en→fi) ansiosta.
+- ✅ **Auth-konteksti laajennettu** (`/app/frontend/src/lib/auth.js`): lisätty `register`, `updateProfile`. `login` palauttaa nyt täyden profiilin (nickname, user_types, has_password) eikä vain id/email/name/role.
+- ✅ **Päästä päähän verifioitu Playwright-skriptillä**: rekisteröinti → automaattinen redirect /profile → muokkaa nickname & user_types → tallenna → kirjaudu ulos → kirjaudu sisään uudelleen → profiili pysyi tallessa. Admin-flow erikseen vahvistettu (admin@viikinkitapahtumat.fi pääsee /admin-paneeliin ja näkee dropdownissa sekä Profiilin että Ylläpito-linkin).
+- ✅ Lint puhdas (ESLint).
+
+## Iteration — Mobile i18n + Settings + UX (2026-04-27)
+
 
 
 

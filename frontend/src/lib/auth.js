@@ -27,11 +27,41 @@ export function AuthProvider({ children }) {
     refresh();
   }, [refresh]);
 
+  // Trim the API response down to the shape we keep in context.
+  function pickProfile(data) {
+    return {
+      id: data.id,
+      email: data.email,
+      name: data.name,
+      role: data.role,
+      nickname: data.nickname ?? null,
+      user_types: data.user_types ?? [],
+      has_password: data.has_password ?? true,
+    };
+  }
+
   const login = useCallback(async (email, password) => {
     // Auth token is set as an httpOnly cookie by the backend; we never read it
     // in JS. We only keep the user profile in component state.
     const { data } = await api.post("/auth/login", { email, password });
-    setUser({ id: data.id, email: data.email, name: data.name, role: data.role });
+    setUser(pickProfile(data));
+    return data;
+  }, []);
+
+  const register = useCallback(async ({ email, password, nickname, user_types }) => {
+    const { data } = await api.post("/auth/register", {
+      email,
+      password,
+      nickname,
+      user_types: user_types || [],
+    });
+    setUser(pickProfile(data));
+    return data;
+  }, []);
+
+  const updateProfile = useCallback(async (patch) => {
+    const { data } = await api.patch("/auth/profile", patch);
+    setUser(pickProfile(data));
     return data;
   }, []);
 
@@ -46,7 +76,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refresh }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, register, updateProfile, logout, refresh }}
+    >
       {children}
     </AuthContext.Provider>
   );
