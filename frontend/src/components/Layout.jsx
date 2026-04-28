@@ -362,6 +362,13 @@ export default function Layout({ children }) {
           </span>
           <div className="flex items-center gap-4">
             <Link
+              to="/guide"
+              data-testid="footer-guide-link"
+              className="text-[10px] font-rune hover:text-viking-gold transition-colors uppercase tracking-[0.2em]"
+            >
+              {t("footer.guide")}
+            </Link>
+            <Link
               to="/privacy"
               data-testid="footer-privacy-link"
               className="text-[10px] font-rune hover:text-viking-gold transition-colors uppercase tracking-[0.2em]"

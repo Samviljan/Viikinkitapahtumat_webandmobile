@@ -106,3 +106,67 @@
     border-left-color: inherit; border-right-color: inherit; border-top-color: inherit; border-bottom-color: inherit;
   }
 }
+
+@layer components {
+  /* Markdown prose styles for the User Guide page (renders /docs/USER_GUIDE.md) */
+  .user-guide-prose {
+    @apply text-viking-stone leading-relaxed;
+  }
+  .user-guide-prose h1 {
+    @apply font-serif text-3xl text-viking-bone mt-12 mb-4;
+  }
+  .user-guide-prose h2 {
+    @apply font-serif text-2xl text-viking-bone mt-12 mb-3 pb-2 border-b border-viking-edge/60;
+  }
+  .user-guide-prose h3 {
+    @apply font-serif text-xl text-viking-bone mt-8 mb-3;
+  }
+  .user-guide-prose h4 {
+    @apply font-rune text-xs uppercase tracking-wider text-viking-gold mt-6 mb-2;
+  }
+  .user-guide-prose p {
+    @apply text-base text-viking-stone leading-relaxed mb-4;
+  }
+  .user-guide-prose a {
+    @apply text-viking-gold hover:underline underline-offset-4;
+  }
+  .user-guide-prose strong {
+    @apply text-viking-bone;
+  }
+  .user-guide-prose ul, .user-guide-prose ol {
+    @apply pl-5 mb-4 space-y-1.5;
+  }
+  .user-guide-prose ul { @apply list-disc; }
+  .user-guide-prose ol { @apply list-decimal; }
+  .user-guide-prose li::marker { @apply text-viking-gold/70; }
+  .user-guide-prose code {
+    @apply bg-viking-surface border border-viking-edge px-1.5 py-0.5 rounded-sm text-xs text-viking-gold font-mono;
+  }
+  .user-guide-prose pre {
+    @apply bg-viking-surface border border-viking-edge rounded-sm p-4 overflow-x-auto my-4 text-xs;
+  }
+  .user-guide-prose pre code {
+    @apply bg-transparent border-0 p-0 text-viking-stone;
+  }
+  .user-guide-prose blockquote {
+    @apply border-l-2 border-viking-gold/60 pl-4 italic text-sm my-4;
+  }
+  .user-guide-prose hr {
+    @apply border-viking-edge my-10;
+  }
+  .user-guide-prose table {
+    @apply w-full text-sm border border-viking-edge my-6 border-collapse;
+  }
+  .user-guide-prose thead {
+    @apply bg-viking-surface;
+  }
+  .user-guide-prose th {
+    @apply font-rune text-[10px] uppercase tracking-wider text-viking-gold text-left p-3 border-b border-viking-edge;
+  }
+  .user-guide-prose td {
+    @apply p-3 align-top border-b border-viking-edge/40 text-sm;
+  }
+  .user-guide-prose tr:last-child td {
+    @apply border-b-0;
+  }
+}

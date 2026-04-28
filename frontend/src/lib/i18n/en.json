@@ -457,7 +457,8 @@
   "footer": {
     "contact": "admin@viikinkitapahtumat.fi",
     "rights": "All rights reserved.",
-    "privacy": "Privacy"
+    "privacy": "Privacy",
+    "guide": "User Guide"
   },
   "fav": {
     "add": "Add to favorites",

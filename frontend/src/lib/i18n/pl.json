@@ -300,7 +300,8 @@
   "footer": {
     "contact": "admin@viikinkitapahtumat.fi",
     "rights": "Wszelkie prawa zastrzeżone.",
-    "privacy": "Prywatność"
+    "privacy": "Prywatność",
+    "guide": "Przewodnik użytkownika"
   },
   "fav": {
     "add": "Dodaj do ulubionych",

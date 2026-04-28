@@ -458,7 +458,8 @@
   "footer": {
     "contact": "admin@viikinkitapahtumat.fi",
     "rights": "Kaikki oikeudet pidätetään.",
-    "privacy": "Tietosuoja"
+    "privacy": "Tietosuoja",
+    "guide": "Käyttöohje"
   },
   "fav": {
     "add": "Lisää suosikkeihin",
