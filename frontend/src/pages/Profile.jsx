@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { LogOut, Check, Shield } from "lucide-react";
 import { ConsentBlock } from "@/pages/Register";
+import AttendingList from "@/components/AttendingList";
+import SavedSearchEditor from "@/components/SavedSearchEditor";
 
 const fieldClass =
   "bg-viking-surface border-viking-edge rounded-sm text-viking-bone placeholder:text-viking-stone focus:border-viking-ember focus:ring-viking-ember";
@@ -235,6 +237,12 @@ export default function Profile() {
                     : t("account.method_password")}
                 </dd>
               </div>
+              {user.paid_messaging_enabled ? (
+                <div>
+                  <dt className="text-overline mb-1">{t("messaging.feature")}</dt>
+                  <dd className="text-viking-gold">{t("messaging.enabled")}</dd>
+                </div>
+              ) : null}
             </dl>
           </div>
 
@@ -251,6 +259,18 @@ export default function Profile() {
             </Link>
           )}
 
+          {user.paid_messaging_enabled && (types.includes("merchant") || types.includes("organizer")) ? (
+            <Link to="/messages" data-testid="profile-messages-link">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-viking-gold/60 text-viking-gold hover:bg-viking-gold/10 rounded-sm font-rune text-xs h-11"
+              >
+                {t("messaging.send_link")}
+              </Button>
+            </Link>
+          ) : null}
+
           <Button
             type="button"
             variant="ghost"
@@ -262,6 +282,12 @@ export default function Profile() {
             {t("account.sign_out")}
           </Button>
         </aside>
+      </div>
+
+      {/* Below: saved search + attending events */}
+      <div className="grid gap-8 mt-10 lg:grid-cols-2">
+        <SavedSearchEditor />
+        <AttendingList />
       </div>
     </div>
   );

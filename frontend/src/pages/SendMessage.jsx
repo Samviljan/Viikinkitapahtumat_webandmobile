@@ -1,0 +1,221 @@
+/**
+ * Paid-feature page: organizers / merchants compose a message and send it
+ * to the attendees of one of their events.
+ *
+ * Backend gates the request on `paid_messaging_enabled`. We hide the page
+ * if the user doesn't have the flag, but the server is the source of truth.
+ *
+ * Recipients are filtered server-side by:
+ *   1. Attendance to the chosen event
+ *   2. The user's marketing consent flag matching the sender's role
+ *   3. Per-RSVP notify_push / notify_email toggle for each channel
+ */
+import React, { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
+import { toast } from "sonner";
+import { Megaphone, AlertTriangle, Check } from "lucide-react";
+import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+
+const fieldClass =
+  "bg-viking-surface border-viking-edge rounded-sm text-viking-bone placeholder:text-viking-stone focus:border-viking-ember focus:ring-viking-ember";
+
+const CHANNELS = ["both", "push", "email"];
+
+export default function SendMessage() {
+  const { user, loading } = useAuth();
+  const { t, lang } = useI18n();
+  const [events, setEvents] = useState([]);
+  const [eventId, setEventId] = useState("");
+  const [channel, setChannel] = useState("both");
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState(null);
+
+  // Load all approved events so user can pick one of "their" events
+  // (loose gating — backend further validates consent).
+  useEffect(() => {
+    if (!user) return;
+    api
+      .get("/events?limit=200")
+      .then((r) => setEvents(r.data || []))
+      .catch(() => setEvents([]));
+  }, [user]);
+
+  if (loading) return null;
+  if (!user || user === false || !user.role) {
+    return <Navigate to="/login" replace state={{ from: "/messages" }} />;
+  }
+  // Hide the page for users without the paid flag or without merchant/organizer role.
+  const types = user.user_types || [];
+  const allowed =
+    !!user.paid_messaging_enabled && (types.includes("merchant") || types.includes("organizer"));
+  if (!allowed) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-20 text-center" data-testid="messaging-blocked">
+        <AlertTriangle size={28} className="text-viking-gold mx-auto mb-4" />
+        <h1 className="font-serif text-2xl text-viking-bone mb-3">
+          {t("messaging.blocked_title")}
+        </h1>
+        <p className="text-sm text-viking-stone leading-relaxed">
+          {t("messaging.blocked_help")}
+        </p>
+      </div>
+    );
+  }
+
+  async function send() {
+    if (!eventId || !subject.trim() || !body.trim()) return;
+    setSending(true);
+    setResult(null);
+    try {
+      const { data } = await api.post("/messages/send", {
+        event_id: eventId,
+        channel,
+        subject: subject.trim(),
+        body: body.trim(),
+      });
+      setResult(data);
+      toast.success(t("messaging.sent_toast"));
+      setSubject("");
+      setBody("");
+    } catch (err) {
+      const status = err.response?.status;
+      if (status === 402) {
+        toast.error(t("messaging.blocked_title"));
+      } else {
+        toast.error(t("account.error_generic"));
+      }
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 sm:px-6 py-12 sm:py-16">
+      <div className="flex items-center gap-3 mb-8">
+        <div className="h-12 w-12 rounded-sm border border-viking-gold/50 flex items-center justify-center text-viking-gold">
+          <Megaphone size={20} />
+        </div>
+        <div>
+          <div className="text-overline">{t("messaging.feature")}</div>
+          <h1 className="font-serif text-2xl sm:text-3xl text-viking-bone">
+            {t("messaging.title")}
+          </h1>
+        </div>
+      </div>
+
+      <p className="text-sm text-viking-stone leading-relaxed mb-8">
+        {t("messaging.consent_help")}
+      </p>
+
+      <div className="carved-card rounded-sm p-6 space-y-5" data-testid="messaging-form">
+        {/* Event picker */}
+        <div className="space-y-2">
+          <Label className="text-overline">{t("messaging.pick_event")}</Label>
+          <select
+            data-testid="msg-event"
+            value={eventId}
+            onChange={(e) => setEventId(e.target.value)}
+            className={`w-full px-3 py-2 ${fieldClass}`}
+          >
+            <option value="">— {t("messaging.pick_event")} —</option>
+            {events.map((ev) => (
+              <option key={ev.id} value={ev.id}>
+                {ev[`title_${lang}`] || ev.title_fi || ev.title || ev.id}
+                {ev.start_date ? ` · ${ev.start_date}` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Channel */}
+        <div className="space-y-2">
+          <Label className="text-overline">{t("messaging.channel")}</Label>
+          <div className="flex flex-wrap gap-2">
+            {CHANNELS.map((c) => {
+              const active = channel === c;
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  data-testid={`msg-channel-${c}`}
+                  onClick={() => setChannel(c)}
+                  className={`px-3 py-2 rounded-sm text-xs font-rune border transition-colors ${
+                    active
+                      ? "border-viking-gold text-viking-gold bg-viking-gold/10"
+                      : "border-viking-edge text-viking-stone hover:border-viking-gold/60"
+                  }`}
+                >
+                  {t(`messaging.ch_${c}`)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Subject */}
+        <div className="space-y-2">
+          <Label className="text-overline">{t("messaging.subject")}</Label>
+          <Input
+            type="text"
+            data-testid="msg-subject"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            maxLength={120}
+            className={fieldClass}
+          />
+        </div>
+
+        {/* Body */}
+        <div className="space-y-2">
+          <Label className="text-overline">{t("messaging.body")}</Label>
+          <textarea
+            data-testid="msg-body"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={6}
+            maxLength={1500}
+            className={`w-full px-3 py-2 ${fieldClass} resize-y`}
+          />
+          <p className="text-[11px] text-viking-stone italic">
+            {t("messaging.body_hint")}
+          </p>
+        </div>
+
+        <Button
+          type="button"
+          onClick={send}
+          disabled={sending || !eventId || !subject.trim() || !body.trim()}
+          data-testid="msg-send"
+          className="bg-viking-ember hover:bg-viking-emberHover text-viking-bone rounded-sm font-rune text-xs h-11 px-6 ember-glow"
+        >
+          {sending ? "..." : t("messaging.send_btn")}
+        </Button>
+
+        {result ? (
+          <div
+            data-testid="msg-result"
+            className="mt-2 p-4 border border-viking-gold/40 rounded-sm bg-viking-gold/5"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Check size={14} className="text-viking-gold" />
+              <span className="text-overline">{t("messaging.result")}</span>
+            </div>
+            <p className="text-sm text-viking-bone">
+              {(t("messaging.result_text") || "")
+                .replace("{push}", String(result.sent_push ?? 0))
+                .replace("{email}", String(result.sent_email ?? 0))
+                .replace("{recipients}", String(result.recipients ?? 0))}
+            </p>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}

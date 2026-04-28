@@ -64,6 +64,7 @@ interface Dict {
     nav_profile: string;
     nav_search: string;
     nav_about: string;
+    nav_attending: string;
     language_auto: string;
     save_defaults: string;
     saved_toast: string;
@@ -122,6 +123,21 @@ interface Dict {
     notify_help: string;
     notify_email: string;
     notify_push: string;
+  };
+  attending: {
+    title: string;
+    help: string;
+    empty: string;
+  };
+  saved_search: {
+    title: string;
+    help: string;
+    radius: string;
+    categories: string;
+    countries: string;
+    any: string;
+    save: string;
+    saved: string;
   };
   info: {
     title: string;
@@ -219,6 +235,7 @@ export const translations: Record<Lang, Dict> = {
       nav_profile: "Profiili",
       nav_search: "Hakuasetukset",
       nav_about: "Tietoa sovelluksesta",
+      nav_attending: "Osallistun-tapahtumat",
       language_auto: "Tunnista automaattisesti",
       save_defaults: "Tallenna oletukseksi",
       saved_toast: "Tallennettu",
@@ -282,6 +299,21 @@ export const translations: Record<Lang, Dict> = {
         "Saat muistutuksia ennen tapahtumaa valitsemallasi tavalla. Voit vaihtaa näitä asetuksia milloin tahansa.",
       notify_email: "Muistuta sähköpostilla",
       notify_push: "Muistuta push-viestillä",
+    },
+    attending: {
+      title: "Osallistun-tapahtumat",
+      help: "Tapahtumat, joihin olet merkinnyt osallistuvasi.",
+      empty: "Et ole vielä merkinnyt osallistuvasi yhteenkään tapahtumaan.",
+    },
+    saved_search: {
+      title: "Hakuoletukset",
+      help: "Tallenna oletukset jotka esitäytetään listanäkymään.",
+      radius: "Etäisyys",
+      categories: "Kategoriat",
+      countries: "Maat",
+      any: "Kaikki",
+      save: "Tallenna",
+      saved: "Oletukset tallennettu",
     },
     info: {
       title: "Tietoa sovelluksesta",
@@ -375,6 +407,7 @@ export const translations: Record<Lang, Dict> = {
       nav_profile: "Profile",
       nav_search: "Search settings",
       nav_about: "About the app",
+      nav_attending: "My attending events",
       language_auto: "Auto-detect",
       save_defaults: "Save as default",
       saved_toast: "Saved",
@@ -438,6 +471,21 @@ export const translations: Record<Lang, Dict> = {
         "You'll receive reminders before the event using the channels you choose. You can change these any time.",
       notify_email: "Remind me by email",
       notify_push: "Remind me by push",
+    },
+    attending: {
+      title: "My attending events",
+      help: "Events you've marked as attending.",
+      empty: "You haven't marked attendance to any event yet.",
+    },
+    saved_search: {
+      title: "Default search filters",
+      help: "Save default filters that pre-fill the events list.",
+      radius: "Distance",
+      categories: "Categories",
+      countries: "Countries",
+      any: "Any",
+      save: "Save",
+      saved: "Defaults saved",
     },
     info: {
       title: "About the app",
@@ -530,6 +578,7 @@ export const translations: Record<Lang, Dict> = {
       nav_profile: "Profil",
       nav_search: "Sökinställningar",
       nav_about: "Om appen",
+      nav_attending: "Mina deltagande",
       language_auto: "Autoidentifiera",
       save_defaults: "Spara som förval",
       saved_toast: "Sparat",
@@ -593,6 +642,21 @@ export const translations: Record<Lang, Dict> = {
         "Du får påminnelser före evenemanget på de sätt du valt. Du kan ändra inställningarna när som helst.",
       notify_email: "Påminn via e-post",
       notify_push: "Påminn via push",
+    },
+    attending: {
+      title: "Mina deltagande",
+      help: "Evenemang du markerat att du deltar i.",
+      empty: "Du har ännu inte markerat deltagande för något evenemang.",
+    },
+    saved_search: {
+      title: "Standardfilter",
+      help: "Spara filter som förhandsfylls i evenemangslistan.",
+      radius: "Avstånd",
+      categories: "Kategorier",
+      countries: "Länder",
+      any: "Alla",
+      save: "Spara",
+      saved: "Standardvärden sparade",
     },
     info: {
       title: "Om appen",

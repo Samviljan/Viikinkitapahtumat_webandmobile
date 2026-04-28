@@ -6,6 +6,14 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { colors } from "@/src/lib/theme";
 import { SettingsProvider } from "@/src/lib/i18n";
 import { AuthProvider } from "@/src/lib/auth";
+import { usePushNotifications } from "@/src/lib/push";
+
+function PushTokenRegistrar() {
+  // Side-effect-only component: registers the device's Expo Push Token with
+  // the backend whenever the user signs in. Returns nothing.
+  usePushNotifications();
+  return null;
+}
 
 export default function RootLayout() {
   return (
@@ -13,6 +21,7 @@ export default function RootLayout() {
       <AuthProvider>
         <SafeAreaProvider>
           <StatusBar style="light" />
+          <PushTokenRegistrar />
           <Stack
             screenOptions={{
               contentStyle: { backgroundColor: colors.bg },
@@ -32,6 +41,7 @@ export default function RootLayout() {
             <Stack.Screen name="settings/search" options={{ headerShown: false }} />
             <Stack.Screen name="settings/auth" options={{ headerShown: false }} />
             <Stack.Screen name="settings/forgot-password" options={{ headerShown: false }} />
+            <Stack.Screen name="settings/attending" options={{ headerShown: false }} />
           </Stack>
         </SafeAreaProvider>
       </AuthProvider>

@@ -14,6 +14,7 @@ import AdminSubscribersPanel from "@/components/admin/AdminSubscribersPanel";
 import AdminWeeklyReportPanel from "@/components/admin/AdminWeeklyReportPanel";
 import AdminSyncPanel from "@/components/admin/AdminSyncPanel";
 import AdminEventRow from "@/components/admin/AdminEventRow";
+import AdminUsersPanel from "@/components/admin/AdminUsersPanel";
 
 const STATUSES = ["pending", "approved", "rejected", "all"];
 
@@ -133,6 +134,10 @@ export default function AdminDashboard() {
           </TabsContent>
         ))}
       </Tabs>
+
+      <div className="mt-12">
+        <AdminUsersPanel />
+      </div>
 
       <div className="mt-12">
         <AdminMerchantsPanel />

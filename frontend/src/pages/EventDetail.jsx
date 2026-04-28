@@ -8,6 +8,7 @@ import { formatDateRange, computeEventTiming } from "@/components/EventCard";
 import FavoriteButton from "@/components/FavoriteButton";
 import RemindMeButton from "@/components/RemindMeButton";
 import AttendButton from "@/components/AttendButton";
+import EventStats from "@/components/EventStats";
 import { flagFor } from "@/lib/countries";
 import { resolveImageUrl } from "@/lib/images";
 
@@ -181,6 +182,7 @@ export default function EventDetail() {
           </div>
           <div className="mt-6 pt-6 border-t border-viking-edge">
             <AttendButton eventId={event.id} />
+            <EventStats eventId={event.id} />
           </div>
         </div>
       </div>

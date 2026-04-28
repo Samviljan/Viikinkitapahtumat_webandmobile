@@ -32,6 +32,7 @@ import Register from "@/pages/Register";
 import Profile from "@/pages/Profile";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
+import SendMessage from "@/pages/SendMessage";
 
 function App() {
   return (
@@ -59,6 +60,7 @@ function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/messages" element={<SendMessage />} />
               <Route
                 path="*"
                 element={

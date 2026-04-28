@@ -41,6 +41,8 @@ export function AuthProvider({ children }) {
       organizer_name: data.organizer_name ?? null,
       consent_organizer_messages: !!data.consent_organizer_messages,
       consent_merchant_offers: !!data.consent_merchant_offers,
+      saved_search: data.saved_search ?? null,
+      paid_messaging_enabled: !!data.paid_messaging_enabled,
     };
   }
 

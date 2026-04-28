@@ -37,6 +37,16 @@ export default function SettingsHub() {
         ? user.nickname || user.email
         : t("auth.signed_out_title"),
     },
+    ...(user
+      ? [
+          {
+            icon: "calendar-outline" as const,
+            titleKey: "settings.nav_attending",
+            href: "/settings/attending",
+            testID: "nav-attending",
+          },
+        ]
+      : []),
     {
       icon: "options-outline",
       titleKey: "settings.nav_search",

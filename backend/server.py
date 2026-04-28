@@ -8,6 +8,7 @@ import os
 import logging
 import secrets
 import uuid
+from html import escape as html_escape
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Literal
 
@@ -35,6 +36,7 @@ from email_service import (
     send_password_reset as svc_send_password_reset,
     make_unsubscribe_token,
 )
+from push_service import send_to_users as push_send_to_users
 from translation_service import fill_missing_translations
 
 
@@ -104,6 +106,8 @@ async def get_current_user(request: Request) -> dict:
         user.setdefault("organizer_name", None)
         user.setdefault("consent_organizer_messages", False)
         user.setdefault("consent_merchant_offers", False)
+        user.setdefault("saved_search", None)
+        user.setdefault("paid_messaging_enabled", False)
         return user
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
@@ -125,6 +129,16 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class SavedSearch(BaseModel):
+    """Default search filters that apply when the logged-in user opens the
+    events list. Mirrored on web and mobile."""
+
+    model_config = ConfigDict(extra="ignore")
+    radius_km: Optional[int] = None  # null = no radius filter
+    categories: List[str] = []  # empty = all categories
+    countries: List[str] = []  # empty = all countries
+
+
 class UserOut(BaseModel):
     id: str
     email: EmailStr
@@ -137,6 +151,8 @@ class UserOut(BaseModel):
     organizer_name: Optional[str] = None
     consent_organizer_messages: bool = False
     consent_merchant_offers: bool = False
+    saved_search: Optional[SavedSearch] = None
+    paid_messaging_enabled: bool = False
 
 
 USER_TYPES = {"reenactor", "fighter", "merchant", "organizer"}
@@ -160,6 +176,7 @@ class ProfileUpdate(BaseModel):
     organizer_name: Optional[str] = None
     consent_organizer_messages: Optional[bool] = None
     consent_merchant_offers: Optional[bool] = None
+    saved_search: Optional[SavedSearch] = None
 
 
 class GoogleSessionRequest(BaseModel):
@@ -178,6 +195,29 @@ class ResetPasswordRequest(BaseModel):
 class AttendRequest(BaseModel):
     notify_email: bool = True
     notify_push: bool = False
+
+
+class PushTokenRequest(BaseModel):
+    """Mobile registers its Expo Push Token after acquiring it from
+    `Notifications.getExpoPushTokenAsync`."""
+
+    expo_push_token: str
+    platform: Optional[str] = None  # "ios" | "android"
+
+
+class PaidMessagingToggle(BaseModel):
+    enabled: bool
+
+
+class SendMessageRequest(BaseModel):
+    """Organizer/merchant sends a single message to all attendees of one of
+    their events. Channel = "push", "email", or "both". Recipients are
+    filtered by the appropriate consent flag and `notify_*` per-RSVP."""
+
+    event_id: str
+    channel: Literal["push", "email", "both"] = "both"
+    subject: str
+    body: str
 
 
 EventCategory = Literal["market", "training_camp", "course", "festival", "meetup", "other"]
@@ -343,6 +383,8 @@ async def login(payload: LoginRequest, response: Response):
         "organizer_name": user.get("organizer_name"),
         "consent_organizer_messages": bool(user.get("consent_organizer_messages", False)),
         "consent_merchant_offers": bool(user.get("consent_merchant_offers", False)),
+        "saved_search": user.get("saved_search"),
+        "paid_messaging_enabled": bool(user.get("paid_messaging_enabled", False)),
         "has_password": True,
         "token": token,
     }
@@ -554,6 +596,13 @@ async def update_profile(
         update["consent_organizer_messages"] = bool(payload.consent_organizer_messages)
     if payload.consent_merchant_offers is not None:
         update["consent_merchant_offers"] = bool(payload.consent_merchant_offers)
+    if payload.saved_search is not None:
+        ss = payload.saved_search
+        update["saved_search"] = {
+            "radius_km": ss.radius_km,
+            "categories": list(ss.categories or []),
+            "countries": list(ss.countries or []),
+        }
 
     # If user removes "merchant"/"organizer" from user_types, also clear the
     # corresponding name field so stale data doesn't linger.
@@ -577,6 +626,8 @@ async def update_profile(
     fresh.setdefault("organizer_name", None)
     fresh.setdefault("consent_organizer_messages", False)
     fresh.setdefault("consent_merchant_offers", False)
+    fresh.setdefault("saved_search", None)
+    fresh.setdefault("paid_messaging_enabled", False)
     return UserOut(**fresh)
 
 
@@ -729,6 +780,337 @@ async def my_attending_events(user: dict = Depends(get_current_user)):
             }
         )
     return out
+
+
+# -----------------------------------------------------------------------------
+# Expo push token registration (mobile)
+# -----------------------------------------------------------------------------
+@api_router.post("/users/me/push-token")
+async def register_push_token(
+    payload: PushTokenRequest, user: dict = Depends(get_current_user)
+):
+    """Register or refresh the user's Expo Push Token. Tokens are stored as
+    a list per user — devices come and go, and the backend prunes them
+    automatically when Expo reports `DeviceNotRegistered`.
+    """
+    tk = (payload.expo_push_token or "").strip()
+    if not (tk.startswith("ExponentPushToken[") or tk.startswith("ExpoPushToken[")):
+        raise HTTPException(status_code=400, detail="Invalid Expo Push Token format")
+
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$addToSet": {"expo_push_tokens": tk}},
+    )
+    if payload.platform in ("ios", "android"):
+        await db.users.update_one(
+            {"id": user["id"], "expo_push_tokens": tk},
+            {"$set": {f"push_token_meta.{tk}": {"platform": payload.platform}}},
+        )
+    return {"ok": True}
+
+
+@api_router.delete("/users/me/push-token")
+async def unregister_push_token(
+    payload: PushTokenRequest, user: dict = Depends(get_current_user)
+):
+    """Remove a single token (e.g. when user signs out on a device)."""
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$pull": {"expo_push_tokens": payload.expo_push_token}},
+    )
+    return {"ok": True}
+
+
+# -----------------------------------------------------------------------------
+# Anonymous attendance stats (visible to merchants/organizers — privacy-safe)
+# -----------------------------------------------------------------------------
+@api_router.get("/events/{event_id}/stats")
+async def event_attendance_stats(
+    event_id: str, user: dict = Depends(get_current_user)
+):
+    """Return *only counts* of reenactor and fighter attendees per event.
+    No nicknames, emails or any other PII. Visible to merchants and
+    organizers (so they can plan stalls/logistics) and admins.
+    """
+    user_types = set(user.get("user_types") or [])
+    is_admin = user.get("role") == "admin"
+    if not is_admin and not (user_types & {"merchant", "organizer"}):
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    ev = await db.events.find_one({"id": event_id, "status": "approved"}, {"_id": 0, "id": 1})
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    rows = await db.event_attendees.find({"event_id": event_id}, {"_id": 0, "user_id": 1}).to_list(5000)
+    if not rows:
+        return {"reenactors": 0, "fighters": 0, "total": 0}
+    user_ids = [r["user_id"] for r in rows]
+    users = await db.users.find(
+        {"id": {"$in": user_ids}}, {"_id": 0, "user_types": 1}
+    ).to_list(5000)
+    reenactors = sum(1 for u in users if "reenactor" in (u.get("user_types") or []))
+    fighters = sum(1 for u in users if "fighter" in (u.get("user_types") or []))
+    return {"reenactors": reenactors, "fighters": fighters, "total": len(users)}
+
+
+# -----------------------------------------------------------------------------
+# Paid messaging — organizer/merchant sends a message to attendees
+#   * Feature must be unlocked per-user via /admin/users/{id}/paid-messaging
+#   * Recipients are filtered by:
+#       - they are attending the event
+#       - they have given consent (organizer → consent_organizer_messages,
+#         merchant → consent_merchant_offers)
+#       - per-attendance toggle for that channel (notify_push / notify_email)
+# -----------------------------------------------------------------------------
+@api_router.post("/messages/send")
+async def send_message_to_attendees(
+    payload: SendMessageRequest, user: dict = Depends(get_current_user)
+):
+    if not user.get("paid_messaging_enabled"):
+        raise HTTPException(
+            status_code=402,
+            detail="Paid messaging is not enabled for this account",
+        )
+    user_types = set(user.get("user_types") or [])
+    if not (user_types & {"merchant", "organizer"}):
+        raise HTTPException(status_code=403, detail="Only merchants/organizers may send")
+
+    ev = await db.events.find_one({"id": payload.event_id, "status": "approved"}, {"_id": 0})
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    # Pick the consent flag matching the sender's role.
+    consent_field = (
+        "consent_organizer_messages" if "organizer" in user_types
+        else "consent_merchant_offers"
+    )
+
+    rows = await db.event_attendees.find(
+        {"event_id": payload.event_id}, {"_id": 0}
+    ).to_list(5000)
+    if not rows:
+        return {"sent_push": 0, "sent_email": 0, "recipients": 0}
+
+    user_ids = [r["user_id"] for r in rows]
+    consenters = await db.users.find(
+        {"id": {"$in": user_ids}, consent_field: True},
+        {"_id": 0, "id": 1, "email": 1},
+    ).to_list(5000)
+    consenter_ids = {u["id"] for u in consenters}
+    consenter_emails = {u["id"]: u["email"] for u in consenters}
+
+    push_user_ids: list[str] = []
+    email_recipients: list[str] = []
+    for r in rows:
+        uid = r["user_id"]
+        if uid not in consenter_ids:
+            continue
+        if payload.channel in ("push", "both") and r.get("notify_push"):
+            push_user_ids.append(uid)
+        if payload.channel in ("email", "both") and r.get("notify_email"):
+            email_recipients.append(consenter_emails[uid])
+
+    sent_push = 0
+    if push_user_ids:
+        result = await push_send_to_users(
+            db,
+            push_user_ids,
+            title=payload.subject,
+            body=payload.body[:160],
+            data={"event_id": payload.event_id},
+        )
+        sent_push = result.get("sent", 0)
+
+    sent_email = 0
+    if email_recipients:
+        # Reuse the generic Resend wrapper.
+        from email_service import send_email as svc_send_email
+        site = os.environ.get("PUBLIC_SITE_URL", "https://viikinkitapahtumat.fi")
+        ev_title = ev.get("title_fi") or ev.get("title") or "Viikinkitapahtumat"
+        sender_name = user.get("organizer_name") or user.get("merchant_name") or user.get("nickname") or "Viikinkitapahtumat"
+        html = (
+            f"<div style='font-family:system-ui,Arial,sans-serif;background:#0E0B09;color:#E8E2D5;padding:24px;'>"
+            f"<div style='max-width:560px;margin:auto;border:1px solid #352A23;padding:24px;'>"
+            f"<div style='font-size:11px;letter-spacing:1.6px;color:#C19C4D;text-transform:uppercase;'>{html_escape(ev_title)}</div>"
+            f"<h1 style='font-family:Georgia,serif;color:#E8E2D5;margin:8px 0 16px;'>{html_escape(payload.subject)}</h1>"
+            f"<div style='white-space:pre-wrap;line-height:1.55;color:#E8E2D5;'>{html_escape(payload.body)}</div>"
+            f"<hr style='border:none;border-top:1px solid #352A23;margin:24px 0;'>"
+            f"<div style='font-size:11px;color:#8E8276;'>Lähettäjä: {html_escape(sender_name)} · "
+            f"<a href='{site}/profile' style='color:#C19C4D;'>Hallinnoi viestiasetuksia</a></div>"
+            f"</div></div>"
+        )
+        for em in email_recipients:
+            try:
+                await svc_send_email(em, payload.subject, html)
+                sent_email += 1
+            except Exception:
+                logger.exception("Failed sending merchant/organizer email to %s", em)
+
+    return {
+        "sent_push": sent_push,
+        "sent_email": sent_email,
+        "recipients": len(consenter_ids),
+    }
+
+
+# -----------------------------------------------------------------------------
+# Admin: enable/disable the paid messaging feature flag for a user
+# -----------------------------------------------------------------------------
+@api_router.get("/admin/users", dependencies=[Depends(get_admin_user)])
+async def admin_list_users(role: Optional[str] = None):
+    """Lightweight user listing for admin — id/email/nickname/role/types/flag.
+    Never returns PII for non-admin contexts.
+    """
+    q: dict = {}
+    if role:
+        q["role"] = role
+    docs = await db.users.find(
+        q,
+        {
+            "_id": 0,
+            "id": 1,
+            "email": 1,
+            "nickname": 1,
+            "name": 1,
+            "role": 1,
+            "user_types": 1,
+            "merchant_name": 1,
+            "organizer_name": 1,
+            "paid_messaging_enabled": 1,
+            "created_at": 1,
+        },
+    ).sort("created_at", -1).to_list(2000)
+    for d in docs:
+        d.setdefault("paid_messaging_enabled", False)
+        d.setdefault("user_types", [])
+    return docs
+
+
+@api_router.patch(
+    "/admin/users/{user_id}/paid-messaging",
+    dependencies=[Depends(get_admin_user)],
+)
+async def admin_toggle_paid_messaging(user_id: str, payload: PaidMessagingToggle):
+    res = await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"paid_messaging_enabled": bool(payload.enabled)}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"id": user_id, "paid_messaging_enabled": bool(payload.enabled)}
+
+
+# -----------------------------------------------------------------------------
+# Daily reminders — push + email reminders for events in the next 3 days
+# -----------------------------------------------------------------------------
+async def _run_daily_event_reminders(window_days: int = 3) -> dict:
+    """Find approved events occurring in [now, now + window_days], find all
+    users RSVPed with notify_push/notify_email=true, and send. Idempotent
+    per (event_id, channel, day) by storing a marker doc in `reminder_log`.
+    """
+    today = datetime.now(timezone.utc).date()
+    horizon = today + timedelta(days=window_days)
+
+    events = await db.events.find(
+        {
+            "status": "approved",
+            "start_date": {
+                "$gte": today.isoformat(),
+                "$lte": horizon.isoformat(),
+            },
+        },
+        {"_id": 0},
+    ).to_list(500)
+
+    summary = {"events_processed": 0, "push_sent": 0, "email_sent": 0}
+
+    for ev in events:
+        eid = ev["id"]
+        rsvps = await db.event_attendees.find(
+            {"event_id": eid}, {"_id": 0}
+        ).to_list(5000)
+        if not rsvps:
+            continue
+
+        push_user_ids = [r["user_id"] for r in rsvps if r.get("notify_push")]
+        email_user_ids = [r["user_id"] for r in rsvps if r.get("notify_email")]
+
+        # Push
+        if push_user_ids:
+            already = await db.reminder_log.find_one(
+                {"event_id": eid, "channel": "push", "date": today.isoformat()}
+            )
+            if not already:
+                title = ev.get("title_fi") or ev.get("title") or "Viikinkitapahtumat"
+                body = "Tapahtuma alkaa pian — muista varata aika kalenteriin."
+                result = await push_send_to_users(
+                    db,
+                    push_user_ids,
+                    title=title,
+                    body=body,
+                    data={"event_id": eid},
+                )
+                summary["push_sent"] += int(result.get("sent", 0))
+                await db.reminder_log.insert_one(
+                    {
+                        "event_id": eid,
+                        "channel": "push",
+                        "date": today.isoformat(),
+                        "sent": result.get("sent", 0),
+                    }
+                )
+
+        # Email — reuse existing reminder helper
+        if email_user_ids:
+            already_em = await db.reminder_log.find_one(
+                {"event_id": eid, "channel": "email", "date": today.isoformat()}
+            )
+            if not already_em:
+                from email_service import send_email as svc_send_email
+                users = await db.users.find(
+                    {"id": {"$in": email_user_ids}}, {"_id": 0, "email": 1}
+                ).to_list(5000)
+                ev_title = ev.get("title_fi") or ev.get("title") or "Viikinkitapahtumat"
+                site = os.environ.get("PUBLIC_SITE_URL", "https://viikinkitapahtumat.fi")
+                html = (
+                    f"<div style='font-family:system-ui,Arial,sans-serif;background:#0E0B09;color:#E8E2D5;padding:24px;'>"
+                    f"<div style='max-width:560px;margin:auto;border:1px solid #352A23;padding:24px;'>"
+                    f"<div style='font-size:11px;letter-spacing:1.6px;color:#C19C4D;text-transform:uppercase;'>Muistutus</div>"
+                    f"<h1 style='font-family:Georgia,serif;color:#E8E2D5;margin:8px 0 16px;'>{html_escape(ev_title)}</h1>"
+                    f"<p>Tapahtuma alkaa pian. Tarkista lisätiedot <a href='{site}/events/{eid}' style='color:#C19C4D;'>täältä</a>.</p>"
+                    f"<hr style='border:none;border-top:1px solid #352A23;margin:24px 0;'>"
+                    f"<div style='font-size:11px;color:#8E8276;'><a href='{site}/profile' style='color:#C19C4D;'>Hallinnoi muistutusasetuksia</a></div>"
+                    f"</div></div>"
+                )
+                sent_em = 0
+                for u in users:
+                    try:
+                        await svc_send_email(u["email"], f"Muistutus: {ev_title}", html)
+                        sent_em += 1
+                    except Exception:
+                        logger.exception("Failed reminder email to %s", u.get("email"))
+                summary["email_sent"] += sent_em
+                await db.reminder_log.insert_one(
+                    {
+                        "event_id": eid,
+                        "channel": "email",
+                        "date": today.isoformat(),
+                        "sent": sent_em,
+                    }
+                )
+
+        summary["events_processed"] += 1
+
+    return summary
+
+
+@api_router.post(
+    "/admin/reminders/run-now",
+    dependencies=[Depends(get_admin_user)],
+)
+async def admin_run_reminders(window_days: int = 3):
+    """Manual trigger for daily reminders (also wired on a scheduler)."""
+    return await _run_daily_event_reminders(window_days)
 
 
 # -----------------------------------------------------------------------------
@@ -1536,6 +1918,14 @@ async def on_startup():
         _scheduled_event_reminders,
         CronTrigger(hour=9, minute=0),
         id="event_reminders_daily",
+        replace_existing=True,
+    )
+    # NEW: Daily push + email reminders for users who RSVPed to upcoming
+    # events with notify_push / notify_email = true.
+    scheduler.add_job(
+        _run_daily_event_reminders,
+        CronTrigger(hour=9, minute=15),
+        id="rsvp_reminders_daily",
         replace_existing=True,
     )
     # Sync events from production into preview/test DB twice daily — 06:00 + 18:00 Europe/Helsinki.

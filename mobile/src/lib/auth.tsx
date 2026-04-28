@@ -19,6 +19,12 @@ import { api, loadStoredToken, setAuthToken } from "@/src/api/client";
 
 export type UserType = "reenactor" | "fighter" | "merchant" | "organizer";
 
+export interface SavedSearch {
+  radius_km: number | null;
+  categories: string[];
+  countries: string[];
+}
+
 export interface AuthUser {
   id: string;
   email: string;
@@ -31,6 +37,8 @@ export interface AuthUser {
   organizer_name: string | null;
   consent_organizer_messages: boolean;
   consent_merchant_offers: boolean;
+  saved_search: SavedSearch | null;
+  paid_messaging_enabled: boolean;
 }
 
 interface AuthCtx {
@@ -56,6 +64,7 @@ interface AuthCtx {
     organizer_name?: string | null;
     consent_organizer_messages?: boolean;
     consent_merchant_offers?: boolean;
+    saved_search?: SavedSearch;
   }) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
 }
@@ -135,6 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       organizer_name?: string | null;
       consent_organizer_messages?: boolean;
       consent_merchant_offers?: boolean;
+      saved_search?: SavedSearch;
     }) => {
       const { data } = await api.patch<AuthUser>("/auth/profile", patch);
       setUser(normalize(data));
@@ -183,5 +193,7 @@ function normalize(raw: Partial<AuthUser>): AuthUser {
     organizer_name: raw.organizer_name ?? null,
     consent_organizer_messages: !!raw.consent_organizer_messages,
     consent_merchant_offers: !!raw.consent_merchant_offers,
+    saved_search: raw.saved_search ?? null,
+    paid_messaging_enabled: !!raw.paid_messaging_enabled,
   };
 }

@@ -21,6 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { COUNTRY_CODES, COUNTRY_FLAGS, COUNTRY_NAMES } from "@/lib/countries";
+import { useAuth } from "@/lib/auth";
 
 const ICAL_PATH = "/api/events.ics";
 
@@ -28,11 +29,34 @@ const CATS = ["all", "market", "training_camp", "course", "festival", "meetup", 
 
 export default function Events() {
   const { t } = useI18n();
+  const { user } = useAuth();
   const [events, setEvents] = useState([]);
   const [cat, setCat] = useState("all");
   // Multi-select country filter — empty set = all countries shown
   const [selectedCountries, setSelectedCountries] = useState(() => new Set());
   const [loaded, setLoaded] = useState(false);
+  const [seeded, setSeeded] = useState(false);
+
+  // Seed filters from the user's saved_search defaults exactly once when the
+  // session resolves. We never overwrite an already-edited filter on later
+  // re-renders, so the user can still freely change filters within a session.
+  useEffect(() => {
+    if (seeded) return;
+    if (!user || !user.role) {
+      setSeeded(true);
+      return;
+    }
+    const ss = user.saved_search;
+    if (ss) {
+      if (Array.isArray(ss.categories) && ss.categories.length > 0 && CATS.includes(ss.categories[0])) {
+        setCat(ss.categories[0]);
+      }
+      if (Array.isArray(ss.countries) && ss.countries.length > 0) {
+        setSelectedCountries(new Set(ss.countries.map((c) => c.toUpperCase())));
+      }
+    }
+    setSeeded(true);
+  }, [user, seeded]);
 
   useEffect(() => {
     setLoaded(false);

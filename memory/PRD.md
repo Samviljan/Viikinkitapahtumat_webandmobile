@@ -361,7 +361,41 @@ See `/app/memory/test_credentials.md`.
 - ✅ **Päästä päähän verifioitu Playwright-skriptillä**: rekisteröinti → automaattinen redirect /profile → muokkaa nickname & user_types → tallenna → kirjaudu ulos → kirjaudu sisään uudelleen → profiili pysyi tallessa. Admin-flow erikseen vahvistettu (admin@viikinkitapahtumat.fi pääsee /admin-paneeliin ja näkee dropdownissa sekä Profiilin että Ylläpito-linkin).
 - ✅ Lint puhdas (ESLint).
 
-## Iteration — Forgot password, RSVP, Marketing consents, Merchant/Organizer profile (Web + Mobile, 2026-04-28)
+## Iteration — Push notifications, Paid messaging, Saved search, Attending list, Anonymous attendee stats (Web + Mobile, 2026-04-28)
+
+- ✅ **Backend laajennukset** (`/app/backend/`):
+  - Uudet user-kentät: `expo_push_tokens: List[str]`, `saved_search: {radius_km, categories, countries}`, `paid_messaging_enabled: bool`.
+  - **Expo Push** (`push_service.py`): `send_to_users(db, ids, title, body, data)` joka resolvoi käyttäjät → tokenit → lähettää 100:n erissä Expo Push REST API:lle (https://exp.host/--/api/v2/push/send) ja siivoaa `DeviceNotRegistered`-tokenit automaattisesti.
+  - Uudet endpointit: `POST/DELETE /api/users/me/push-token` (rekisteröi/poistaa Expo Push Tokenin), `GET /api/events/{id}/stats` (anonyymit osallistujamäärät — vain elävöittäjät+taistelijat+yhteensä, vain merchants/organizers/admin näkee), `POST /api/messages/send` (lisämaksullinen viestien lähetys osallistujille), `GET /api/admin/users` + `PATCH /api/admin/users/{id}/paid-messaging` (admin togglaa lisämaksullisen ominaisuuden), `POST /api/admin/reminders/run-now` (manuaalinen trigger).
+  - **APScheduler-job** `_run_daily_event_reminders` (klo 09:15 päivittäin Helsinki-aikaa): hakee tapahtumat 0–3 päivän sisällä, lähettää push + sähköposti -muistutukset niille jotka RSVP:llä `notify_push=true` / `notify_email=true`. Idempotentti `reminder_log`-tauluun.
+  - **Suostumusvalvonta**: viestien lähetys filtteröi vastaanottajat 1) RSVP:n perusteella (osallistuvat valittuun tapahtumaan), 2) suostumuksen perusteella (organizer→`consent_organizer_messages`, merchant→`consent_merchant_offers`), 3) per-RSVP-kanavalla (`notify_push`/`notify_email`). 402 Payment Required jos käyttäjällä ei ole `paid_messaging_enabled=true`.
+  - Käyttäjien yhteystietoja EI näytetä lähettäjälle missään vaiheessa.
+
+- ✅ **Web UI**:
+  - `/profile`: Uudet osiot **SavedSearchEditor** (radius 25/50/100/250km, kategoriat, maat) ja **AttendingList** (lista omista RSVP-tapahtumista per-tapahtuma push/email-statuksilla).
+  - `/messages` (uusi sivu, vain `paid_messaging_enabled`+merchant/organizer): tapahtumavalinta, kanava (push/sähköposti/molemmat), otsikko + viesti. Result-paneeli näyttää lähetetty/eligible-vastaanottaja-määrät. Privacy-note korostaa että yhteystietoja ei näytetä.
+  - `EventDetail`: Uusi **EventStats**-komponentti merchants/organizers/admin näkyvyydellä — vain *anonyymit* numerot (elävöittäjät, taistelijat, yhteensä).
+  - **Admin Dashboard**: Uusi `AdminUsersPanel` käyttäjälistalla (filterit Kaikki/Kauppiaat/Järjestäjät/Adminit) ja shadcn `Switch`-toggle joka aktivoi/deaktivoi lisämaksullisen viestiominaisuuden per-käyttäjä.
+  - `/events`: Pre-seedaa `cat` ja `selectedCountries` käyttäjän `saved_search`-oletuksista kerran sessiossa kun käyttäjä on kirjautunut.
+  - Profile-sivulla "Lähetä viesti"-linkki näkyy automaattisesti kun käyttäjällä on lisämaksullinen ominaisuus käytössä JA hän on merchant/organizer.
+
+- ✅ **Mobile**:
+  - `/app/mobile/src/lib/push.tsx` — `usePushNotifications` -hook joka pyytää permissionin, hakee Expo Push Tokenin (käyttäen EAS projectId:tä) ja rekisteröi backendiin `POST /api/users/me/push-token`. Pyörii `_layout.tsx`:ssä `<PushTokenRegistrar />`-komponentin kautta. Ei tee mitään simulaattorissa (`Device.isDevice` check). Kuuntelee myös `addPushTokenListener`-eventtejä ja päivittää tokenin automaattisesti.
+  - Asennettu `expo-notifications` ja `expo-device` (SDK 54 yhteensopivuus).
+  - `app/settings/attending.tsx` — uusi näyttö "Osallistun-tapahtumat" -listalle.
+  - Settings-hub `(tabs)/settings.tsx` — uusi nav-kortti "Osallistun-tapahtumat" näkyy kirjautuneille.
+  - `auth.tsx` (mobile) sai `saved_search` ja `paid_messaging_enabled` -kentät.
+  - Translations.ts laajennettu: `attending.*`, `saved_search.*`, `settings.nav_attending`.
+
+- ✅ **Päästä päähän testattu Playwrightilla**: admin näkee 7 käyttäjää, voi suodattaa kauppiaat (5 riviä), togglata `paid_messaging_enabled` ON. Merchantin kirjautuminen → `/profile` näyttää nyt SavedSearch + AttendingList + "Lähetä viesti" -linkin (kun lisämaksullinen ominaisuus on päällä). `/messages`-sivu lähettää viestin Sleipnir fighting camp -tapahtumaan, vastaanottaja-pipeline löytää 1 eligiblen (suostumus + RSVP), Expo Push API kutsuu (sent_push=0 koska testitokeni on feikki, mikä on odotettua). EventDetail-näytöllä `EventStats`-komponentti näkyy merchant-roolille.
+
+- ✅ **Backend curl-testattu**: register/login/forgot/reset/attend/me/attending/admin-users/paid-messaging-toggle/stats/messages-send/reminders-run-now kaikki vihreää.
+
+- ⚠️ **Tärkeä huomautus**: Push-viestien rekisteröinti vaatii FYYSISEN laitteen (Expo `Device.isDevice` check). Tämä ei toimi simulaattorissa. EAS:n Expo Push Service ei vaadi access tokenia ulospäin lähetykseen; voit lisätä `EXPO_ACCESS_TOKEN` env-muuttujan jos haluat parempaa rate-limit- ja security-tukea (suositeltu tuotantoon).
+
+- ✅ TypeScript clean (`npx tsc --noEmit`), ESLint clean, ruff clean.
+
+
 - ✅ **Backend laajennukset** (`/app/backend/server.py`):
   - `users`-skeema sai uudet kentät: `merchant_name`, `organizer_name`, `consent_organizer_messages` (default false), `consent_merchant_offers` (default false), `password_reset_token`, `password_reset_expires`.
   - `POST /api/auth/forgot-password` (60min TTL, ei email-enumeraatiota — palauttaa aina 200, lähettää sähköpostin Resendin kautta vain jos osoite on rekisteröity password_hashin kanssa).
