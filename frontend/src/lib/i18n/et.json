@@ -201,7 +201,27 @@
     "field_url": "Veebisait",
     "field_region": "Piirkond",
     "field_category": "Kategooria",
-    "confirm_delete_simple": "Kustutada"
+    "confirm_delete_simple": "Kustutada",
+    "nav": {
+      "overview": "Ülevaade",
+      "events": "Üritused",
+      "users": "Kasutajad",
+      "messages": "Sõnumid",
+      "newsletter": "Uudiskiri",
+      "content": "Sisu",
+      "system": "Süsteem"
+    },
+    "overview": {
+      "quick_links": "Kiirlingid",
+      "events_help": "Ürituste kinnitamine, muutmine ja kustutamine.",
+      "users_help": "Kasutajate haldamine, GDPR-kustutamine ja administraatorite loomine.",
+      "messages_help": "Saada sõnumeid osalejatele ja jälgi statistikat.",
+      "newsletter_help": "Kuukiri, tellijad ja iganädalane kokkuvõte."
+    },
+    "messages": {
+      "compose_title": "Saada sõnum osalejatele",
+      "compose_help": "Administraatorina saad saata sõnumeid kõigile osalejatele, kes on andnud nõusoleku. Avab sõnumilehe."
+    }
   },
   "courses": {
     "title": "Kursused ja töötoad",

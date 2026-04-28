@@ -52,9 +52,13 @@ export default function SendMessage() {
     return <Navigate to="/login" replace state={{ from: "/messages" }} />;
   }
   // Hide the page for users without the paid flag or without merchant/organizer role.
+  // Admins always have access (site-wide messaging).
   const types = user.user_types || [];
+  const isAdmin = user.role === "admin";
   const allowed =
-    !!user.paid_messaging_enabled && (types.includes("merchant") || types.includes("organizer"));
+    isAdmin ||
+    (!!user.paid_messaging_enabled &&
+      (types.includes("merchant") || types.includes("organizer")));
   if (!allowed) {
     return (
       <div className="mx-auto max-w-xl px-4 py-20 text-center" data-testid="messaging-blocked">

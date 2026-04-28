@@ -223,6 +223,26 @@
       "confirm_delete": "Vill du radera användaren {user} permanent? Alla deltagandebekräftelser och prenumerationer raderas enligt GDPR. Detta kan inte ångras.",
       "delete_success": "Användaren raderad (GDPR)",
       "cannot_delete_self": "Du kan inte radera ditt eget konto"
+    },
+    "nav": {
+      "overview": "Översikt",
+      "events": "Evenemang",
+      "users": "Användare",
+      "messages": "Meddelanden",
+      "newsletter": "Nyhetsbrev",
+      "content": "Innehåll",
+      "system": "System"
+    },
+    "overview": {
+      "quick_links": "Snabblänkar",
+      "events_help": "Godkänn, redigera och ta bort evenemang.",
+      "users_help": "Hantera användare, GDPR-radering och skapa adminkonton.",
+      "messages_help": "Skicka meddelanden till deltagare och följ leveransstatistik.",
+      "newsletter_help": "Månadsbrev, prenumeranter och veckosammandrag."
+    },
+    "messages": {
+      "compose_title": "Skicka meddelande till deltagare",
+      "compose_help": "Som admin kan du skicka meddelanden till alla deltagare som gett samtycke. Öppnar meddelandesidan."
     }
   },
   "account": {

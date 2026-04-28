@@ -26,7 +26,14 @@ import Contact from "@/pages/Contact";
 import Privacy from "@/pages/Privacy";
 import Unsubscribe from "@/pages/Unsubscribe";
 import AdminLogin from "@/pages/AdminLogin";
-import AdminDashboard from "@/pages/AdminDashboard";
+import AdminLayout from "@/pages/admin/AdminLayout";
+import AdminOverview from "@/pages/admin/AdminOverview";
+import AdminEvents from "@/pages/admin/AdminEvents";
+import AdminUsers from "@/pages/admin/AdminUsers";
+import AdminMessages from "@/pages/admin/AdminMessages";
+import AdminNewsletter from "@/pages/admin/AdminNewsletter";
+import AdminContent from "@/pages/admin/AdminContent";
+import AdminSystem from "@/pages/admin/AdminSystem";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Profile from "@/pages/Profile";
@@ -54,7 +61,15 @@ function App() {
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/unsubscribe" element={<Unsubscribe />} />
               <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminOverview />} />
+                <Route path="events" element={<AdminEvents />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="messages" element={<AdminMessages />} />
+                <Route path="newsletter" element={<AdminNewsletter />} />
+                <Route path="content" element={<AdminContent />} />
+                <Route path="system" element={<AdminSystem />} />
+              </Route>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/profile" element={<Profile />} />

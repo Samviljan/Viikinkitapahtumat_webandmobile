@@ -201,7 +201,27 @@
     "field_url": "Strona internetowa",
     "field_region": "Region",
     "field_category": "Kategoria",
-    "confirm_delete_simple": "Usunąć"
+    "confirm_delete_simple": "Usunąć",
+    "nav": {
+      "overview": "Przegląd",
+      "events": "Wydarzenia",
+      "users": "Użytkownicy",
+      "messages": "Wiadomości",
+      "newsletter": "Newsletter",
+      "content": "Treść",
+      "system": "System"
+    },
+    "overview": {
+      "quick_links": "Szybkie linki",
+      "events_help": "Zatwierdzanie, edycja i usuwanie wydarzeń.",
+      "users_help": "Zarządzanie użytkownikami, usuwanie RODO i tworzenie kont admin.",
+      "messages_help": "Wysyłanie wiadomości do uczestników i statystyki dostarczeń.",
+      "newsletter_help": "Newsletter miesięczny, subskrybenci i raport tygodniowy."
+    },
+    "messages": {
+      "compose_title": "Wyślij wiadomość do uczestników",
+      "compose_help": "Jako administrator możesz wysyłać wiadomości do wszystkich uczestników, którzy wyrazili zgodę. Otwiera stronę wiadomości."
+    }
   },
   "courses": {
     "title": "Kursy i warsztaty",

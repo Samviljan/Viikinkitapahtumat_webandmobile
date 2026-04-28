@@ -245,6 +245,26 @@
       "col_event": "Begivenhed",
       "col_subject": "Emne",
       "col_recipients": "Modtagere"
+    },
+    "nav": {
+      "overview": "Oversigt",
+      "events": "Begivenheder",
+      "users": "Brugere",
+      "messages": "Beskeder",
+      "newsletter": "Nyhedsbrev",
+      "content": "Indhold",
+      "system": "System"
+    },
+    "overview": {
+      "quick_links": "Hurtige links",
+      "events_help": "Godkend, rediger og slet begivenheder.",
+      "users_help": "Håndter brugere, GDPR-sletning og opret adminkonti.",
+      "messages_help": "Send beskeder til deltagere og følg leveringsstatistik.",
+      "newsletter_help": "Månedligt nyhedsbrev, abonnenter og ugentlig oversigt."
+    },
+    "messages": {
+      "compose_title": "Send besked til deltagere",
+      "compose_help": "Som admin kan du sende beskeder til alle deltagere, der har givet samtykke. Åbner beskedsiden."
     }
   },
   "account": {

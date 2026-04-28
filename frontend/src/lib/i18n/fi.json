@@ -246,6 +246,26 @@
       "col_event": "Tapahtuma",
       "col_subject": "Otsikko",
       "col_recipients": "Vastaanottajia"
+    },
+    "nav": {
+      "overview": "Yleiskatsaus",
+      "events": "Tapahtumat",
+      "users": "Käyttäjät",
+      "messages": "Viestit",
+      "newsletter": "Uutiskirje",
+      "content": "Sisältö",
+      "system": "Järjestelmä"
+    },
+    "overview": {
+      "quick_links": "Pikalinkit",
+      "events_help": "Tapahtumien hyväksyntä, muokkaus ja poisto.",
+      "users_help": "Käyttäjien hallinta, GDPR-poisto ja admin-tilien luonti.",
+      "messages_help": "Lähetä viesti tapahtumien osallistujille ja seuraa toimitustilastoja.",
+      "newsletter_help": "Kuukausikirje, tilaajat ja viikkokatsaus."
+    },
+    "messages": {
+      "compose_title": "Lähetä viesti osallistujille",
+      "compose_help": "Adminina voit lähettää viestejä mihin tahansa tapahtumaan osallistuvalle, joka on antanut suostumuksen. Avautuu viestintäsivulla."
     }
   },
   "account": {

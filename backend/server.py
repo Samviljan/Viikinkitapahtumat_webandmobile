@@ -874,24 +874,34 @@ async def event_attendance_stats(
 async def send_message_to_attendees(
     payload: SendMessageRequest, user: dict = Depends(get_current_user)
 ):
-    if not user.get("paid_messaging_enabled"):
+    is_admin = user.get("role") == "admin"
+    if not is_admin and not user.get("paid_messaging_enabled"):
         raise HTTPException(
             status_code=402,
             detail="Paid messaging is not enabled for this account",
         )
     user_types = set(user.get("user_types") or [])
-    if not (user_types & {"merchant", "organizer"}):
+    if not is_admin and not (user_types & {"merchant", "organizer"}):
         raise HTTPException(status_code=403, detail="Only merchants/organizers may send")
 
     ev = await db.events.find_one({"id": payload.event_id, "status": "approved"}, {"_id": 0})
     if not ev:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    # Pick the consent flag matching the sender's role.
-    consent_field = (
-        "consent_organizer_messages" if "organizer" in user_types
-        else "consent_merchant_offers"
-    )
+    # Pick the consent filter matching the sender. Admins reach everyone who has
+    # given EITHER consent (site-wide announcements). Merchants/organizers stay
+    # bound to their respective consent flag.
+    if is_admin:
+        consent_filter: dict = {
+            "$or": [
+                {"consent_organizer_messages": True},
+                {"consent_merchant_offers": True},
+            ]
+        }
+    elif "organizer" in user_types:
+        consent_filter = {"consent_organizer_messages": True}
+    else:
+        consent_filter = {"consent_merchant_offers": True}
 
     rows = await db.event_attendees.find(
         {"event_id": payload.event_id}, {"_id": 0}
@@ -901,7 +911,7 @@ async def send_message_to_attendees(
 
     user_ids = [r["user_id"] for r in rows]
     consenters = await db.users.find(
-        {"id": {"$in": user_ids}, consent_field: True},
+        {"id": {"$in": user_ids}, **consent_filter},
         {"_id": 0, "id": 1, "email": 1},
     ).to_list(5000)
     consenter_ids = {u["id"] for u in consenters}

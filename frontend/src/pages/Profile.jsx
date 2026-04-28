@@ -259,7 +259,7 @@ export default function Profile() {
             </Link>
           )}
 
-          {user.paid_messaging_enabled && (types.includes("merchant") || types.includes("organizer")) ? (
+          {(isAdmin || (user.paid_messaging_enabled && (types.includes("merchant") || types.includes("organizer")))) ? (
             <Link to="/messages" data-testid="profile-messages-link">
               <Button
                 type="button"

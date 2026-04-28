@@ -245,6 +245,26 @@
       "col_event": "Veranstaltung",
       "col_subject": "Betreff",
       "col_recipients": "Empfänger"
+    },
+    "nav": {
+      "overview": "Übersicht",
+      "events": "Veranstaltungen",
+      "users": "Benutzer",
+      "messages": "Nachrichten",
+      "newsletter": "Newsletter",
+      "content": "Inhalt",
+      "system": "System"
+    },
+    "overview": {
+      "quick_links": "Schnellzugriff",
+      "events_help": "Veranstaltungen genehmigen, bearbeiten und löschen.",
+      "users_help": "Benutzer verwalten, DSGVO-Löschung und Admin-Konten erstellen.",
+      "messages_help": "Teilnehmer benachrichtigen und Zustellstatistiken verfolgen.",
+      "newsletter_help": "Monatlicher Newsletter, Abonnenten und Wochenübersicht."
+    },
+    "messages": {
+      "compose_title": "Nachricht an Teilnehmer senden",
+      "compose_help": "Als Admin kannst du Nachrichten an alle Teilnehmer senden, die ihre Zustimmung gegeben haben. Öffnet die Nachrichtenseite."
     }
   },
   "account": {

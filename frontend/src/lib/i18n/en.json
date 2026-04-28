@@ -245,6 +245,26 @@
       "col_event": "Event",
       "col_subject": "Subject",
       "col_recipients": "Recipients"
+    },
+    "nav": {
+      "overview": "Overview",
+      "events": "Events",
+      "users": "Users",
+      "messages": "Messages",
+      "newsletter": "Newsletter",
+      "content": "Content",
+      "system": "System"
+    },
+    "overview": {
+      "quick_links": "Quick links",
+      "events_help": "Approve, edit, and delete events.",
+      "users_help": "Manage users, GDPR delete, and create admin accounts.",
+      "messages_help": "Message attendees and track delivery stats.",
+      "newsletter_help": "Monthly newsletter, subscribers, and weekly digest."
+    },
+    "messages": {
+      "compose_title": "Send a message to attendees",
+      "compose_help": "As an admin you can message any attendee of any event who has given consent. Opens the messaging page."
     }
   },
   "account": {

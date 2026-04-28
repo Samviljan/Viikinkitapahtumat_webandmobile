@@ -448,7 +448,28 @@ See `/app/memory/test_credentials.md`.
 - **P2** PWA push, brute-force-rate-limit, OG-tagit, custom favicon, lisämuistutus 1 vrk ennen, admin image-library picker UI.
 - **P2** Add ET/PL event content auto-translation (currently translation_service only fills fi/en/sv).
 - **P3** Production data sync utility (preview admin → prod admin).
+## Iteration — Admin sub-pages + admin messaging + i18n refactor + DA/DE full translation (2026-04-28)
+- ✅ **Backend `/api/messages/send`** — `role=admin` now bypasses `paid_messaging_enabled` and the merchant/organizer requirement. Admin recipients are filtered by **either** consent flag (`consent_organizer_messages` OR `consent_merchant_offers`), since admin = site itself.
+- ✅ **Frontend `/messages` page** — admin users now see the compose form (previously blocked).
+- ✅ **Admin web UI split into sub-pages** (long single-scroll page → focused sub-routes):
+  - `/admin` — overview (KPI cards + 4 quick links)
+  - `/admin/events` — events tabs (pending/approved/rejected/all)
+  - `/admin/users` — users panel (filter + paid-messaging toggle + GDPR delete + add admin)
+  - `/admin/messages` — messaging stats + audit log + compose link
+  - `/admin/newsletter` — monthly + subscribers + weekly digest
+  - `/admin/content` — merchants + guilds CRUD
+  - `/admin/system` — preview→prod sync panel
+  - Implementation: `pages/admin/AdminLayout.jsx` (sidebar shell + `<Outlet/>`) + 7 small page components, react-router nested routes, `Lucide` icons.
+  - Old `pages/AdminDashboard.jsx` deleted.
+- ✅ **Admin: add admin user + GDPR-delete user** — `POST /api/admin/users` (creates role=admin) and `DELETE /api/admin/users/{id}` (cascades RSVPs + email reminders + newsletter subscriptions; anonymises message_log sender_id; refuses to delete self / last admin). New `AdminUserCreateDialog.jsx` + trash icon column on users table.
+- ✅ **i18n refactor**: 2113-line `i18n.js` → 7 per-language JSON files (`/app/frontend/src/lib/i18n/{fi,en,sv,et,pl,da,de}.json`) + 75-line provider that statically imports them. CRA bundles JSONs at build time.
+- ✅ **DA & DE full translation** via Claude Haiku 4.5 over Emergent LLM Key. Was: stubs (~20 keys, fallback EN). Now: full ~250 keys per language (every section: home, events, submit, courses, guilds, shops, sword, contact, newsletter, admin, profile, attend, messaging). Verified end-to-end via Playwright on /events, /home, /admin.
+- ✅ **Mobile prep for Play Console**: `app.json` version 0.3.0 → 0.4.0, versionCode 5 → 6. `eas.json production.android.buildType: "app-bundle"` produces .aab for Play Console upload. EAS-BUILD.md rewritten for AAB workflow + EXPO_TOKEN CI usage.
+
+
 ## Backlog (priorities)
+- **P1** Stripe integration for paid messaging (currently admin manually toggles `paid_messaging_enabled`).
+- **P1** Mobile DA/DE/ET/PL native dictionaries (currently fall back to EN; covers ~80 string keys vs 250 on web).
 - **P1 (mobile vaihe 2)** Push-notifikaatiot suosikkitapahtumista, käyttäjätilit, premium-versio (lipunmyynti, ennakkotarjoukset), offline-välimuisti.
 - **P2** Shadcn Calendar+Popover date-pickeriksi, PWA push, brute-force-rate-limit, OG-tagit, custom favicon, lisämuistutus 1 vrk ennen, admin "Valitse galleriasta" -kuvavalitsin, ET/PL auto-käännös tapahtumasisällölle, lat/lon-kentät tapahtumiin (Android-geocode-luotettavuus).
 - **P3** Preview→prod data sync utility.
