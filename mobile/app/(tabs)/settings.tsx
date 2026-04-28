@@ -47,6 +47,17 @@ export default function SettingsHub() {
           },
         ]
       : []),
+    ...(user?.paid_messaging_enabled &&
+    (user.user_types.includes("merchant") || user.user_types.includes("organizer"))
+      ? [
+          {
+            icon: "megaphone-outline" as const,
+            titleKey: "messaging.nav_label",
+            href: "/settings/messages",
+            testID: "nav-messages",
+          },
+        ]
+      : []),
     {
       icon: "options-outline",
       titleKey: "settings.nav_search",

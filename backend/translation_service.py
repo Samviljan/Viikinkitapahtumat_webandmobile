@@ -14,7 +14,16 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage
 
 logger = logging.getLogger(__name__)
 
-LANG_NAME = {"fi": "Finnish", "en": "English", "sv": "Swedish"}
+LANG_NAME = {
+    "fi": "Finnish",
+    "en": "English",
+    "sv": "Swedish",
+    "da": "Danish",
+    "de": "German",
+    "et": "Estonian",
+    "pl": "Polish",
+}
+SUPPORTED_LANGS = tuple(LANG_NAME.keys())  # primary order also used for fallback picking
 MODEL = "claude-haiku-4-5-20251001"
 PROVIDER = "anthropic"
 
@@ -58,8 +67,9 @@ async def translate(text: str, source: str, target: str) -> Optional[str]:
 
 
 def _pick_source(values: dict[str, str]) -> Optional[str]:
-    """Return language code with the longest non-empty value, prefer fi > en > sv."""
-    candidates = [(lang, (values.get(lang) or "").strip()) for lang in ("fi", "en", "sv")]
+    """Return language code with the longest non-empty value, prefer fi > en > sv > others."""
+    pref_order = ("fi", "en", "sv", "da", "de", "et", "pl")
+    candidates = [(lang, (values.get(lang) or "").strip()) for lang in pref_order]
     candidates = [(lang, v) for lang, v in candidates if v]
     if not candidates:
         return None
@@ -78,11 +88,11 @@ async def fill_missing_translations(db, event_id: str) -> dict:
 
     updates: dict = {}
     for base in ("title", "description"):
-        values = {lang: ev.get(f"{base}_{lang}", "") for lang in ("fi", "en", "sv")}
+        values = {lang: ev.get(f"{base}_{lang}", "") for lang in SUPPORTED_LANGS}
         src = _pick_source(values)
         if not src:
             continue
-        for tgt in ("fi", "en", "sv"):
+        for tgt in SUPPORTED_LANGS:
             if tgt == src:
                 continue
             if (values.get(tgt) or "").strip():

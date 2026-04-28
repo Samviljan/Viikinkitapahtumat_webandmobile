@@ -2,12 +2,11 @@
  * Translation strings for the mobile app.
  *
  * Convention: dotted keys (`tab.home`, `home.near_me`) accessed via t().
- * Languages we ship: FI (default), EN, SV.
- * Estonian (et) and Polish (pl) users will see English thanks to the
- * fallback chain in i18n.tsx.
+ * Languages we ship native dictionaries for: FI (default), EN, SV.
+ * DA, DE, ET, PL users see English via the fallback chain in i18n.tsx.
  */
 
-export const SUPPORTED_LANGS = ["fi", "en", "sv"] as const;
+export const SUPPORTED_LANGS = ["fi", "en", "sv", "da", "de", "et", "pl"] as const;
 export type Lang = (typeof SUPPORTED_LANGS)[number];
 
 interface Dict {
@@ -139,6 +138,26 @@ interface Dict {
     save: string;
     saved: string;
   };
+  messaging: {
+    feature: string;
+    title: string;
+    blocked_title: string;
+    blocked_help: string;
+    consent_help: string;
+    pick_event: string;
+    channel: string;
+    ch_both: string;
+    ch_push: string;
+    ch_email: string;
+    subject: string;
+    body: string;
+    body_hint: string;
+    send_btn: string;
+    sent_toast: string;
+    result: string;
+    result_text: string;
+    nav_label: string;
+  };
   info: {
     title: string;
     sub: string;
@@ -162,7 +181,7 @@ interface Dict {
   units: { km: string };
 }
 
-export const translations: Record<Lang, Dict> = {
+export const translations: Partial<Record<Lang, Dict>> = {
   fi: {
     brand: {
       title: "VIIKINKITAPAHTUMAT",
@@ -314,6 +333,29 @@ export const translations: Record<Lang, Dict> = {
       any: "Kaikki",
       save: "Tallenna",
       saved: "Oletukset tallennettu",
+    },
+    messaging: {
+      feature: "Lisämaksullinen ominaisuus",
+      title: "Lähetä viesti osallistujille",
+      blocked_title: "Ominaisuus ei ole käytössä tilillesi",
+      blocked_help:
+        "Viestien lähettäminen tapahtumien osallistujille on lisämaksullinen ominaisuus. Ota yhteyttä ylläpitoon aktivoidaksesi sen.",
+      consent_help:
+        "Viesti lähetetään vain niille käyttäjille jotka ovat 1) merkinneet osallistuvansa tapahtumaan JA 2) antaneet luvan vastaanottaa viestejä rooliasi vastaavasta lähteestä. Yhteystietoja ei näytetä.",
+      pick_event: "Valitse tapahtuma",
+      channel: "Kanava",
+      ch_both: "Push + sähköposti",
+      ch_push: "Vain push",
+      ch_email: "Vain sähköposti",
+      subject: "Otsikko",
+      body: "Viesti",
+      body_hint: "Push-viesteissä näkyy vain ensimmäiset ~160 merkkiä.",
+      send_btn: "Lähetä",
+      sent_toast: "Viesti lähetetty",
+      result: "Tulos",
+      result_text:
+        "Push: {push}, sähköposti: {email}, vastaanottajia: {recipients}",
+      nav_label: "Lähetä viesti",
     },
     info: {
       title: "Tietoa sovelluksesta",
@@ -487,6 +529,29 @@ export const translations: Record<Lang, Dict> = {
       save: "Save",
       saved: "Defaults saved",
     },
+    messaging: {
+      feature: "Paid feature",
+      title: "Send a message to attendees",
+      blocked_title: "This feature is not enabled for your account",
+      blocked_help:
+        "Sending messages to attendees is a paid feature. Contact support to activate it.",
+      consent_help:
+        "Recipients are filtered to users who 1) have marked attendance for the event AND 2) have given consent matching your role. Contact details are never shown.",
+      pick_event: "Choose event",
+      channel: "Channel",
+      ch_both: "Push + email",
+      ch_push: "Push only",
+      ch_email: "Email only",
+      subject: "Subject",
+      body: "Message",
+      body_hint: "Push notifications only show the first ~160 characters.",
+      send_btn: "Send",
+      sent_toast: "Message sent",
+      result: "Result",
+      result_text:
+        "Push: {push}, email: {email}, recipients: {recipients}",
+      nav_label: "Send message",
+    },
     info: {
       title: "About the app",
       sub: "Version, contact and more info.",
@@ -657,6 +722,26 @@ export const translations: Record<Lang, Dict> = {
       any: "Alla",
       save: "Spara",
       saved: "Standardvärden sparade",
+    },
+    messaging: {
+      feature: "Premiumfunktion",
+      title: "Skicka meddelande till deltagare",
+      blocked_title: "Denna funktion är inte aktiverad",
+      blocked_help: "Att skicka meddelanden är en premiumfunktion.",
+      consent_help: "Mottagarna filtreras enligt deltagande och samtycke.",
+      pick_event: "Välj evenemang",
+      channel: "Kanal",
+      ch_both: "Push + e-post",
+      ch_push: "Endast push",
+      ch_email: "Endast e-post",
+      subject: "Ämne",
+      body: "Meddelande",
+      body_hint: "Push-meddelanden visar bara ~160 tecken.",
+      send_btn: "Skicka",
+      sent_toast: "Meddelande skickat",
+      result: "Resultat",
+      result_text: "Push: {push}, e-post: {email}, mottagare: {recipients}",
+      nav_label: "Skicka meddelande",
     },
     info: {
       title: "Om appen",

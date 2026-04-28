@@ -27,6 +27,8 @@ const LANGS = [
   { code: "fi", label: "Suomi" },
   { code: "en", label: "English" },
   { code: "sv", label: "Svenska" },
+  { code: "da", label: "Dansk" },
+  { code: "de", label: "Deutsch" },
   { code: "et", label: "Eesti" },
   { code: "pl", label: "Polski" },
 ];

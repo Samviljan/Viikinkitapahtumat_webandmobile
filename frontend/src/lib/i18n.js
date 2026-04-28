@@ -64,12 +64,14 @@ const TRANSLATIONS = {
     submit: {
       title: "Ilmoita tapahtuma",
       sub: "Lähettämäsi tapahtuma julkaistaan ylläpidon hyväksynnän jälkeen.",
-      title_field: "Tapahtuman nimi (suomeksi)",
+      title_field: "Tapahtuman nimi",
       title_en: "Nimi englanniksi (valinnainen)",
       title_sv: "Nimi ruotsiksi (valinnainen)",
-      desc_field: "Kuvaus (suomeksi)",
+      desc_field: "Kuvaus",
       desc_en: "Kuvaus englanniksi (valinnainen)",
       desc_sv: "Kuvaus ruotsiksi (valinnainen)",
+      autotranslate_hint:
+        "Käännämme nimen ja kuvauksen automaattisesti tuetuille kielille (englanti, ruotsi, tanska, saksa, viro, puola). Voit kirjoittaa tekstin suomeksi.",
       category: "Kategoria",
       country: "Maa",
       location: "Sijainti",
@@ -196,6 +198,28 @@ const TRANSLATIONS = {
         filter_admin: "Adminit",
         paid_on_toast: "Lisämaksullinen ominaisuus aktivoitu",
         paid_off_toast: "Lisämaksullinen ominaisuus deaktivoitu",
+      },
+      stats: {
+        title: "Tilastot",
+        users: "Käyttäjät",
+        paid: "lisämaksullista",
+        push_devices: "Push-laitteet",
+        rsvps: "RSVP yhteensä",
+        msgs_30d: "Viestit (30 pv)",
+        last_30d: "Viimeiset 30 päivää",
+        push_sent: "Push lähetetty",
+        email_sent: "Sähköposteja",
+        reminders_push: "Muistutus-pushit",
+        reminders_email: "Muistutus-sähköpostit",
+        push_delivery: "toimitus",
+        top_events: "Suosituimmat tapahtumat",
+        attendees: "osallistujaa",
+        message_history: "Viestien lähetyshistoria",
+        col_when: "Aika",
+        col_sender: "Lähettäjä",
+        col_event: "Tapahtuma",
+        col_subject: "Otsikko",
+        col_recipients: "Vastaanottajia",
       },
     },
     account: {
@@ -529,12 +553,14 @@ const TRANSLATIONS = {
     submit: {
       title: "Submit an event",
       sub: "Your submission will appear after admin approval.",
-      title_field: "Event name (Finnish)",
+      title_field: "Event name",
       title_en: "Name in English (optional)",
       title_sv: "Name in Swedish (optional)",
-      desc_field: "Description (Finnish)",
+      desc_field: "Description",
       desc_en: "Description in English (optional)",
       desc_sv: "Description in Swedish (optional)",
+      autotranslate_hint:
+        "We auto-translate the name and description to all supported languages (Finnish, Swedish, Danish, German, Estonian, Polish). You can submit in any language.",
       category: "Category",
       country: "Country",
       location: "Location",
@@ -654,6 +680,28 @@ const TRANSLATIONS = {
         filter_admin: "Admins",
         paid_on_toast: "Paid feature enabled",
         paid_off_toast: "Paid feature disabled",
+      },
+      stats: {
+        title: "Statistics",
+        users: "Users",
+        paid: "paid",
+        push_devices: "Push devices",
+        rsvps: "Total RSVPs",
+        msgs_30d: "Messages (30d)",
+        last_30d: "Last 30 days",
+        push_sent: "Push sent",
+        email_sent: "Emails sent",
+        reminders_push: "Reminder pushes",
+        reminders_email: "Reminder emails",
+        push_delivery: "delivery",
+        top_events: "Top events by attendance",
+        attendees: "attendees",
+        message_history: "Message audit log",
+        col_when: "When",
+        col_sender: "Sender",
+        col_event: "Event",
+        col_subject: "Subject",
+        col_recipients: "Recipients",
       },
     },
     account: {
@@ -976,8 +1024,14 @@ const TRANSLATIONS = {
     submit: {
       title: "Anmäl evenemang",
       sub: "Ditt evenemang publiceras efter admins godkännande.",
-      title_field: "Evenemangsnamn (finska)",
+      title_field: "Evenemangsnamn",
       title_en: "Namn på engelska (valfritt)",
+      title_sv: "Namn på svenska (valfritt)",
+      desc_field: "Beskrivning",
+      desc_en: "Beskrivning på engelska (valfritt)",
+      desc_sv: "Beskrivning på svenska (valfritt)",
+      autotranslate_hint:
+        "Vi översätter automatiskt namnet och beskrivningen till alla stödda språk (finska, engelska, danska, tyska, estniska, polska).",
       title_sv: "Namn på svenska (valfritt)",
       desc_field: "Beskrivning (finska)",
       desc_en: "Beskrivning på engelska (valfritt)",
@@ -1933,6 +1987,74 @@ const TRANSLATIONS = {
         "clear": "Wyczyść ulubione"
     }
 },
+};
+
+// Soft-launch stubs for Danish and German: every missing key falls back to
+// English via the `t()` helper. We expose minimal native overrides for the
+// most-visible labels (nav + categories) so the chrome feels translated even
+// before a full localisation pass.
+TRANSLATIONS.da = {
+  nav: {
+    swordfighting: "Vikingesværdkamp",
+    home: "Hjem",
+    events: "Begivenheder",
+    map: "Kort",
+    submit: "Indsend begivenhed",
+    contact: "Kontakt",
+    courses: "Kurser",
+    about: "Om",
+    favorites: "Favoritter",
+    admin: "Administration",
+    guilds: "Gilder",
+    merchants: "Handlende",
+  },
+  account: {
+    sign_in: "Log ind",
+    sign_up: "Opret konto",
+    sign_out: "Log ud",
+    profile: "Profil",
+    my_account: "Min konto",
+  },
+  attend: {
+    mark_attending: "Markér som deltagende",
+    attending: "Deltager — annullér",
+    sign_in_to_attend: "Log ind for at deltage",
+  },
+  footer: {
+    copyright: "© 2026 Viikinkitapahtumat — Vikingebegivenheder",
+  },
+};
+
+TRANSLATIONS.de = {
+  nav: {
+    swordfighting: "Wikinger-Schwertkampf",
+    home: "Startseite",
+    events: "Veranstaltungen",
+    map: "Karte",
+    submit: "Veranstaltung einreichen",
+    contact: "Kontakt",
+    courses: "Kurse",
+    about: "Über uns",
+    favorites: "Favoriten",
+    admin: "Verwaltung",
+    guilds: "Gilden",
+    merchants: "Händler",
+  },
+  account: {
+    sign_in: "Anmelden",
+    sign_up: "Konto erstellen",
+    sign_out: "Abmelden",
+    profile: "Profil",
+    my_account: "Mein Konto",
+  },
+  attend: {
+    mark_attending: "Als teilnehmend markieren",
+    attending: "Teilnehmend — abbrechen",
+    sign_in_to_attend: "Anmelden, um teilzunehmen",
+  },
+  footer: {
+    copyright: "© 2026 Viikinkitapahtumat — Wikinger-Veranstaltungen",
+  },
 };
 
 const I18nContext = createContext(null);

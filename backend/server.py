@@ -253,9 +253,17 @@ class EventOut(BaseModel):
     title_fi: str
     title_en: str
     title_sv: str
+    title_da: Optional[str] = ""
+    title_de: Optional[str] = ""
+    title_et: Optional[str] = ""
+    title_pl: Optional[str] = ""
     description_fi: str
     description_en: str
     description_sv: str
+    description_da: Optional[str] = ""
+    description_de: Optional[str] = ""
+    description_et: Optional[str] = ""
+    description_pl: Optional[str] = ""
     category: str
     country: str = "FI"
     location: str
@@ -946,11 +954,26 @@ async def send_message_to_attendees(
             except Exception:
                 logger.exception("Failed sending merchant/organizer email to %s", em)
 
-    return {
+    return_payload = {
         "sent_push": sent_push,
         "sent_email": sent_email,
         "recipients": len(consenter_ids),
     }
+    # Audit trail — used by /admin/stats/messages.
+    await db.message_log.insert_one(
+        {
+            "event_id": payload.event_id,
+            "sender_id": user["id"],
+            "channel": payload.channel,
+            "subject": payload.subject[:200],
+            "body_preview": payload.body[:200],
+            "sent_push": sent_push,
+            "sent_email": sent_email,
+            "recipients": len(consenter_ids),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
+    return return_payload
 
 
 # -----------------------------------------------------------------------------
@@ -1111,6 +1134,143 @@ async def _run_daily_event_reminders(window_days: int = 3) -> dict:
 async def admin_run_reminders(window_days: int = 3):
     """Manual trigger for daily reminders (also wired on a scheduler)."""
     return await _run_daily_event_reminders(window_days)
+
+
+# -----------------------------------------------------------------------------
+# Admin stats — aggregate metrics for the dashboard
+# -----------------------------------------------------------------------------
+@api_router.get(
+    "/admin/stats/overview",
+    dependencies=[Depends(get_admin_user)],
+)
+async def admin_stats_overview():
+    """High-level KPIs visible at the top of the admin stats panel."""
+    now = datetime.now(timezone.utc)
+    last_30d = (now - timedelta(days=30)).isoformat()
+
+    users_total = await db.users.count_documents({})
+    paid_users = await db.users.count_documents({"paid_messaging_enabled": True})
+    rsvps_total = await db.event_attendees.count_documents({})
+
+    # Push delivery summary (computed from message_log + reminder_log)
+    push_30d = await db.message_log.aggregate(
+        [
+            {"$match": {"created_at": {"$gte": last_30d}}},
+            {
+                "$group": {
+                    "_id": None,
+                    "sent_push": {"$sum": "$sent_push"},
+                    "sent_email": {"$sum": "$sent_email"},
+                    "recipients": {"$sum": "$recipients"},
+                    "messages": {"$sum": 1},
+                }
+            },
+        ]
+    ).to_list(1)
+    msg_summary = push_30d[0] if push_30d else {
+        "sent_push": 0, "sent_email": 0, "recipients": 0, "messages": 0,
+    }
+
+    reminder_30d = await db.reminder_log.aggregate(
+        [
+            {"$match": {"date": {"$gte": (now - timedelta(days=30)).date().isoformat()}}},
+            {
+                "$group": {
+                    "_id": "$channel",
+                    "sent": {"$sum": "$sent"},
+                    "events": {"$sum": 1},
+                }
+            },
+        ]
+    ).to_list(10)
+
+    # Devices with push tokens
+    push_devices = await db.users.count_documents(
+        {"expo_push_tokens": {"$exists": True, "$ne": []}}
+    )
+
+    return {
+        "users_total": users_total,
+        "users_paid": paid_users,
+        "rsvps_total": rsvps_total,
+        "push_devices": push_devices,
+        "messages_30d": {
+            "messages": msg_summary.get("messages", 0),
+            "sent_push": msg_summary.get("sent_push", 0),
+            "sent_email": msg_summary.get("sent_email", 0),
+            "recipients": msg_summary.get("recipients", 0),
+        },
+        "reminders_30d": {row["_id"]: row for row in reminder_30d},
+    }
+
+
+@api_router.get(
+    "/admin/stats/messages",
+    dependencies=[Depends(get_admin_user)],
+)
+async def admin_stats_messages(limit: int = 50):
+    """Recent message-log entries — full audit trail of paid messages sent."""
+    rows = await db.message_log.find({}, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    if not rows:
+        return []
+    # Enrich with event titles + sender info.
+    event_ids = list({r["event_id"] for r in rows if r.get("event_id")})
+    sender_ids = list({r["sender_id"] for r in rows if r.get("sender_id")})
+    events = await db.events.find(
+        {"id": {"$in": event_ids}},
+        {"_id": 0, "id": 1, "title_fi": 1},
+    ).to_list(500)
+    senders = await db.users.find(
+        {"id": {"$in": sender_ids}},
+        {"_id": 0, "id": 1, "email": 1, "nickname": 1, "merchant_name": 1, "organizer_name": 1},
+    ).to_list(500)
+    ev_by = {e["id"]: e for e in events}
+    sd_by = {u["id"]: u for u in senders}
+    for r in rows:
+        ev = ev_by.get(r.get("event_id"), {})
+        sd = sd_by.get(r.get("sender_id"), {})
+        r["event_title"] = ev.get("title_fi") or r.get("event_id")
+        r["sender_label"] = (
+            sd.get("organizer_name") or sd.get("merchant_name") or sd.get("nickname") or sd.get("email") or ""
+        )
+    return rows
+
+
+@api_router.get(
+    "/admin/stats/top-events",
+    dependencies=[Depends(get_admin_user)],
+)
+async def admin_stats_top_events(limit: int = 10):
+    """Top events by attendee count — sorted descending."""
+    pipeline = [
+        {"$group": {"_id": "$event_id", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": limit},
+    ]
+    rows = await db.event_attendees.aggregate(pipeline).to_list(limit)
+    if not rows:
+        return []
+    event_ids = [r["_id"] for r in rows]
+    events = await db.events.find(
+        {"id": {"$in": event_ids}},
+        {"_id": 0, "id": 1, "title_fi": 1, "start_date": 1, "location": 1},
+    ).to_list(limit)
+    by_id = {e["id"]: e for e in events}
+    out = []
+    for r in rows:
+        ev = by_id.get(r["_id"])
+        if not ev:
+            continue
+        out.append(
+            {
+                "event_id": r["_id"],
+                "title": ev.get("title_fi") or r["_id"],
+                "start_date": ev.get("start_date"),
+                "location": ev.get("location"),
+                "attendees": r["count"],
+            }
+        )
+    return out
 
 
 # -----------------------------------------------------------------------------

@@ -14,7 +14,7 @@ interface ConsentDict {
   consent_merchant_offers: string;
 }
 
-export const CONSENT_TEXTS: Record<Lang, ConsentDict> = {
+export const CONSENT_TEXTS: Partial<Record<Lang, ConsentDict>> = {
   fi: {
     section_title: "Viestit osallistumistasi tapahtumista",
     section_help:
@@ -45,5 +45,5 @@ export const CONSENT_TEXTS: Record<Lang, ConsentDict> = {
 };
 
 export function getConsentTexts(lang: Lang): ConsentDict {
-  return CONSENT_TEXTS[lang] ?? CONSENT_TEXTS.en;
+  return (CONSENT_TEXTS[lang] || CONSENT_TEXTS.en || CONSENT_TEXTS.fi) as ConsentDict;
 }

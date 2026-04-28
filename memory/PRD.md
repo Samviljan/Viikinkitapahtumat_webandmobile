@@ -361,6 +361,29 @@ See `/app/memory/test_credentials.md`.
 - ✅ **Päästä päähän verifioitu Playwright-skriptillä**: rekisteröinti → automaattinen redirect /profile → muokkaa nickname & user_types → tallenna → kirjaudu ulos → kirjaudu sisään uudelleen → profiili pysyi tallessa. Admin-flow erikseen vahvistettu (admin@viikinkitapahtumat.fi pääsee /admin-paneeliin ja näkee dropdownissa sekä Profiilin että Ylläpito-linkin).
 - ✅ Lint puhdas (ESLint).
 
+## Iteration — DA/DE languages, auto-translate, mobile messaging, admin stats (2026-04-28)
+
+- ✅ **Lisätty kielet DA + DE** sekä webissä että mobiilissa:
+  - Web `/app/frontend/src/lib/i18n.js`: `LANGS`-listaan Dansk + Deutsch, stub-namespacet (nav/account/attend/footer) — muut avaimet putoavat takaisin englantiin fallback-ketjun kautta.
+  - Mobile `translations.ts`: `SUPPORTED_LANGS` laajennettu `["fi","en","sv","da","de","et","pl"]`. `Record<Lang, Dict>` → `Partial<Record<Lang, Dict>>` jotta DA/DE/ET/PL voivat olla optional. `getConsentTexts` palauttaa fallbackin EN:ään.
+
+- ✅ **Ilmoittautumislomake yksinkertaistettu** (`Submit.jsx`): Poistettu valinnaiset `title_en`/`title_sv`/`description_en`/`description_sv` -kentät. Autotranslate-vinkki: "Käännämme nimen ja kuvauksen automaattisesti tuetuille kielille (englanti, ruotsi, tanska, saksa, viro, puola)..."
+  - `translation_service.py` laajennettu: `LANG_NAME` sisältää nyt 7 kieltä (fi/en/sv/**da**/**de**/et/pl). `_pick_source` ja `fill_missing_translations` iteroivat kaikki kielet → kun käyttäjä syöttää suomeksi, backend kääntää automaattisesti kaikkiin muihin Claude Haiku 4.5:llä (Emergent LLM Key).
+  - `EventOut`-skeema sai `title_da`/`title_de`/`title_et`/`title_pl` ja `description_*` versionsa (optional, default `""`).
+
+- ✅ **Mobiilin /messages-näyttö** (`/app/mobile/app/settings/messages.tsx`): mirror webin `SendMessage.jsx`:stä. Anonyymi/ei-paid → "Ominaisuus ei ole käytössä tilillesi". Paid merchant/organizer → tapahtumavalintakortit, kanava-chipsit (push/email/molemmat), aihe + viesti, tulospaneeli. Settings-hub `(tabs)/settings.tsx` näyttää automaattisesti "Lähetä viesti" -kortin kun käyttäjällä on lisämaksullinen ominaisuus käytössä.
+
+- ✅ **Admin Stats Panel** (`/app/frontend/src/components/admin/AdminStatsPanel.jsx`):
+  - **Backend-endpointit**: `GET /api/admin/stats/overview` (käyttäjät, paid-käyttäjät, RSVP-määrä, push-laitteet, 30pv-viestit-summary), `GET /api/admin/stats/messages?limit=N` (täydellinen audit log enrichattuna event_title + sender_label), `GET /api/admin/stats/top-events?limit=N` (suosituimmat tapahtumat osallistujamäärän mukaan).
+  - **Audit log**: `send_message_to_attendees` kirjoittaa nyt jokaisen viestin `message_log`-kokoelmaan (event_id, sender_id, channel, subject, body_preview, sent_push, sent_email, recipients, created_at).
+  - **UI**: KPI-strippi (4 korttia), 30 päivän rollup (Push lähetetty/Sähköposteja/Muistutus-pushit/Muistutus-sähköpostit), Top events -lista, Viestien lähetyshistoria -taulu.
+  - **Push delivery rate** lasketaan `(sent_push / recipients) * 100` -kaavalla overview-kortilla.
+  - Sijoitettu Admin Dashboardin Tabs-paneelin alapuolelle, ennen AdminUsersPanelia.
+
+- ✅ **Päästä päähän testattu Playwrightilla**: Admin login → Stats Panel renderöityy täysillä luvuilla (7 käyttäjää, 1 lisämaksullista, 0% toimitus, 0 push lähetetty, 1 sähköposti). Submit-sivulla EN/SV-kentät poissa, autotranslate-vinkki näkyvissä. DA/DE-kielet näkyvät DOM:issa.
+- ✅ **Backend curl-testattu**: stats/overview/messages/top-events kaikki vihreää. Helkas Forge -merchant lähetti viestin Sleipnir-tapahtumaan → audit log tallensi `{sent_email: 1, recipients: 1, event_title: "Sleipnir fighting camp, Ulvila", sender_label: "Helkas Forge"}`.
+- ✅ TypeScript clean (`npx tsc --noEmit`), ESLint clean, ruff clean.
+
 ## Iteration — Push notifications, Paid messaging, Saved search, Attending list, Anonymous attendee stats (Web + Mobile, 2026-04-28)
 
 - ✅ **Backend laajennukset** (`/app/backend/`):

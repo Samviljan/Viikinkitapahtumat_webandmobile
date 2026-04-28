@@ -102,25 +102,6 @@ export default function Submit() {
             />
           </Field>
 
-          <div className="grid sm:grid-cols-2 gap-5">
-            <Field label={t("submit.title_en")}>
-              <Input
-                data-testid="field-title-en"
-                value={form.title_en}
-                onChange={update("title_en")}
-                className={fieldClass}
-              />
-            </Field>
-            <Field label={t("submit.title_sv")}>
-              <Input
-                data-testid="field-title-sv"
-                value={form.title_sv}
-                onChange={update("title_sv")}
-                className={fieldClass}
-              />
-            </Field>
-          </div>
-
           <Field label={t("submit.desc_field")} required>
             <Textarea
               required
@@ -130,28 +111,13 @@ export default function Submit() {
               onChange={update("description_fi")}
               className={fieldClass}
             />
+            <p
+              data-testid="autotranslate-hint"
+              className="text-[11px] text-viking-stone italic mt-2 leading-relaxed"
+            >
+              {t("submit.autotranslate_hint")}
+            </p>
           </Field>
-
-          <div className="grid sm:grid-cols-2 gap-5">
-            <Field label={t("submit.desc_en")}>
-              <Textarea
-                data-testid="field-desc-en"
-                rows={4}
-                value={form.description_en}
-                onChange={update("description_en")}
-                className={fieldClass}
-              />
-            </Field>
-            <Field label={t("submit.desc_sv")}>
-              <Textarea
-                data-testid="field-desc-sv"
-                rows={4}
-                value={form.description_sv}
-                onChange={update("description_sv")}
-                className={fieldClass}
-              />
-            </Field>
-          </div>
 
           <div className="grid sm:grid-cols-3 gap-5">
             <Field label={t("submit.category")} required>
