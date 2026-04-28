@@ -20,15 +20,17 @@ import { SearchPanel, SearchPanelSection } from "@/src/components/SearchPanel";
 import { MonthPicker, MonthValue } from "@/src/components/MonthPicker";
 import { useEvents } from "@/src/hooks/useEvents";
 import { geocode, haversineKm, useLocation } from "@/src/hooks/useLocation";
-import { FI_MONTHS, parseEventDate } from "@/src/lib/format";
+import { parseEventDate } from "@/src/lib/format";
 import { COUNTRY_CODES, COUNTRY_FLAGS, COUNTRY_NAMES } from "@/src/lib/countries";
 import { colors, radius, spacing, text } from "@/src/lib/theme";
+import { localized, useSettings } from "@/src/lib/i18n";
 import type { VikingEvent } from "@/src/types";
 
 type DateFilter = "any" | "this_week" | "this_month" | "next_3_months";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { t, lang, defaults, loaded } = useSettings();
   const [includePast, setIncludePast] = useState(false);
   const { events, loading, error, refresh } = useEvents(includePast);
   const { coords, status, request } = useLocation();
@@ -42,6 +44,16 @@ export default function HomeScreen() {
   const [dateFilter, setDateFilter] = useState<DateFilter>("any");
   const [monthFilter, setMonthFilter] = useState<MonthValue | null>(null);
   const [distances, setDistances] = useState<Record<string, number>>({});
+  // Once defaults have loaded from AsyncStorage, copy them into the session
+  // state. The user can then override per-session without affecting defaults.
+  const [defaultsApplied, setDefaultsApplied] = useState(false);
+  useEffect(() => {
+    if (!loaded || defaultsApplied) return;
+    setSelectedCountries(new Set(defaults.defaultCountries));
+    setDateFilter(defaults.defaultDateRange);
+    setNearMe(defaults.defaultNearMe);
+    setDefaultsApplied(true);
+  }, [loaded, defaults, defaultsApplied]);
 
   // Recompute distances when GPS or events change.
   useEffect(() => {
@@ -90,16 +102,20 @@ export default function HomeScreen() {
 
     const q = searchText.trim().toLowerCase();
     if (q) {
-      list = list.filter(
-        (e) =>
-          e.title_fi?.toLowerCase().includes(q) ||
+      list = list.filter((e) => {
+        const titleL = localized(e as unknown as Record<string, unknown>, "title", lang);
+        const descL = localized(e as unknown as Record<string, unknown>, "description", lang);
+        return (
+          titleL.toLowerCase().includes(q) ||
           e.location?.toLowerCase().includes(q) ||
-          e.description_fi?.toLowerCase().includes(q),
-      );
+          descL.toLowerCase().includes(q)
+        );
+      });
     }
 
     if (nearMe && coords) {
-      list = list.filter((e) => (distances[e.id] ?? Infinity) <= 200);
+      const radius = defaults.nearMeRadiusKm;
+      list = list.filter((e) => (distances[e.id] ?? Infinity) <= radius);
       list = [...list].sort(
         (a, b) => (distances[a.id] ?? 9999) - (distances[b.id] ?? 9999),
       );
@@ -133,7 +149,7 @@ export default function HomeScreen() {
     }
 
     return list;
-  }, [events, searchText, nearMe, coords, distances, dateFilter, monthFilter, selectedCountries]);
+  }, [events, searchText, nearMe, coords, distances, dateFilter, monthFilter, selectedCountries, lang, defaults.nearMeRadiusKm]);
 
   // Only show country chips for countries that exist in the unfiltered result set
   const presentCountries = useMemo(() => {
@@ -153,14 +169,21 @@ export default function HomeScreen() {
 
   const activeSummary = useMemo(() => {
     const parts: string[] = [];
-    if (nearMe) parts.push("Lähellä minua");
-    if (monthFilter)
-      parts.push(`${FI_MONTHS[monthFilter.month]} ${monthFilter.year}`);
-    else if (dateFilter === "this_week") parts.push("Tällä viikolla");
-    else if (dateFilter === "this_month") parts.push("Tässä kuussa");
-    else if (dateFilter === "next_3_months") parts.push("3 kk");
+    if (nearMe) parts.push(t("home.near_me"));
+    if (monthFilter) {
+      // Localised month names — use Intl for non-Finnish locales
+      try {
+        const dt = new Date(monthFilter.year, monthFilter.month, 1);
+        const name = new Intl.DateTimeFormat(lang, { month: "long" }).format(dt);
+        parts.push(`${name.charAt(0).toUpperCase()}${name.slice(1)} ${monthFilter.year}`);
+      } catch {
+        parts.push(`${monthFilter.month + 1}/${monthFilter.year}`);
+      }
+    } else if (dateFilter === "this_week") parts.push(t("home.date_this_week"));
+    else if (dateFilter === "this_month") parts.push(t("home.date_this_month"));
+    else if (dateFilter === "next_3_months") parts.push(t("home.date_next_3_months"));
     return parts.join(" · ");
-  }, [nearMe, dateFilter, monthFilter]);
+  }, [nearMe, dateFilter, monthFilter, t, lang]);
 
   return (
     <AppBackground>
@@ -175,9 +198,9 @@ export default function HomeScreen() {
             <View style={styles.brand}>
               <Text style={styles.brandRune}>ᚠ</Text>
               <View style={{ flex: 1 }}>
-                <Text style={styles.brandTitle}>VIIKINKITAPAHTUMAT</Text>
+                <Text style={styles.brandTitle}>{t("brand.title")}</Text>
                 <Text style={styles.brandTagline}>
-                  Pohjoisen viikinki- ja rauta-aikaharrastajien kalenteri
+                  {t("brand.tagline")}
                 </Text>
               </View>
               <Pressable
@@ -188,7 +211,7 @@ export default function HomeScreen() {
                   styles.infoBtn,
                   pressed && { opacity: 0.7 },
                 ]}
-                accessibilityLabel="Tietoa sovelluksesta"
+                accessibilityLabel={t("info.title")}
               >
                 <Ionicons
                   name="information-circle-outline"
@@ -198,60 +221,64 @@ export default function HomeScreen() {
               </Pressable>
             </View>
 
-            <Text style={text.overline}>Saatavilla {events.length}</Text>
+            <Text style={text.overline}>{t("home.showing_count", { n: events.length })}</Text>
             <Text style={[text.h1, { marginTop: 4, marginBottom: spacing.lg }]}>
-              Tapahtumat
+              {t("home.title")}
             </Text>
 
-            <SearchPanel title="Hae tapahtumia" resultsCount={filtered.length}>
-              <SearchPanelSection label="Hakusana">
+            <SearchPanel title={t("home.title")} resultsCount={filtered.length}>
+              <SearchPanelSection label={t("home.search_placeholder")}>
                 <SearchBar
                   testID="home-search"
                   value={searchText}
                   onChangeText={setSearchText}
-                  placeholder="Etsi paikkakunnalla tai nimellä…"
+                  placeholder={t("home.search_placeholder")}
                 />
               </SearchPanelSection>
 
-              <SearchPanelSection label="Sijainti & ajankohta">
+              <SearchPanelSection label={t("home.near_me")}>
                 <FilterChipsRow>
                   <FilterChip
                     testID="chip-near-me"
                     active={nearMe}
                     onPress={onTapNearMe}
                     icon="location"
-                    label={status === "requesting" ? "Etsitään…" : "Lähellä minua"}
+                    label={
+                      status === "requesting"
+                        ? t("home.loading")
+                        : `${t("home.near_me")} · ${t("home.near_me_radius", { km: defaults.nearMeRadiusKm })}`
+                    }
                   />
                   <FilterChip
                     testID="chip-week"
                     active={dateFilter === "this_week"}
                     onPress={() => setRange("this_week")}
                     icon="calendar"
-                    label="Tällä viikolla"
+                    label={t("home.date_this_week")}
                   />
                   <FilterChip
                     testID="chip-month"
                     active={dateFilter === "this_month"}
                     onPress={() => setRange("this_month")}
                     icon="calendar-outline"
-                    label="Tässä kuussa"
+                    label={t("home.date_this_month")}
                   />
                   <FilterChip
                     testID="chip-3mo"
                     active={dateFilter === "next_3_months"}
                     onPress={() => setRange("next_3_months")}
                     icon="time-outline"
-                    label="3 kk"
+                    label={t("home.date_next_3_months")}
                   />
                 </FilterChipsRow>
               </SearchPanelSection>
 
-              <SearchPanelSection label="Valitse kuukausi">
+              <SearchPanelSection label={t("home.date_any")}>
                 <MonthPicker value={monthFilter} onChange={pickMonth} />
               </SearchPanelSection>
 
               {presentCountries.length > 1 ? (
-                <SearchPanelSection label="Maa">
+                <SearchPanelSection label={t("home.countries")}>
                   <View style={styles.countryRow} testID="country-filter-row">
                     {presentCountries.map((code) => {
                       const active = selectedCountries.has(code);
@@ -286,7 +313,7 @@ export default function HomeScreen() {
                         style={[styles.countryChip, styles.countryChipClear]}
                       >
                         <Ionicons name="close" size={11} color={colors.ember} />
-                        <Text style={styles.countryClearLabel}>Kaikki maat</Text>
+                        <Text style={styles.countryClearLabel}>{t("home.countries")}</Text>
                       </Pressable>
                     ) : null}
                   </View>
@@ -304,7 +331,7 @@ export default function HomeScreen() {
                   color={includePast ? colors.gold : colors.stone}
                 />
                 <Text style={[styles.pastToggleText, includePast && styles.pastToggleTextActive]}>
-                  Näytä myös menneet tapahtumat
+                  {includePast ? t("home.hide_past") : t("home.show_past")}
                 </Text>
               </Pressable>
 
@@ -320,7 +347,7 @@ export default function HomeScreen() {
               <View style={styles.banner}>
                 <Ionicons name="warning-outline" size={14} color={colors.ember} />
                 <Text style={styles.bannerText}>
-                  Sijainti estetty asetuksissa. Hyväksy paikannus uudelleen.
+                  {t("home.error_load")}
                 </Text>
               </View>
             ) : null}
@@ -337,7 +364,7 @@ export default function HomeScreen() {
             <View style={styles.empty}>
               <Ionicons name="leaf-outline" size={32} color={colors.stone} />
               <Text style={styles.emptyText}>
-                Suodattimet eivät anna tuloksia. Kokeile löysempää valintaa.
+                {t("home.no_events")}
               </Text>
             </View>
           )

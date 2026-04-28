@@ -5,6 +5,7 @@ import { AppBackground } from "@/src/components/AppBackground";
 import { LinkListRow, SectionTitle } from "@/src/components/LinkListRow";
 import { useMerchants } from "@/src/hooks/useDirectory";
 import { colors, spacing, text } from "@/src/lib/theme";
+import { useSettings } from "@/src/lib/i18n";
 
 const CATEGORY_LABELS: Record<string, string> = {
   gear: "Varuste- ja työkaluvalikoima",
@@ -15,6 +16,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export default function ShopsScreen() {
   const { data, loading, error } = useMerchants();
+  const { t } = useSettings();
 
   const sections = useMemo(() => {
     const map = new Map<string, typeof data>();
@@ -56,7 +58,7 @@ export default function ShopsScreen() {
             <View>
               <Text style={text.overline}>Kauppiaat</Text>
               <Text style={[text.h1, { marginTop: 4, marginBottom: spacing.sm }]}>
-                Kauppiaat & sepät
+                {t("shops.title")}
               </Text>
               <Text style={styles.intro}>
                 Varusteita, käsityökaluja ja kankaita viikinkiajan ja

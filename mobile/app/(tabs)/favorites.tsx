@@ -8,10 +8,12 @@ import { EventCard } from "@/src/components/EventCard";
 import { useEvents } from "@/src/hooks/useEvents";
 import { useFavorites } from "@/src/hooks/useFavorites";
 import { colors, spacing, text } from "@/src/lib/theme";
+import { useSettings } from "@/src/lib/i18n";
 
 export default function FavoritesScreen() {
   const { events } = useEvents();
   const { ids } = useFavorites();
+  const { t } = useSettings();
 
   const favEvents = useMemo(
     () => events.filter((e) => ids.includes(e.id)),
@@ -24,14 +26,13 @@ export default function FavoritesScreen() {
         <SafeAreaView edges={["top"]} style={styles.empty}>
           <Ionicons name="star-outline" size={48} color={colors.gold} />
           <Text style={[text.h2, { marginTop: spacing.lg, textAlign: "center" }]}>
-            Ei vielä suosikkeja
+            {t("favorites.title")}
           </Text>
           <Text style={styles.emptyText}>
-            Tähdellä merkityt tapahtumat tallentuvat tähän puhelimeesi —{"\n"}
-            ne pysyvät offline-tilassakin.
+            {t("favorites.empty")}
           </Text>
           <Link href="/" style={styles.cta}>
-            Selaa tapahtumia
+            {t("favorites.browse")}
           </Link>
         </SafeAreaView>
       </AppBackground>
@@ -48,9 +49,9 @@ export default function FavoritesScreen() {
           contentContainerStyle={styles.list}
           ListHeaderComponent={
             <View>
-              <Text style={text.overline}>{favEvents.length} tallennettua</Text>
+              <Text style={text.overline}>{t("home.showing_count", { n: favEvents.length })}</Text>
               <Text style={[text.h1, { marginTop: 4, marginBottom: spacing.lg }]}>
-                Suosikit
+                {t("favorites.title")}
               </Text>
             </View>
           }

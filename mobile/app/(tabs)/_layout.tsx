@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/src/lib/theme";
 import { useFavorites } from "@/src/hooks/useFavorites";
+import { useSettings } from "@/src/lib/i18n";
 
 /**
  * Custom tabs layout (replaces expo-router's <Tabs/>) so that ONLY the
@@ -18,18 +19,18 @@ import { useFavorites } from "@/src/hooks/useFavorites";
 
 interface TabDef {
   href: string;
-  label: string;
+  labelKey: string;
   icon: React.ComponentProps<typeof Ionicons>["name"];
   testID: string;
   showBadge?: boolean;
 }
 
 const TABS: TabDef[] = [
-  { href: "/", label: "Etusivu", icon: "home", testID: "tab-home" },
-  { href: "/favorites", label: "Suosikit", icon: "star", testID: "tab-favs", showBadge: true },
-  { href: "/calendar", label: "Kalenteri", icon: "calendar", testID: "tab-cal" },
-  { href: "/guilds", label: "Kaartit", icon: "shield", testID: "tab-guilds" },
-  { href: "/shops", label: "Kauppiaat", icon: "storefront", testID: "tab-shops" },
+  { href: "/", labelKey: "tab.home", icon: "home", testID: "tab-home" },
+  { href: "/favorites", labelKey: "tab.favorites", icon: "star", testID: "tab-favs", showBadge: true },
+  { href: "/calendar", labelKey: "tab.calendar", icon: "calendar", testID: "tab-cal" },
+  { href: "/shops", labelKey: "tab.shops", icon: "storefront", testID: "tab-shops" },
+  { href: "/settings", labelKey: "tab.settings", icon: "settings-sharp", testID: "tab-settings" },
 ];
 
 export default function TabsLayout() {
@@ -37,6 +38,7 @@ export default function TabsLayout() {
   const router = useRouter();
   const { count } = useFavorites();
   const insets = useSafeAreaInsets();
+  const { t } = useSettings();
 
   return (
     <View style={styles.root}>
@@ -50,25 +52,25 @@ export default function TabsLayout() {
         ]}
         testID="bottom-tabbar"
       >
-        {TABS.map((t) => {
+        {TABS.map((tab) => {
           const active =
-            t.href === "/"
+            tab.href === "/"
               ? pathname === "/" || pathname.endsWith("/(tabs)") || pathname.endsWith("/index")
-              : pathname.startsWith(t.href);
+              : pathname.startsWith(tab.href);
           return (
             <Pressable
-              key={t.href}
-              testID={t.testID}
-              onPress={() => router.replace(t.href as never)}
+              key={tab.href}
+              testID={tab.testID}
+              onPress={() => router.replace(tab.href as never)}
               style={styles.tab}
             >
               <View>
                 <Ionicons
-                  name={t.icon}
+                  name={tab.icon}
                   size={20}
                   color={active ? colors.gold : colors.stone}
                 />
-                {t.showBadge && count > 0 ? (
+                {tab.showBadge && count > 0 ? (
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>{count}</Text>
                   </View>
@@ -80,7 +82,7 @@ export default function TabsLayout() {
                   { color: active ? colors.gold : colors.stone },
                 ]}
               >
-                {t.label}
+                {t(tab.labelKey)}
               </Text>
             </Pressable>
           );

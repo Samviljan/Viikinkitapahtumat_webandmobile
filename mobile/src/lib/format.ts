@@ -63,8 +63,20 @@ export function daysUntil(start?: string | null, end?: string | null): number | 
   return Math.round((s.getTime() - today.getTime()) / 86400000);
 }
 
-export function countdownLabel(days: number): string {
-  if (days === 0) return "Käynnissä nyt";
-  if (days === 1) return "1 päivä";
-  return `${days} päivää`;
+export function countdownLabel(
+  days: number,
+  t?: (k: string, vars?: Record<string, string | number>) => string,
+): string {
+  // Backwards-compat: when called without `t` (legacy callers) fall back to FI.
+  const tr = t || ((k: string, vars?: Record<string, string | number>) => {
+    const fi: Record<string, string> = {
+      "countdown.today": "Käynnissä nyt",
+      "countdown.tomorrow": "Huomenna",
+      "countdown.days": `${vars?.n} päivää`,
+    };
+    return fi[k] || k;
+  });
+  if (days === 0) return tr("countdown.today");
+  if (days === 1) return tr("countdown.tomorrow");
+  return tr("countdown.days", { n: days });
 }

@@ -4,8 +4,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AppBackground } from "@/src/components/AppBackground";
 import { EventCard } from "@/src/components/EventCard";
 import { useEvents } from "@/src/hooks/useEvents";
-import { FI_MONTHS, parseEventDate } from "@/src/lib/format";
+import { parseEventDate } from "@/src/lib/format";
 import { colors, spacing, text } from "@/src/lib/theme";
+import { useSettings } from "@/src/lib/i18n";
 
 interface MonthSection {
   title: string;
@@ -15,19 +16,29 @@ interface MonthSection {
 
 export default function CalendarScreen() {
   const { events } = useEvents();
+  const { t, lang } = useSettings();
 
   const sections: MonthSection[] = useMemo(() => {
     const buckets = new Map<string, MonthSection>();
     const sorted = [...events].sort((a, b) =>
       (a.start_date ?? "").localeCompare(b.start_date ?? ""),
     );
+    const monthName = (idx: number) => {
+      try {
+        const dt = new Date(2000, idx, 1);
+        const name = new Intl.DateTimeFormat(lang, { month: "long" }).format(dt);
+        return name.charAt(0).toUpperCase() + name.slice(1);
+      } catch {
+        return String(idx + 1);
+      }
+    };
     for (const ev of sorted) {
       const d = parseEventDate(ev.start_date);
       if (!d) continue;
       const key = `${d.getFullYear()}-${d.getMonth()}`;
       if (!buckets.has(key)) {
         buckets.set(key, {
-          title: FI_MONTHS[d.getMonth()],
+          title: monthName(d.getMonth()),
           year: d.getFullYear(),
           data: [],
         });
@@ -35,7 +46,7 @@ export default function CalendarScreen() {
       buckets.get(key)!.data.push(ev);
     }
     return Array.from(buckets.values());
-  }, [events]);
+  }, [events, lang]);
 
   return (
     <AppBackground>
@@ -53,7 +64,7 @@ export default function CalendarScreen() {
           )}
           contentContainerStyle={styles.list}
           ListHeaderComponent={
-            <Text style={[text.h1, { marginBottom: spacing.lg }]}>Kalenteri</Text>
+            <Text style={[text.h1, { marginBottom: spacing.lg }]}>{t("calendar.title")}</Text>
           }
           stickySectionHeadersEnabled={false}
           showsVerticalScrollIndicator={false}

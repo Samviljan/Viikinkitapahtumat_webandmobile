@@ -18,16 +18,17 @@ import { useEvent } from "@/src/hooks/useEvents";
 import { useFavorites } from "@/src/hooks/useFavorites";
 import { flagFor } from "@/src/lib/countries";
 import {
-  FI_CATS,
   countdownLabel,
   daysUntil,
   formatDateRange,
 } from "@/src/lib/format";
 import { colors, radius, spacing, text } from "@/src/lib/theme";
+import { localized, useSettings } from "@/src/lib/i18n";
 
 export default function EventDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { event, loading, error } = useEvent(id || "");
+  const { t, lang } = useSettings();
   const { isFavorite, toggle } = useFavorites();
 
   if (loading) {
@@ -80,16 +81,18 @@ export default function EventDetail() {
         <View style={styles.metaRow}>
           <Text style={styles.flag}>{flagFor(ev.country)}</Text>
           <Text style={text.overline}>
-            {(FI_CATS[ev.category] || ev.category).toUpperCase()}
+            {t(`category.${ev.category}`).toUpperCase()}
           </Text>
         </View>
-        <Text style={styles.title}>{ev.title_fi}</Text>
+        <Text style={styles.title}>
+          {localized(ev as unknown as Record<string, unknown>, "title", lang) || ev.title_fi}
+        </Text>
 
         {cd !== null ? (
           <View style={styles.cdBadge}>
             <Ionicons name="hourglass-outline" size={13} color={colors.ember} />
-            <Text style={styles.cdLabel}>TAPAHTUMAN ALKUUN</Text>
-            <Text style={styles.cdValue}>{countdownLabel(cd)}</Text>
+            <Text style={styles.cdLabel}>{t("home.countdown_label")}</Text>
+            <Text style={styles.cdValue}>{countdownLabel(cd, t)}</Text>
           </View>
         ) : null}
 
@@ -120,12 +123,12 @@ export default function EventDetail() {
               color={fav ? colors.gold : colors.bone}
             />
             <Text style={[styles.actionText, fav ? { color: colors.gold } : null]}>
-              {fav ? "Tallennettu" : "Tallenna"}
+              {fav ? t("event.unfavorite") : t("event.favorite")}
             </Text>
           </Pressable>
           <Pressable testID="action-map" style={styles.actionBtn} onPress={openMap}>
             <Ionicons name="map-outline" size={16} color={colors.bone} />
-            <Text style={styles.actionText}>Avaa kartassa</Text>
+            <Text style={styles.actionText}>{t("home.near_me")}</Text>
           </Pressable>
           {ev.link ? (
             <Pressable
@@ -135,13 +138,15 @@ export default function EventDetail() {
             >
               <Ionicons name="open-outline" size={16} color={colors.bone} />
               <Text style={[styles.actionText, { color: colors.bone }]}>
-                Sivusto
+                {t("info.open_web")}
               </Text>
             </Pressable>
           ) : null}
         </View>
 
-        <Text style={styles.description}>{ev.description_fi}</Text>
+        <Text style={styles.description}>
+          {localized(ev as unknown as Record<string, unknown>, "description", lang) || ev.description_fi}
+        </Text>
 
         {gallery.length > 0 ? (
           <View style={styles.gallerySection}>

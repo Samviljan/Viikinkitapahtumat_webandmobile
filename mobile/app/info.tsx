@@ -17,6 +17,7 @@ import Constants from "expo-constants";
 import { Stack, useRouter } from "expo-router";
 import { AppBackground } from "@/src/components/AppBackground";
 import { colors, radius, spacing, text } from "@/src/lib/theme";
+import { useSettings } from "@/src/lib/i18n";
 
 const WEB_URL = "https://viikinkitapahtumat.fi";
 const ADMIN_EMAIL = "admin@viikinkitapahtumat.fi";
@@ -32,6 +33,7 @@ const ADMIN_EMAIL = "admin@viikinkitapahtumat.fi";
  */
 export default function InfoScreen() {
   const router = useRouter();
+  const { t } = useSettings();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -61,21 +63,19 @@ export default function InfoScreen() {
 
   async function shareApp() {
     const message =
-      `Pohjoisen viikinki- ja rauta-aikatapahtumat yhdessä paikassa.\n\n` +
-      `Selaa kalenteri ja tallenna suosikit:\n${WEB_URL}\n\n` +
-      `(Beta-vaihe — Android-sovellus tulossa pian.)`;
+      `${t("info.share_message")}\n${WEB_URL}`;
     try {
       await Share.share(
         {
           // iOS uses url + message, Android uses message only.
           message,
           url: WEB_URL,
-          title: "Viikinkitapahtumat",
+          title: t("brand.title"),
         },
-        { dialogTitle: "Jaa Viikinkitapahtumat" },
+        { dialogTitle: t("info.share_app") },
       );
     } catch {
-      Alert.alert("Jako epäonnistui", "Yritä uudelleen.");
+      Alert.alert(t("info.share_app"), "");
     }
   }
 

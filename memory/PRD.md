@@ -335,6 +335,20 @@ See `/app/memory/test_credentials.md`.
 - ✅ Backend testit (curl): list 4 subscribers OK, create + delete + 404 + 401 kaikki vahvistettu. Frontend bundle todennettu sisältämään uudet test-id:t (`subscribers-panel`, `subscribers-toggle`, `cookie-accept`, `cookie-reject`, `EDQGCCY02S`).
 - ✅ Lint puhdas (ESLint + ruff).
 
+## Iteration — Mobile i18n + Settings + UX (2026-04-27)
+- ✅ **Mobile i18n -järjestelmä** (`/app/mobile/src/lib/i18n.tsx` + `translations.ts`): SettingsProvider + useSettings()-hook. Tukee FI/EN/SV (ET/PL fall back EN:ään). Auto-tunnistaa laitteen kielen `expo-localization`:n kautta ensimmäisellä käynnistyksellä. Käyttäjä voi ohittaa manuaalisesti. Tallentuu AsyncStorageen (`vk_lang`, `vk_defaults`).
+- ✅ **Tapahtumat näytetään valitulla kielellä**: `localized()` lukee `title_{lang}` ja `description_{lang}` Pydantic-vastauksesta, fallback EN→FI.
+- ✅ **Asetukset-näyttö** (`/app/mobile/app/(tabs)/settings.tsx`): kielenvalitsin, oletushakufiltterit (maa, aikaväli, Lähellä minua), Lähellä minua km-säde (25/50/100/200/500/1000), reset-painike, "Tietoa sovelluksesta"-linkki, "Tallennettu"-toast. Asetukset toimivat oletuksina, käyttäjä voi ylikirjoittaa etusivun chip-suodattimilla per session.
+- ✅ **Tab-bar uudelleenrakennettu**: Kaartit poistettu (siirretty `_guilds.tsx.bak`), Asetukset lisätty 5. välilehdeksi. Tab-labelit lokalisoitu.
+- ✅ **EventCard-tausta tummennettu** `rgba(26,20,17,0.92)` → solid `#0F0B08` + voimakkaampi varjo (parempi luettavuus AppBackgroundin yli, käyttäjäpalaute).
+- ✅ **Lähellä minua** käyttää nyt asetusten km-rajaa (oli kovakoodattu 200 km).
+- ✅ Lokalisoidut näkymät: Home, Settings, Info, Favorites, Calendar, Shops, EventCard, Event detail. `formatDateRange` ja kuukaudet käyttävät `Intl.DateTimeFormat`ia valitulla kielellä.
+- ✅ TypeScript clean (`npx tsc --noEmit`).
+- ✅ **Versio päivitetty**: app.json `0.2.0 → 0.3.0`, versionCode `3 → 4`.
+- ✅ **expo-localization** lisätty riippuvuuksiin (yarn add).
+- 🚧 **Seuraavaksi**: Uusi EAS production AAB-build (0.3.0/4) → Closed beta -track päivitys.
+
+
 
 
 - **P2** Date pickers: replace native `<input type="date">` with shadcn Calendar+Popover for visual consistency.

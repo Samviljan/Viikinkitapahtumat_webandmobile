@@ -6,7 +6,8 @@ import { colors, radius, spacing, text } from "@/src/lib/theme";
 import { resolveImageUrl } from "@/src/api/client";
 import { useFavorites } from "@/src/hooks/useFavorites";
 import { flagFor } from "@/src/lib/countries";
-import { FI_CATS, countdownLabel, daysUntil, formatDateRange } from "@/src/lib/format";
+import { countdownLabel, daysUntil, formatDateRange } from "@/src/lib/format";
+import { localized, useSettings } from "@/src/lib/i18n";
 import type { VikingEvent } from "@/src/types";
 
 const CAT_ICON: Record<string, React.ComponentProps<typeof Ionicons>["name"]> = {
@@ -25,12 +26,14 @@ const CAT_ICON: Record<string, React.ComponentProps<typeof Ionicons>["name"]> = 
  */
 export function EventCard({ event }: { event: VikingEvent }) {
   const { isFavorite, toggle } = useFavorites();
+  const { t, lang } = useSettings();
   const fav = isFavorite(event.id);
   const img = resolveImageUrl(event.image_url);
   const cd = daysUntil(event.start_date, event.end_date);
   const [imgFailed, setImgFailed] = useState(false);
-  const cat = (FI_CATS[event.category] || event.category).toUpperCase();
+  const cat = t(`category.${event.category}`).toUpperCase();
   const catIcon = CAT_ICON[event.category] || "sparkles-outline";
+  const title = localized(event as unknown as Record<string, unknown>, "title", lang) || event.title_fi;
 
   return (
     <Link
@@ -72,7 +75,7 @@ export function EventCard({ event }: { event: VikingEvent }) {
             </View>
 
             <Text style={styles.title} numberOfLines={2}>
-              {event.title_fi}
+              {title}
             </Text>
 
             <View style={styles.metaRow}>
@@ -111,8 +114,8 @@ export function EventCard({ event }: { event: VikingEvent }) {
         {cd !== null ? (
           <View style={styles.footer}>
             <Ionicons name="hourglass-outline" size={11} color={colors.ember} />
-            <Text style={styles.footerLabel}>TAPAHTUMAAN</Text>
-            <Text style={styles.footerVal}>{countdownLabel(cd)}</Text>
+            <Text style={styles.footerLabel}>{t("home.countdown_label")}</Text>
+            <Text style={styles.footerVal}>{countdownLabel(cd, t)}</Text>
           </View>
         ) : null}
       </Pressable>
@@ -124,7 +127,9 @@ const THUMB = 96;
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "rgba(26,20,17,0.92)",
+    // Solid darker tone (was rgba(26,20,17,0.92)) for stronger contrast against
+    // the subtly-textured AppBackground — fixes "title hard to read on home".
+    backgroundColor: "#0F0B08",
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.edge,
@@ -133,9 +138,9 @@ const styles = StyleSheet.create({
     // Pronounced shadow so each event reads as its own physical "card"
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.45,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.55,
+    shadowRadius: 5,
+    elevation: 4,
     position: "relative",
   },
   cardPressed: { opacity: 0.85, transform: [{ scale: 0.995 }] },
