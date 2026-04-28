@@ -496,6 +496,25 @@ See `/app/memory/test_credentials.md`.
   - Uses `title_<lang>` with fallback chain `title_<lang> → title_en → title_fi`
 - ✅ Verified end-to-end on preview: Created DE event → approved via admin → Resend log: `submitter notification: event=... approved=True lang=de sent=True`. Logger captures language used per delivery for monitoring.
 
+## Iteration — Mobile profile parity with web (2026-04-28d)
+- ✅ **Mobile profile screen** (`mobile/app/settings/profile.tsx`) now feature-parity with web profile:
+  - Profile picture preview + change/remove (uses `expo-image-picker`, multipart upload to `/api/uploads/profile-image`)
+  - Country selector (modal-based picker over all 21 supported countries with flags)
+  - Association name (free text)
+  - SVTL Fighter Card upload (`expo-document-picker`, PDF, multipart to `/api/uploads/profile-doc?kind=fighter_card`)
+  - Equipment Passport upload (same flow, `kind=equipment_passport`)
+  - Open uploaded PDFs via `Linking.openURL` with new `?t=<jwt>` query-param fallback (added to backend `GET /api/uploads/profile-docs/{filename}`).
+  - Remove document via `PATCH /auth/profile {fighter_card_url:""}` / `equipment_passport_url:""`.
+- ✅ Auth context (`src/lib/auth.tsx`) extended: AuthUser now exposes `association_name`, `country`, `profile_image_url`, `fighter_card_url`, `equipment_passport_url`. Added `refreshUser()` helper to re-fetch `/auth/me` after upload mutations server-side.
+- ✅ Backend `serve_profile_doc` accepts `?t=<jwt>` query param as auth fallback (header-based auth still preferred). Tested: missing→401, header→200/404, query→200/404, invalid query→401. This is necessary because mobile `Linking.openURL` cannot pass custom Authorization headers.
+- ✅ New translation keys (FI/EN/SV) for: profile_image_label/change/remove/upload_error/too_large, country_label/optional/none, association_label/help, documents_section/help, fighter_card_label/help, equipment_passport_label/help, doc_pick_pdf/view/remove/upload_error/too_large.
+- ✅ New deps: `expo-image-picker@55.0.19`, `expo-document-picker@55.0.13`.
+- ✅ TypeScript clean (`npx tsc --noEmit`).
+- ✅ **Mobile build 0.4.3 kicked off**:
+  - Build ID: `c9b4d2be-2216-48ce-82ef-5ae398e4ba91`
+  - Logs / artifact: https://expo.dev/accounts/samviljan/projects/viikinkitapahtumat/builds/c9b4d2be-2216-48ce-82ef-5ae398e4ba91
+  - Version 0.4.3, versionCode 12, includes: 21-country support + full profile feature parity.
+
 ## Backlog (priorities)
 - **P1** Stripe integration for paid messaging (currently admin manually toggles `paid_messaging_enabled`).
 - **P1** Mobile DA/DE/ET/PL native dictionaries (currently fall back to EN; covers ~80 string keys vs 250 on web).

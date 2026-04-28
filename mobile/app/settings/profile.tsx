@@ -3,19 +3,27 @@
  *
  * - When NOT logged in: shows a friendly empty-state and a "Sign in / Create
  *   account" button that routes to /settings/auth.
- * - When logged in: lets the user edit nickname + user_types, plus a sign-out
- *   button. Email and login type are read-only.
+ * - When logged in: lets the user edit nickname, user_types, profile picture,
+ *   country, association, fighter card PDF, equipment passport PDF, and the
+ *   marketing consents. Email and login type are read-only.
  */
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  FlatList,
+  Image,
+  Linking,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
+  ActivityIndicator,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -24,22 +32,34 @@ import { colors, radius, spacing, text } from "@/src/lib/theme";
 import { useSettings } from "@/src/lib/i18n";
 import { useAuth, type UserType } from "@/src/lib/auth";
 import { getConsentTexts } from "@/src/lib/consents";
+import { api, apiBaseUrl, resolveImageUrl, TOKEN_KEY } from "@/src/api/client";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { COUNTRY_CODES, COUNTRY_FLAGS, COUNTRY_NAMES } from "@/src/lib/countries";
 
 const ALL_TYPES: UserType[] = ["reenactor", "fighter", "merchant", "organizer"];
+const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
+const MAX_DOC_BYTES = 8 * 1024 * 1024;
+type DocKind = "fighter_card" | "equipment_passport";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { t, lang } = useSettings();
-  const { user, signOut, updateProfile } = useAuth();
+  const { user, signOut, updateProfile, refreshUser } = useAuth();
   const consentTexts = getConsentTexts(lang);
   const [nickname, setNickname] = useState("");
   const [types, setTypes] = useState<UserType[]>([]);
   const [merchantName, setMerchantName] = useState("");
   const [organizerName, setOrganizerName] = useState("");
+  const [associationName, setAssociationName] = useState("");
+  const [country, setCountry] = useState<string | null>(null);
   const [consentOrganizer, setConsentOrganizer] = useState(false);
   const [consentMerchant, setConsentMerchant] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedHint, setSavedHint] = useState(false);
+  const [countryPickerOpen, setCountryPickerOpen] = useState(false);
+  const [imageBusy, setImageBusy] = useState(false);
+  const [fighterBusy, setFighterBusy] = useState(false);
+  const [passportBusy, setPassportBusy] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -47,6 +67,8 @@ export default function ProfileScreen() {
       setTypes(user.user_types || []);
       setMerchantName(user.merchant_name || "");
       setOrganizerName(user.organizer_name || "");
+      setAssociationName(user.association_name || "");
+      setCountry(user.country || null);
       setConsentOrganizer(!!user.consent_organizer_messages);
       setConsentMerchant(!!user.consent_merchant_offers);
     }
@@ -77,6 +99,8 @@ export default function ProfileScreen() {
         organizer_name: types.includes("organizer") ? organizerName.trim() : "",
         consent_organizer_messages: consentOrganizer,
         consent_merchant_offers: consentMerchant,
+        association_name: associationName.trim() || null,
+        country: country,
       });
       setSavedHint(true);
       setTimeout(() => setSavedHint(false), 1500);
@@ -84,6 +108,126 @@ export default function ProfileScreen() {
       Alert.alert(t("auth.error_generic"));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function pickImage() {
+    if (!user) return;
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(t("auth.profile_image_upload_error"));
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+    const asset = result.assets[0];
+    if (asset.fileSize && asset.fileSize > MAX_IMAGE_BYTES) {
+      Alert.alert(t("auth.profile_image_too_large"));
+      return;
+    }
+    setImageBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", {
+        uri: asset.uri,
+        name: asset.fileName || "profile.jpg",
+        type: asset.mimeType || "image/jpeg",
+      } as unknown as Blob);
+      await api.post<{ url: string }>(
+        "/uploads/profile-image",
+        fd,
+        { headers: { "Content-Type": "multipart/form-data" } },
+      );
+      // Backend already updated user.profile_image_url; refresh from /auth/me
+      await refreshUser();
+    } catch {
+      Alert.alert(t("auth.profile_image_upload_error"));
+    } finally {
+      setImageBusy(false);
+    }
+  }
+
+  async function removeImage() {
+    if (!user) return;
+    setImageBusy(true);
+    try {
+      await api.patch("/auth/profile", { profile_image_url: "" });
+      await refreshUser();
+    } catch {
+      Alert.alert(t("auth.error_generic"));
+    } finally {
+      setImageBusy(false);
+    }
+  }
+
+  async function pickDocument(kind: DocKind) {
+    if (!user) return;
+    const setBusy = kind === "fighter_card" ? setFighterBusy : setPassportBusy;
+    const result = await DocumentPicker.getDocumentAsync({
+      type: "application/pdf",
+      multiple: false,
+      copyToCacheDirectory: true,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+    const asset = result.assets[0];
+    if (asset.size && asset.size > MAX_DOC_BYTES) {
+      Alert.alert(t("auth.doc_too_large"));
+      return;
+    }
+    setBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append("kind", kind);
+      fd.append("file", {
+        uri: asset.uri,
+        name: asset.name || `${kind}.pdf`,
+        type: "application/pdf",
+      } as unknown as Blob);
+      await api.post("/uploads/profile-doc", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      await refreshUser();
+    } catch {
+      Alert.alert(t("auth.doc_upload_error"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function viewDocument(url: string | null) {
+    if (!url) return;
+    try {
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+      const full = url.startsWith("http") ? url : `${apiBaseUrl}${url}`;
+      // Append token via query string so the OS browser/PDF viewer can open
+      // the auth-protected URL (Linking.openURL can't carry custom headers).
+      const tokenized = token
+        ? `${full}${full.includes("?") ? "&" : "?"}t=${encodeURIComponent(token)}`
+        : full;
+      await Linking.openURL(tokenized);
+    } catch {
+      Alert.alert(t("auth.error_generic"));
+    }
+  }
+
+  async function removeDocument(kind: DocKind) {
+    if (!user) return;
+    const setBusy = kind === "fighter_card" ? setFighterBusy : setPassportBusy;
+    setBusy(true);
+    try {
+      await api.patch("/auth/profile", {
+        [`${kind}_url`]: "",
+      });
+      await refreshUser();
+    } catch {
+      Alert.alert(t("auth.error_generic"));
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -97,6 +241,13 @@ export default function ProfileScreen() {
       },
     ]);
   }
+
+  const profileImageHttpUrl = resolveImageUrl(user?.profile_image_url ?? null);
+  const initial = (
+    (user?.nickname || user?.email || "") as string
+  )
+    .charAt(0)
+    .toUpperCase();
 
   return (
     <AppBackground>
@@ -145,11 +296,15 @@ export default function ProfileScreen() {
             <>
               <View style={styles.headerCard}>
                 <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>
-                    {(user.nickname || user.email)
-                      .charAt(0)
-                      .toUpperCase()}
-                  </Text>
+                  {profileImageHttpUrl ? (
+                    <Image
+                      source={{ uri: profileImageHttpUrl }}
+                      style={styles.avatarImage}
+                      testID="profile-image-preview"
+                    />
+                  ) : (
+                    <Text style={styles.avatarText}>{initial}</Text>
+                  )}
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.email}>{user.email}</Text>
@@ -161,7 +316,48 @@ export default function ProfileScreen() {
                 </View>
               </View>
 
-              <Text style={styles.label}>{t("auth.nickname")}</Text>
+              {/* Profile image actions */}
+              <Text style={styles.label}>{t("auth.profile_image_label")}</Text>
+              <View style={styles.rowBtns}>
+                <Pressable
+                  testID="profile-image-pick"
+                  onPress={pickImage}
+                  disabled={imageBusy}
+                  style={({ pressed }) => [
+                    styles.outlineBtn,
+                    (pressed || imageBusy) && { opacity: 0.7 },
+                  ]}
+                >
+                  {imageBusy ? (
+                    <ActivityIndicator size="small" color={colors.gold} />
+                  ) : (
+                    <Ionicons name="camera-outline" size={14} color={colors.gold} />
+                  )}
+                  <Text style={styles.outlineBtnText}>
+                    {t("auth.profile_image_change")}
+                  </Text>
+                </Pressable>
+                {user.profile_image_url ? (
+                  <Pressable
+                    testID="profile-image-remove"
+                    onPress={removeImage}
+                    disabled={imageBusy}
+                    style={({ pressed }) => [
+                      styles.dangerBtn,
+                      (pressed || imageBusy) && { opacity: 0.7 },
+                    ]}
+                  >
+                    <Ionicons name="trash-outline" size={14} color={colors.ember} />
+                    <Text style={styles.dangerBtnText}>
+                      {t("auth.profile_image_remove")}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+
+              <Text style={[styles.label, { marginTop: spacing.lg }]}>
+                {t("auth.nickname")}
+              </Text>
               <TextInput
                 testID="profile-nickname"
                 value={nickname}
@@ -237,7 +433,79 @@ export default function ProfileScreen() {
                 </View>
               ) : null}
 
-              {/* Marketing consents — wording must match web app exactly. */}
+              {/* Association */}
+              <Text style={[styles.label, { marginTop: spacing.lg }]}>
+                {t("auth.association_label")}
+              </Text>
+              <TextInput
+                testID="profile-association"
+                value={associationName}
+                onChangeText={setAssociationName}
+                style={styles.input}
+                placeholderTextColor={colors.stone}
+                autoCapitalize="words"
+              />
+              <Text style={styles.help}>{t("auth.association_help")}</Text>
+
+              {/* Country */}
+              <Text style={[styles.label, { marginTop: spacing.lg }]}>
+                {t("auth.country_label")}
+              </Text>
+              <Pressable
+                testID="profile-country-open"
+                onPress={() => setCountryPickerOpen(true)}
+                style={[styles.input, styles.pickerRow]}
+              >
+                <Text
+                  style={
+                    country ? styles.pickerValue : styles.pickerPlaceholder
+                  }
+                >
+                  {country
+                    ? `${COUNTRY_FLAGS[country] || ""}  ${
+                        COUNTRY_NAMES[country] || country
+                      }`
+                    : t("auth.country_none")}
+                </Text>
+                <Ionicons name="chevron-down" size={16} color={colors.stone} />
+              </Pressable>
+
+              {/* Documents */}
+              <View style={styles.docsBlock}>
+                <Text style={styles.label}>
+                  {t("auth.documents_section")}
+                </Text>
+                <Text style={styles.help}>{t("auth.documents_help")}</Text>
+
+                <DocField
+                  testID="profile-fighter-card"
+                  label={t("auth.fighter_card_label")}
+                  help={t("auth.fighter_card_help")}
+                  url={user.fighter_card_url}
+                  busy={fighterBusy}
+                  pickLabel={t("auth.doc_pick_pdf")}
+                  viewLabel={t("auth.doc_view")}
+                  removeLabel={t("auth.doc_remove")}
+                  onPick={() => pickDocument("fighter_card")}
+                  onView={() => viewDocument(user.fighter_card_url)}
+                  onRemove={() => removeDocument("fighter_card")}
+                />
+                <DocField
+                  testID="profile-equipment-passport"
+                  label={t("auth.equipment_passport_label")}
+                  help={t("auth.equipment_passport_help")}
+                  url={user.equipment_passport_url}
+                  busy={passportBusy}
+                  pickLabel={t("auth.doc_pick_pdf")}
+                  viewLabel={t("auth.doc_view")}
+                  removeLabel={t("auth.doc_remove")}
+                  onPick={() => pickDocument("equipment_passport")}
+                  onView={() => viewDocument(user.equipment_passport_url)}
+                  onRemove={() => removeDocument("equipment_passport")}
+                />
+              </View>
+
+              {/* Marketing consents */}
               <View style={styles.consentBlock} testID="profile-consents">
                 <Text style={[styles.label, { marginTop: spacing.md }]}>
                   {consentTexts.section_title}
@@ -287,6 +555,71 @@ export default function ProfileScreen() {
           )}
         </ScrollView>
 
+        {/* Country picker modal */}
+        <Modal
+          visible={countryPickerOpen}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setCountryPickerOpen(false)}
+        >
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => setCountryPickerOpen(false)}
+          >
+            <Pressable style={styles.modalSheet} onPress={() => {}}>
+              <View style={styles.modalHandle} />
+              <Text style={[styles.label, { textAlign: "center" }]}>
+                {t("auth.country_label")}
+              </Text>
+              <FlatList
+                data={[null, ...COUNTRY_CODES]}
+                keyExtractor={(item) => item ?? "none"}
+                renderItem={({ item }) => {
+                  const selected =
+                    (item ?? null) === (country ?? null) ||
+                    (!country && item === null);
+                  return (
+                    <Pressable
+                      testID={
+                        item ? `country-opt-${item}` : "country-opt-none"
+                      }
+                      onPress={() => {
+                        setCountry(item);
+                        setCountryPickerOpen(false);
+                      }}
+                      style={[
+                        styles.modalRow,
+                        selected && styles.modalRowActive,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.modalRowText,
+                          selected && { color: colors.gold },
+                        ]}
+                      >
+                        {item
+                          ? `${COUNTRY_FLAGS[item] || ""}  ${
+                              COUNTRY_NAMES[item] || item
+                            }`
+                          : t("auth.country_none")}
+                      </Text>
+                      {selected ? (
+                        <Ionicons
+                          name="checkmark"
+                          size={16}
+                          color={colors.gold}
+                        />
+                      ) : null}
+                    </Pressable>
+                  );
+                }}
+                style={{ maxHeight: 480 }}
+              />
+            </Pressable>
+          </Pressable>
+        </Modal>
+
         {savedHint ? (
           <View style={styles.toast} pointerEvents="none">
             <Ionicons name="checkmark-circle" size={14} color={colors.gold} />
@@ -295,6 +628,93 @@ export default function ProfileScreen() {
         ) : null}
       </SafeAreaView>
     </AppBackground>
+  );
+}
+
+function DocField({
+  testID,
+  label,
+  help,
+  url,
+  busy,
+  pickLabel,
+  viewLabel,
+  removeLabel,
+  onPick,
+  onView,
+  onRemove,
+}: {
+  testID: string;
+  label: string;
+  help: string;
+  url: string | null;
+  busy: boolean;
+  pickLabel: string;
+  viewLabel: string;
+  removeLabel: string;
+  onPick: () => void;
+  onView: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <View style={styles.docCard} testID={testID}>
+      <View style={styles.docHeader}>
+        <Ionicons name="document-text-outline" size={18} color={colors.gold} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.docLabel}>{label}</Text>
+          <Text style={styles.docHelp}>
+            {help}
+            {url ? "  ·  PDF" : ""}
+          </Text>
+        </View>
+      </View>
+      <View style={styles.rowBtns}>
+        <Pressable
+          testID={`${testID}-pick`}
+          onPress={onPick}
+          disabled={busy}
+          style={({ pressed }) => [
+            styles.outlineBtn,
+            (pressed || busy) && { opacity: 0.7 },
+          ]}
+        >
+          {busy ? (
+            <ActivityIndicator size="small" color={colors.gold} />
+          ) : (
+            <Ionicons name="cloud-upload-outline" size={14} color={colors.gold} />
+          )}
+          <Text style={styles.outlineBtnText}>{pickLabel}</Text>
+        </Pressable>
+        {url ? (
+          <>
+            <Pressable
+              testID={`${testID}-view`}
+              onPress={onView}
+              disabled={busy}
+              style={({ pressed }) => [
+                styles.outlineBtn,
+                (pressed || busy) && { opacity: 0.7 },
+              ]}
+            >
+              <Ionicons name="open-outline" size={14} color={colors.gold} />
+              <Text style={styles.outlineBtnText}>{viewLabel}</Text>
+            </Pressable>
+            <Pressable
+              testID={`${testID}-remove`}
+              onPress={onRemove}
+              disabled={busy}
+              style={({ pressed }) => [
+                styles.dangerBtn,
+                (pressed || busy) && { opacity: 0.7 },
+              ]}
+            >
+              <Ionicons name="trash-outline" size={14} color={colors.ember} />
+              <Text style={styles.dangerBtnText}>{removeLabel}</Text>
+            </Pressable>
+          </>
+        ) : null}
+      </View>
+    </View>
   );
 }
 
@@ -377,8 +797,10 @@ const styles = StyleSheet.create({
     borderColor: colors.gold,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
   avatarText: { color: colors.gold, fontSize: 22, fontWeight: "700" },
+  avatarImage: { width: 48, height: 48 },
   email: { color: colors.bone, fontSize: 14, fontWeight: "600" },
   authBadge: {
     color: colors.stone,
@@ -406,6 +828,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 14,
   },
+  pickerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  pickerValue: { color: colors.bone, fontSize: 14 },
+  pickerPlaceholder: { color: colors.stone, fontSize: 14, fontStyle: "italic" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   chip: {
     flexDirection: "row",
@@ -429,6 +858,58 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
   chipLabelActive: { color: colors.gold },
+  rowBtns: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  outlineBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: colors.gold,
+    borderRadius: radius.sm,
+    backgroundColor: "rgba(201,161,74,0.1)",
+  },
+  outlineBtnText: {
+    color: colors.gold,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  dangerBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: colors.ember,
+    borderRadius: radius.sm,
+  },
+  dangerBtnText: {
+    color: colors.ember,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  docsBlock: {
+    marginTop: spacing.xl,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.edge,
+  },
+  docCard: {
+    borderWidth: 1,
+    borderColor: colors.edge,
+    borderRadius: radius.sm,
+    backgroundColor: "rgba(26,20,17,0.7)",
+    padding: spacing.md,
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+  },
+  docHeader: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
+  docLabel: { color: colors.bone, fontSize: 13, fontWeight: "700" },
+  docHelp: { color: colors.stone, fontSize: 11, marginTop: 2 },
   primaryBtn: {
     backgroundColor: colors.ember,
     paddingVertical: 13,
@@ -512,4 +993,39 @@ const styles = StyleSheet.create({
   consentTextActive: {
     color: colors.bone,
   },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "flex-end",
+  },
+  modalSheet: {
+    backgroundColor: "#110E0C",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xxl,
+    borderTopWidth: 1,
+    borderColor: colors.edge,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: colors.edge,
+    borderRadius: 2,
+    alignSelf: "center",
+    marginVertical: spacing.sm,
+  },
+  modalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    borderRadius: radius.sm,
+  },
+  modalRowActive: {
+    backgroundColor: "rgba(201,161,74,0.12)",
+  },
+  modalRowText: { color: colors.bone, fontSize: 14 },
 });

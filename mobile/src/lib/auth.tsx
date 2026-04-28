@@ -39,6 +39,11 @@ export interface AuthUser {
   consent_merchant_offers: boolean;
   saved_search: SavedSearch | null;
   paid_messaging_enabled: boolean;
+  association_name: string | null;
+  country: string | null;
+  profile_image_url: string | null;
+  fighter_card_url: string | null;
+  equipment_passport_url: string | null;
 }
 
 interface AuthCtx {
@@ -57,6 +62,7 @@ interface AuthCtx {
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogleSession: (sessionId: string) => Promise<void>;
   signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   updateProfile: (patch: {
     nickname?: string;
     user_types?: UserType[];
@@ -65,6 +71,9 @@ interface AuthCtx {
     consent_organizer_messages?: boolean;
     consent_merchant_offers?: boolean;
     saved_search?: SavedSearch;
+    association_name?: string | null;
+    country?: string | null;
+    profile_image_url?: string | null;
   }) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
 }
@@ -136,6 +145,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const { data } = await api.get<AuthUser>("/auth/me");
+      setUser(normalize(data));
+    } catch {
+      /* keep current user */
+    }
+  }, []);
+
   const updateProfile = useCallback(
     async (patch: {
       nickname?: string;
@@ -145,6 +163,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       consent_organizer_messages?: boolean;
       consent_merchant_offers?: boolean;
       saved_search?: SavedSearch;
+      association_name?: string | null;
+      country?: string | null;
+      profile_image_url?: string | null;
     }) => {
       const { data } = await api.patch<AuthUser>("/auth/profile", patch);
       setUser(normalize(data));
@@ -165,6 +186,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signInWithGoogleSession,
         signOut,
+        refreshUser,
         updateProfile,
         forgotPassword,
       }}
@@ -195,5 +217,10 @@ function normalize(raw: Partial<AuthUser>): AuthUser {
     consent_merchant_offers: !!raw.consent_merchant_offers,
     saved_search: raw.saved_search ?? null,
     paid_messaging_enabled: !!raw.paid_messaging_enabled,
+    association_name: raw.association_name ?? null,
+    country: raw.country ?? null,
+    profile_image_url: raw.profile_image_url ?? null,
+    fighter_card_url: raw.fighter_card_url ?? null,
+    equipment_passport_url: raw.equipment_passport_url ?? null,
   };
 }

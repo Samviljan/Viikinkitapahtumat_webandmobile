@@ -1778,11 +1778,37 @@ async def upload_profile_doc(
 
 
 @api_router.get("/uploads/profile-docs/{filename}")
-async def serve_profile_doc(filename: str, user: dict = Depends(get_current_user)):
+async def serve_profile_doc(
+    filename: str,
+    request: Request,
+    t: Optional[str] = None,
+):
     """Stream a profile PDF. Auth required AND only the owning user (or admin)
     may read it — these are personal documents (fighter cards, equipment
     passports), so anonymous /api access is forbidden.
+
+    Auth methods (in priority order):
+        1. httpOnly access_token cookie (web)
+        2. Authorization: Bearer <token> header (mobile API calls)
+        3. ?t=<token> query string (mobile Linking.openURL fallback —
+           lets us hand the OS an openable URL while still enforcing auth)
     """
+    user: Optional[dict] = None
+    try:
+        user = await get_current_user(request)
+    except HTTPException:
+        if t:
+            try:
+                payload = jwt.decode(t, get_jwt_secret(), algorithms=[JWT_ALGORITHM])
+                if payload.get("type") == "access":
+                    user = await db.users.find_one(
+                        {"id": payload["sub"]}, {"_id": 0}
+                    )
+            except Exception:
+                user = None
+        if not user:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+
     doc = await db["profile_docs.files"].find_one(
         {"filename": filename}, {"_id": 1, "metadata": 1}
     )

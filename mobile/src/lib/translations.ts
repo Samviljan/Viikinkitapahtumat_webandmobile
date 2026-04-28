@@ -120,6 +120,27 @@ interface Dict {
     merchant_name_help: string;
     organizer_name_label: string;
     organizer_name_help: string;
+    country_label: string;
+    country_optional: string;
+    country_none: string;
+    association_label: string;
+    association_help: string;
+    profile_image_label: string;
+    profile_image_change: string;
+    profile_image_remove: string;
+    profile_image_upload_error: string;
+    profile_image_too_large: string;
+    documents_section: string;
+    documents_help: string;
+    fighter_card_label: string;
+    fighter_card_help: string;
+    equipment_passport_label: string;
+    equipment_passport_help: string;
+    doc_pick_pdf: string;
+    doc_view: string;
+    doc_remove: string;
+    doc_upload_error: string;
+    doc_too_large: string;
   };
   attend: {
     mark_attending: string;
@@ -328,6 +349,29 @@ export const translations: Partial<Record<Lang, Dict>> = {
       merchant_name_help: "Pakollinen kun valittuna 'Kauppias'.",
       organizer_name_label: "Tapahtuman tai järjestäjän nimi",
       organizer_name_help: "Pakollinen kun valittuna 'Tapahtumajärjestäjä'.",
+      country_label: "Maa",
+      country_optional: "Valinnainen",
+      country_none: "Ei valittu",
+      association_label: "Yhdistys (valinnainen)",
+      association_help:
+        "Jos olet jonkin yhdistyksen jäsen, voit liittää nimen tähän — näkyy vain sinulle.",
+      profile_image_label: "Profiilikuva",
+      profile_image_change: "Vaihda kuva",
+      profile_image_remove: "Poista kuva",
+      profile_image_upload_error: "Kuvan lataus epäonnistui",
+      profile_image_too_large: "Kuva on liian suuri (max 3 MB)",
+      documents_section: "Asiakirjat",
+      documents_help:
+        "SVTL Taistelijakortti ja Varustepassi (PDF). Vain sinä ja ylläpito voivat avata.",
+      fighter_card_label: "SVTL Taistelijakortti",
+      fighter_card_help: "PDF, max 8 MB.",
+      equipment_passport_label: "Varustepassi",
+      equipment_passport_help: "PDF, max 8 MB.",
+      doc_pick_pdf: "Valitse PDF",
+      doc_view: "Avaa",
+      doc_remove: "Poista",
+      doc_upload_error: "Tiedoston lataus epäonnistui",
+      doc_too_large: "Tiedosto on liian suuri (max 8 MB)",
     },
     attend: {
       mark_attending: "Merkitse osallistuvaksi",
@@ -536,6 +580,29 @@ export const translations: Partial<Record<Lang, Dict>> = {
       merchant_name_help: "Required when 'Merchant' is selected.",
       organizer_name_label: "Event or organization name",
       organizer_name_help: "Required when 'Event organizer' is selected.",
+      country_label: "Country",
+      country_optional: "Optional",
+      country_none: "Not selected",
+      association_label: "Association (optional)",
+      association_help:
+        "If you belong to an association, you can add the name here — visible only to you.",
+      profile_image_label: "Profile picture",
+      profile_image_change: "Change picture",
+      profile_image_remove: "Remove picture",
+      profile_image_upload_error: "Failed to upload picture",
+      profile_image_too_large: "Image too large (max 3 MB)",
+      documents_section: "Documents",
+      documents_help:
+        "SVTL Fighter Card and Equipment Passport (PDF). Only you and the admins can open them.",
+      fighter_card_label: "SVTL Fighter Card",
+      fighter_card_help: "PDF, max 8 MB.",
+      equipment_passport_label: "Equipment Passport",
+      equipment_passport_help: "PDF, max 8 MB.",
+      doc_pick_pdf: "Pick PDF",
+      doc_view: "Open",
+      doc_remove: "Remove",
+      doc_upload_error: "File upload failed",
+      doc_too_large: "File too large (max 8 MB)",
     },
     attend: {
       mark_attending: "Mark as attending",
@@ -743,6 +810,29 @@ export const translations: Partial<Record<Lang, Dict>> = {
       merchant_name_help: "Krävs när 'Handelsman' är valt.",
       organizer_name_label: "Evenemangets eller organisationens namn",
       organizer_name_help: "Krävs när 'Evenemangsarrangör' är valt.",
+      country_label: "Land",
+      country_optional: "Frivilligt",
+      country_none: "Ej valt",
+      association_label: "Förening (frivilligt)",
+      association_help:
+        "Om du är medlem i en förening kan du lägga till namnet här — syns bara för dig.",
+      profile_image_label: "Profilbild",
+      profile_image_change: "Byt bild",
+      profile_image_remove: "Ta bort bild",
+      profile_image_upload_error: "Kunde inte ladda upp bilden",
+      profile_image_too_large: "Bilden är för stor (max 3 MB)",
+      documents_section: "Dokument",
+      documents_help:
+        "SVTL Fightarkort och Utrustningspass (PDF). Endast du och administratörerna kan öppna dem.",
+      fighter_card_label: "SVTL Fightarkort",
+      fighter_card_help: "PDF, max 8 MB.",
+      equipment_passport_label: "Utrustningspass",
+      equipment_passport_help: "PDF, max 8 MB.",
+      doc_pick_pdf: "Välj PDF",
+      doc_view: "Öppna",
+      doc_remove: "Ta bort",
+      doc_upload_error: "Filuppladdning misslyckades",
+      doc_too_large: "Filen är för stor (max 8 MB)",
     },
     attend: {
       mark_attending: "Markera deltagande",
