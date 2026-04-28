@@ -22,7 +22,11 @@
     },
     "android": {
       "package": "fi.viikinkitapahtumat.mobile",
-      "versionCode": 7,
+      "versionCode": 8,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0E0B09"
+      },
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
