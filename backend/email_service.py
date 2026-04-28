@@ -194,41 +194,226 @@ async def notify_admin_new_event(ev: dict) -> dict:
 
 def render_event_decision(ev: dict, approved: bool) -> tuple[str, str]:
     site = _site_url()
-    title = escape(ev.get("title_fi") or "")
     if approved:
-        link = f"{site}/events/{ev.get('id')}" if (site and ev.get("id")) else ""
-        cta_html = (
-            f'<p style="margin-top:24px"><a href="{link}" style="{BTN_STYLE}">Katso julkaistu tapahtuma</a></p>'
-            if link
-            else ""
-        )
-        body = (
-            f'<div style="{BASE_STYLE}">'
-            f'<h1 style="{H1_STYLE}">Tapahtumasi on hyväksytty</h1>'
-            f'<div style="{CARD_STYLE}">'
-            f"<p>Hei,</p>"
-            f"<p>Hienoa! Lähettämäsi tapahtuma <strong>{title}</strong> on hyväksytty ja "
-            f"se näkyy nyt sivustomme tapahtumakalenterissa ja kuukausiuutiskirjeessä.</p>"
-            f"<p>Kiitos että jaat tapahtumasi viikinkiyhteisön kanssa.</p>"
-            f"{cta_html}"
-            f"</div></div>"
-        )
-        subject = f"Hyväksytty: {ev.get('title_fi') or ''}"
-    else:
-        body = (
-            f'<div style="{BASE_STYLE}">'
-            f'<h1 style="{H1_STYLE}">Tapahtumailmoituksesi tilanne</h1>'
-            f'<div style="{CARD_STYLE}">'
-            f"<p>Hei,</p>"
-            f"<p>Lähettämääsi tapahtumaa <strong>{title}</strong> ei tällä kertaa julkaistu "
-            f"sivustollamme. Tämä voi johtua puutteellisista tiedoista, päällekkäisyydestä toisen "
-            f"ilmoituksen kanssa tai siitä, että tapahtuma ei sovi sivuston aihepiiriin.</p>"
-            f"<p>Voit lähettää tapahtuman uudestaan tarvittavin täydennyksin tai ottaa yhteyttä "
-            f"sähköpostitse osoitteeseen <a href='mailto:{_admin_email()}' style='color:#C19C4D'>"
-            f"{_admin_email()}</a>.</p>"
-            f"</div></div>"
-        )
-        subject = f"Tapahtumailmoituksesi: {ev.get('title_fi') or ''}"
+        return _render_event_approved(ev, site)
+
+    title = escape(ev.get("title_fi") or ev.get("title_en") or "")
+    body = (
+        f'<div style="{BASE_STYLE}">'
+        f'<h1 style="{H1_STYLE}">Tapahtumailmoituksesi tilanne</h1>'
+        f'<div style="{CARD_STYLE}">'
+        f"<p>Hei,</p>"
+        f"<p>Lähettämääsi tapahtumaa <strong>{title}</strong> ei tällä kertaa julkaistu "
+        f"sivustollamme. Tämä voi johtua puutteellisista tiedoista, päällekkäisyydestä toisen "
+        f"ilmoituksen kanssa tai siitä, että tapahtuma ei sovi sivuston aihepiiriin.</p>"
+        f"<p>Voit lähettää tapahtuman uudestaan tarvittavin täydennyksin tai ottaa yhteyttä "
+        f"sähköpostitse osoitteeseen <a href='mailto:{_admin_email()}' style='color:#C19C4D'>"
+        f"{_admin_email()}</a>.</p>"
+        f"</div></div>"
+    )
+    subject = f"Tapahtumailmoituksesi: {ev.get('title_fi') or ev.get('title_en') or ''}"
+    return subject, body
+
+
+# -----------------------------------------------------------------------------
+# Multilingual approval email
+# -----------------------------------------------------------------------------
+# Map event country (ISO-2) → email language. Only languages with a dedicated
+# template are kept; all others fall through to English.
+_COUNTRY_TO_EMAIL_LANG = {
+    "FI": "fi",
+    "SE": "sv",
+    "EE": "et",
+    "DK": "da",
+    "PL": "pl",
+    "DE": "de",
+}
+
+_APPROVED_TEMPLATES = {
+    "fi": {
+        "subject": "Hyväksytty: {title}",
+        "h1": "Tapahtumasi on hyväksytty",
+        "greeting": "Hei,",
+        "main": (
+            "Hienoa! Lähettämäsi tapahtuma <strong>{title}</strong> on hyväksytty ja "
+            "se näkyy nyt sivuston <a href='{site}' style='color:#C19C4D'>"
+            "viikinkitapahtumat.fi</a> tapahtumakalenterissa ja kuukausiuutiskirjeessä."
+        ),
+        "thanks": "Kiitos että jaat tapahtumasi viikinkiyhteisön kanssa.",
+        "cta": "Avaa tapahtumakortti",
+        "contact_title": "Muutoksia tai poistopyyntö?",
+        "contact_body": (
+            "Mikäli haluat tapahtuman pois sivustolta tai jokin tieto kaipaa korjausta "
+            "(päivämäärä, paikka, kuvaus, kuva tms.), ota yhteyttä sähköpostitse "
+            "osoitteeseen <a href='mailto:{admin}' style='color:#C19C4D'>{admin}</a> ja "
+            "korjaamme tiedot mahdollisimman pian."
+        ),
+    },
+    "en": {
+        "subject": "Approved: {title}",
+        "h1": "Your event has been approved",
+        "greeting": "Hi,",
+        "main": (
+            "Great news! Your event <strong>{title}</strong> has been approved and is "
+            "now visible in the calendar at <a href='{site}' style='color:#C19C4D'>"
+            "viikinkitapahtumat.fi</a> and our monthly newsletter."
+        ),
+        "thanks": "Thank you for sharing your event with the Viking community.",
+        "cta": "Open event page",
+        "contact_title": "Need a change or removal?",
+        "contact_body": (
+            "If you'd like the event removed, the date, location, description or image "
+            "corrected, or any other detail updated, just email us at "
+            "<a href='mailto:{admin}' style='color:#C19C4D'>{admin}</a> and we'll take "
+            "care of it as soon as possible."
+        ),
+    },
+    "sv": {
+        "subject": "Godkänt: {title}",
+        "h1": "Ditt evenemang har godkänts",
+        "greeting": "Hej,",
+        "main": (
+            "Bra nyheter! Ditt evenemang <strong>{title}</strong> har godkänts och syns "
+            "nu i kalendern på <a href='{site}' style='color:#C19C4D'>"
+            "viikinkitapahtumat.fi</a> och i vårt månatliga nyhetsbrev."
+        ),
+        "thanks": "Tack för att du delar ditt evenemang med vikingagemenskapen.",
+        "cta": "Öppna evenemangssidan",
+        "contact_title": "Behöver du ändra eller ta bort?",
+        "contact_body": (
+            "Om du vill ta bort evenemanget, korrigera datum, plats, beskrivning, bild "
+            "eller någon annan detalj — mejla oss på "
+            "<a href='mailto:{admin}' style='color:#C19C4D'>{admin}</a> så ordnar vi det "
+            "så snart som möjligt."
+        ),
+    },
+    "da": {
+        "subject": "Godkendt: {title}",
+        "h1": "Dit arrangement er godkendt",
+        "greeting": "Hej,",
+        "main": (
+            "Gode nyheder! Dit arrangement <strong>{title}</strong> er godkendt og vises "
+            "nu i kalenderen på <a href='{site}' style='color:#C19C4D'>"
+            "viikinkitapahtumat.fi</a> og i vores månedlige nyhedsbrev."
+        ),
+        "thanks": "Tak fordi du deler dit arrangement med vikingefællesskabet.",
+        "cta": "Åbn arrangementssiden",
+        "contact_title": "Har du brug for ændringer eller fjernelse?",
+        "contact_body": (
+            "Hvis du ønsker arrangementet fjernet, eller dato, sted, beskrivelse, billede "
+            "eller andre detaljer rettet — skriv til os på "
+            "<a href='mailto:{admin}' style='color:#C19C4D'>{admin}</a>, så ordner vi det "
+            "så hurtigt som muligt."
+        ),
+    },
+    "de": {
+        "subject": "Genehmigt: {title}",
+        "h1": "Ihre Veranstaltung wurde genehmigt",
+        "greeting": "Hallo,",
+        "main": (
+            "Gute Nachrichten! Ihre Veranstaltung <strong>{title}</strong> wurde "
+            "genehmigt und ist jetzt im Kalender auf "
+            "<a href='{site}' style='color:#C19C4D'>viikinkitapahtumat.fi</a> sowie in "
+            "unserem monatlichen Newsletter sichtbar."
+        ),
+        "thanks": "Danke, dass Sie Ihre Veranstaltung mit der Wikingergemeinschaft teilen.",
+        "cta": "Veranstaltungsseite öffnen",
+        "contact_title": "Änderungen oder Entfernung gewünscht?",
+        "contact_body": (
+            "Wenn Sie die Veranstaltung entfernen lassen oder Datum, Ort, Beschreibung, "
+            "Bild oder andere Details korrigieren möchten, schreiben Sie uns einfach an "
+            "<a href='mailto:{admin}' style='color:#C19C4D'>{admin}</a> und wir kümmern "
+            "uns schnellstmöglich darum."
+        ),
+    },
+    "et": {
+        "subject": "Kinnitatud: {title}",
+        "h1": "Sinu üritus on kinnitatud",
+        "greeting": "Tere,",
+        "main": (
+            "Suurepärane! Sinu üritus <strong>{title}</strong> on kinnitatud ja on nüüd "
+            "nähtav kalendris aadressil <a href='{site}' style='color:#C19C4D'>"
+            "viikinkitapahtumat.fi</a> ja meie igakuises uudiskirjas."
+        ),
+        "thanks": "Aitäh, et jagad oma üritust viikingikogukonnaga.",
+        "cta": "Ava ürituse leht",
+        "contact_title": "Vajad muudatusi või eemaldamist?",
+        "contact_body": (
+            "Kui soovid üritust eemaldada või kuupäeva, asukohta, kirjeldust, pilti või "
+            "muud detaili muuta — kirjuta meile aadressil "
+            "<a href='mailto:{admin}' style='color:#C19C4D'>{admin}</a> ja me hoolitseme "
+            "selle eest võimalikult kiiresti."
+        ),
+    },
+    "pl": {
+        "subject": "Zatwierdzono: {title}",
+        "h1": "Twoje wydarzenie zostało zatwierdzone",
+        "greeting": "Cześć,",
+        "main": (
+            "Świetna wiadomość! Twoje wydarzenie <strong>{title}</strong> zostało "
+            "zatwierdzone i jest teraz widoczne w kalendarzu na "
+            "<a href='{site}' style='color:#C19C4D'>viikinkitapahtumat.fi</a> oraz w "
+            "naszym miesięcznym newsletterze."
+        ),
+        "thanks": "Dziękujemy za podzielenie się wydarzeniem ze społecznością wikingów.",
+        "cta": "Otwórz stronę wydarzenia",
+        "contact_title": "Potrzebujesz zmiany lub usunięcia?",
+        "contact_body": (
+            "Jeśli chcesz, aby wydarzenie zostało usunięte, lub potrzebujesz poprawić "
+            "datę, miejsce, opis, zdjęcie lub inne szczegóły — napisz do nas na "
+            "<a href='mailto:{admin}' style='color:#C19C4D'>{admin}</a>, a my zajmiemy "
+            "się tym tak szybko, jak to możliwe."
+        ),
+    },
+}
+
+
+def _email_lang_for(ev: dict) -> str:
+    """Pick email language based on event.country, fall back to en."""
+    code = (ev.get("country") or "").upper()
+    return _COUNTRY_TO_EMAIL_LANG.get(code, "en")
+
+
+def _localized_title(ev: dict, lang: str) -> str:
+    return (
+        ev.get(f"title_{lang}")
+        or ev.get("title_en")
+        or ev.get("title_fi")
+        or ""
+    )
+
+
+def _render_event_approved(ev: dict, site: str) -> tuple[str, str]:
+    lang = _email_lang_for(ev)
+    tpl = _APPROVED_TEMPLATES[lang]
+    title_raw = _localized_title(ev, lang)
+    title = escape(title_raw)
+    admin = _admin_email()
+    site_url = site or "https://viikinkitapahtumat.fi"
+    link = f"{site}/events/{ev.get('id')}" if (site and ev.get("id")) else ""
+    cta_html = (
+        f'<p style="margin-top:24px"><a href="{link}" style="{BTN_STYLE}">{escape(tpl["cta"])}</a></p>'
+        if link
+        else ""
+    )
+    main_html = tpl["main"].format(title=title, site=escape(site_url))
+    contact_html = tpl["contact_body"].format(admin=escape(admin))
+    body = (
+        f'<div style="{BASE_STYLE}">'
+        f'<h1 style="{H1_STYLE}">{escape(tpl["h1"])}</h1>'
+        f'<div style="{CARD_STYLE}">'
+        f'<p>{escape(tpl["greeting"])}</p>'
+        f"<p>{main_html}</p>"
+        f'<p>{escape(tpl["thanks"])}</p>'
+        f"{cta_html}"
+        f"</div>"
+        f'<div style="{CARD_STYLE}">'
+        f'<h2 style="{H2_STYLE}">{escape(tpl["contact_title"])}</h2>'
+        f"<p>{contact_html}</p>"
+        f"</div>"
+        f"</div>"
+    )
+    subject = tpl["subject"].format(title=title_raw)
     return subject, body
 
 
@@ -237,7 +422,16 @@ async def notify_submitter_decision(ev: dict, approved: bool) -> dict:
     if not to:
         return {"sent": False, "reason": "no_organizer_email"}
     subject, html = render_event_decision(ev, approved)
-    return await send_email(to, subject, html)
+    result = await send_email(to, subject, html)
+    logger.info(
+        "submitter notification: event=%s approved=%s lang=%s to=%s sent=%s",
+        ev.get("id"),
+        approved,
+        _email_lang_for(ev) if approved else "fi",
+        to,
+        result.get("sent"),
+    )
+    return result
 
 
 def render_weekly_admin_report(stats: dict, pending: list[dict], upcoming: list[dict], new_subs: int) -> tuple[str, str]:

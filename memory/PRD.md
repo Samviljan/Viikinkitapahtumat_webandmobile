@@ -487,6 +487,15 @@ See `/app/memory/test_credentials.md`.
 - ✅ **Play Console Data Safety -mappaus** generoitu: `/app/docs/PLAY_CONSOLE_DATA_SAFETY.md`. Sisältää: 14 datakategorian täydellinen taulukko, 10 kerätyn datatyypin yhteenveto Play Consolen lomaketta varten, koodirefrenssit (mistä endpointista jokainen tieto tulee), päivitysmuistutus tuleville integraatiomuutoksille (Stripe, analytiikka).
 - ✅ **Maa-vaihtoehdot laajennettu 10 → 21 maahan**: lisätty SI Slovenia, HR Kroatia, UA Ukraina, NL Alankomaat, GB Iso-Britannia, IE Irlanti, BE Belgia, FR Ranska, ES Espanja, PT Portugali, IT Italia. Päivitetty kaikkialle: backend `VALID_COUNTRIES` & `EventCountry` Literal, frontend `countries.js` (lipuilla), 3× COUNTRIES-listaa (Profile, Submit, AdminEventEditDialog), `SavedSearchEditor.jsx` COUNTRY_KEYS, mobile `countries.ts` ja `types.ts`. Käännökset 7 kielessä: top-level `countries.{CODE}` ja `account.country_opt_{CODE}`. Validoitu API-kutsulla: `IT` hyväksytään, virheellinen `XX` palauttaa 400.
 
+## Iteration — Multilingual approval email + 21 country support (2026-04-28c)
+- ✅ **Multilingual event approval email** (`email_service.py::render_event_decision`): When admin approves an event via `PATCH /api/admin/events/{id}` (status=approved), the submitter (`organizer_email`) now receives a localized email in their event's country language. Mapping: FI→fi, SE→sv, EE→et, DK→da, PL→pl, DE→de; all other countries (NO/IS/LV/LT/SI/HR/UA/NL/GB/IE/BE/FR/ES/PT/IT) fall through to English. Email contains:
+  - Localized subject + heading: "Your event has been approved"
+  - Localized confirmation that it's now visible on viikinkitapahtumat.fi
+  - **Event-card link button** (`/events/{id}`)
+  - **Contact card** with explanation: organizer can email `admin@viikinkitapahtumat.fi` if they want the event removed or any detail (date, location, description, image) corrected
+  - Uses `title_<lang>` with fallback chain `title_<lang> → title_en → title_fi`
+- ✅ Verified end-to-end on preview: Created DE event → approved via admin → Resend log: `submitter notification: event=... approved=True lang=de sent=True`. Logger captures language used per delivery for monitoring.
+
 ## Backlog (priorities)
 - **P1** Stripe integration for paid messaging (currently admin manually toggles `paid_messaging_enabled`).
 - **P1** Mobile DA/DE/ET/PL native dictionaries (currently fall back to EN; covers ~80 string keys vs 250 on web).
