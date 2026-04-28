@@ -1,14 +1,15 @@
-# EAS Build — quick start (Android APK + iOS TestFlight)
+# EAS Build — quick start (Android AAB for Play Console + iOS TestFlight)
 
 > **Why?** Web-preview ja Expo Go LAN-setup eivät tue push-notifikaatioita
-> tai oikeita laitetestauksia. EAS Build tuottaa asennettavan **.apk**:n
-> Androidille ja TestFlight-jakelun iOS:lle.
+> tai oikeita laitetestauksia. EAS Build tuottaa Play Console -kelpoisen
+> **.aab**:n Androidille ja TestFlight-jakelun iOS:lle.
 
 ## Edellytykset
 
 1. **Expo-tili** (ilmainen) — luo: https://expo.dev/signup
 2. **Node 20+** + `yarn` lokaalilla koneella
 3. iOS-buildiin: **Apple Developer-tili** ($99/v) — Androidille riittää pelkkä Expo-tili
+4. **Google Play Console** -tili (ennen ensimmäistä julkaisua, $25 kertamaksu)
 
 ## 1. Kertaluonteinen setup
 
@@ -21,30 +22,42 @@ npm install -g eas-cli
 # Kirjaudu Expo-tiliisi
 eas login
 # → email + password tai SSO-tunnukset
-
-# Yhdistä projekti EAS:iin (luo automaattisesti projectId)
-eas project:init
-# Hyväksy ehdotettu nimi "viikinkitapahtumat" tai anna oma
-# Tämä kirjoittaa app.json:iin oikean projectId:n placeholderin tilalle
 ```
 
-`eas project:init` korvaa `app.json`:n `__EAS_PROJECT_ID__` -placeholderit
-oikealla UUID:lla automaattisesti.
+EAS-projektin ID on jo määritetty `app.json`:ssa (`extra.eas.projectId`),
+joten `eas project:init`-vaihetta ei tarvita.
 
-## 2. Android APK (helpoin tapa testaajille)
+## 2. Android AAB Play Consolea varten (PROD)
+
+`eas.json:n` `production`-profiili tuottaa `.aab`-tiedoston jonka voi suoraan ladata
+Play Console → Internal testing / Production. `versionCode` nostetaan automaattisesti
+joka buildilla (`autoIncrement: true`).
+
+```bash
+cd /app/mobile
+eas build --profile production --platform android
+```
+
+- Build pyörii Expo:n pilvessä (~10–15 min)
+- Saat suoran latauslinkin: `https://expo.dev/artifacts/eas/<id>.aab`
+- Lataa .aab Play Consoleen: **Release → Internal testing → Create new release → Upload .aab**
+- (Tai jos Play Console -credentialit on jo annettu EAS:lle: `eas submit --profile production --platform android`)
+
+**Maksuton tili**: 30 buildia/kk Androidille — riittää alpha/beta-vaiheeseen.
+
+## 3. Android APK (sisäinen testaus ennen Play Consolea)
+
+Jos haluat jakaa APK:ta suoraan testaajille (ei Play Consolen kautta), käytä
+`preview`-profiilia:
 
 ```bash
 eas build --profile preview --platform android
 ```
 
-- Build pyörii Expo:n pilvessä (~10–15 min)
-- Saat suoran latauslinkin: `https://expo.dev/artifacts/eas/<id>.apk`
-- Jaa linkki testaajille → he klikkaavat APK:n Android-puhelimeensa
-  (lisätietoja: salli "tuntemattomista lähteistä asennus" Android-asetuksista)
+- Saat APK-latauslinkin
+- Jaa linkki testaajille → he asentavat puhelimeen "tuntemattomista lähteistä"
 
-**Maksuton tili**: 30 buildia/kk Androidille — riittää beta-vaiheeseen.
-
-## 3. iOS TestFlight (vaatii Apple Developer-tilin)
+## 4. iOS TestFlight (vaatii Apple Developer-tilin)
 
 ```bash
 eas build --profile production --platform ios
@@ -53,35 +66,18 @@ eas build --profile production --platform ios
 eas submit --profile production --platform ios
 ```
 
-- Ensimmäisellä kerralla: anna Apple Developer credentialit kun kysytään
-- App Store Connect lähettää sen TestFlight-vaiheeseen automaattisesti
-- Kutsu testaajat App Store Connect → TestFlight → Internal/External testers
-
-## 4. Tuotantopaketit (valmiit Play Store / App Store)
+## 5. Buildaus CI:stä / palvelimelta (ilman interaktiivista login:ia)
 
 ```bash
-eas build --profile production --platform all
+export EXPO_TOKEN="<token from https://expo.dev/accounts/<user>/settings/access-tokens>"
+cd /app/mobile
+eas build --profile production --platform android --non-interactive --no-wait
 ```
 
-Submitoi kauppoihin:
-```bash
-eas submit --profile production --platform android  # tarvitsee Google Play Console
-eas submit --profile production --platform ios      # tarvitsee Apple Developer
-```
+`EXPO_TOKEN` on suositeltu tapa CI/CD-pipelineissä, koska sen voi rajata ja peruuttaa.
 
-## API-osoitteen vaihtaminen tuotantoa varten
-
-Kun haluat julkaista tuotantopaketin joka osoittaa tuotannon backendiin
-preview:n sijaan:
-
-```jsonc
-// app.json
-"extra": {
-  "apiBaseUrl": "https://viikinkitapahtumat.fi"
-}
-```
-
-Build sen jälkeen `--profile production`.
+`--no-wait` palauttaa terminaalille heti — buildin tilannetta voi seurata
+osoitteessa https://expo.dev/accounts/<user>/projects/viikinkitapahtumat/builds
 
 ## Vianmääritys
 
@@ -91,14 +87,17 @@ Build sen jälkeen `--profile production`.
 - **iOS bundle identifier on jo käytössä**: vaihda `app.json` →
   `ios.bundleIdentifier` toiseen arvoon (esim. lisää `.beta`).
 - **Build epäonnistuu Java/Gradle-virheillä**: käytä
-  `eas build --profile preview --platform android --clear-cache`.
+  `eas build --profile production --platform android --clear-cache`.
+- **"Version code already used in Play Console"**: nosta `app.json` →
+  `android.versionCode` arvoa manuaalisesti tai tarkista että
+  `eas.json` → `production.autoIncrement` on `true`.
 
 ## Hyödyllisiä komentoja
 
 ```bash
 eas build:list                    # listaa kaikki buildit
 eas build:view <build-id>         # yksittäisen buildin tila
-eas update --branch preview --message "Hot fix"   # OTA-päivitys ilman uutta buildia
+eas update --branch production --message "Hot fix"   # OTA-päivitys ilman uutta buildia
 eas device:create                 # rekisteröi iOS-laitteen testaukseen
 ```
 
@@ -108,5 +107,5 @@ eas device:create                 # rekisteröi iOS-laitteen testaukseen
   Expo:n palvelimelle
 - **JWT-tokenit ja API-osoitteet** ovat client-puolen koodissa → käytä
   julkista API:a, ei admin-credentialeja
-- Beta-paketit (`preview`-profiili) **eivät** ole signattu Play Store/App Store
-  -kelpoisiksi; käytä vain testaukseen
+- Beta-paketit (`preview`-profiili, APK) **eivät** ole Play Store -kelpoisia;
+  käytä vain testaukseen. Play Storeen tarvitaan AAB (`production`-profiili).

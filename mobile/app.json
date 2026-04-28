@@ -2,7 +2,7 @@
   "expo": {
     "name": "Viikinkitapahtumat",
     "slug": "viikinkitapahtumat",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "viikinki",
@@ -22,7 +22,7 @@
     },
     "android": {
       "package": "fi.viikinkitapahtumat.mobile",
-      "versionCode": 5,
+      "versionCode": 6,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",

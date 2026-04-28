@@ -6,15 +6,21 @@
  */
 import React, { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Trash2, UserPlus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
+import AdminUserCreateDialog from "@/components/admin/AdminUserCreateDialog";
 
 export default function AdminUsersPanel() {
   const { t } = useI18n();
+  const { user: currentAdmin } = useAuth();
   const [users, setUsers] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [filter, setFilter] = useState("all"); // all | merchant | organizer | admin
+  const [showCreate, setShowCreate] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -52,6 +58,19 @@ export default function AdminUsersPanel() {
     }
   }
 
+  async function deleteUser(u) {
+    const label = u.email || u.nickname || u.id;
+    if (!window.confirm(t("admin.users.confirm_delete").replace("{user}", label))) return;
+    try {
+      await api.delete(`/admin/users/${u.id}`);
+      setUsers((prev) => prev.filter((x) => x.id !== u.id));
+      toast.success(t("admin.users.delete_success"));
+    } catch (err) {
+      const detail = err?.response?.data?.detail;
+      toast.error(typeof detail === "string" ? detail : t("admin.action_error"));
+    }
+  }
+
   const visible = users.filter((u) => {
     if (filter === "all") return true;
     if (filter === "admin") return u.role === "admin";
@@ -66,7 +85,7 @@ export default function AdminUsersPanel() {
         <h3 className="font-serif text-base text-viking-bone">
           {t("admin.users.title")} <span className="text-viking-stone text-xs ml-2">({users.length})</span>
         </h3>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
           {["all", "merchant", "organizer", "admin"].map((f) => (
             <button
               key={f}
@@ -82,6 +101,16 @@ export default function AdminUsersPanel() {
               {t(`admin.users.filter_${f}`)}
             </button>
           ))}
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setShowCreate(true)}
+            className="bg-viking-ember hover:bg-viking-ember/90 ml-2"
+            data-testid="admin-add-admin-btn"
+          >
+            <UserPlus className="w-3.5 h-3.5 mr-1.5" />
+            {t("admin.users.add_admin_btn")}
+          </Button>
         </div>
       </div>
 
@@ -92,14 +121,15 @@ export default function AdminUsersPanel() {
               <th className="text-left py-2 pr-3">{t("admin.users.col_user")}</th>
               <th className="text-left py-2 pr-3">{t("admin.users.col_role")}</th>
               <th className="text-left py-2 pr-3">{t("admin.users.col_types")}</th>
-              <th className="text-right py-2 pl-3">{t("admin.users.col_paid")}</th>
+              <th className="text-right py-2 px-3">{t("admin.users.col_paid")}</th>
+              <th className="text-right py-2 pl-3 w-12">{t("admin.users.col_actions")}</th>
             </tr>
           </thead>
           <tbody>
             {visible.length === 0 ? (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={5}
                   className="py-8 text-center text-viking-stone italic text-xs"
                 >
                   —
@@ -151,12 +181,28 @@ export default function AdminUsersPanel() {
                       ))}
                     </div>
                   </td>
-                  <td className="py-3 pl-3 text-right">
+                  <td className="py-3 px-3 text-right">
                     <Switch
                       data-testid={`toggle-paid-${u.id}`}
                       checked={!!u.paid_messaging_enabled}
                       onCheckedChange={() => toggle(u)}
                     />
+                  </td>
+                  <td className="py-3 pl-3 text-right">
+                    <button
+                      type="button"
+                      onClick={() => deleteUser(u)}
+                      disabled={u.id === currentAdmin?.id}
+                      title={
+                        u.id === currentAdmin?.id
+                          ? t("admin.users.cannot_delete_self")
+                          : t("admin.users.delete_btn")
+                      }
+                      data-testid={`delete-user-${u.id}`}
+                      className="p-1.5 rounded-sm border border-viking-edge text-viking-stone hover:text-red-400 hover:border-red-400/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </td>
                 </tr>
               ))
@@ -164,6 +210,11 @@ export default function AdminUsersPanel() {
           </tbody>
         </table>
       </div>
+      <AdminUserCreateDialog
+        open={showCreate}
+        onOpenChange={setShowCreate}
+        onCreated={() => load()}
+      />
     </div>
   );
 }

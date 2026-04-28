@@ -1024,6 +1024,105 @@ async def admin_toggle_paid_messaging(user_id: str, payload: PaidMessagingToggle
 
 
 # -----------------------------------------------------------------------------
+# Admin: create another admin account
+# -----------------------------------------------------------------------------
+class AdminUserCreate(BaseModel):
+    email: EmailStr
+    password: str
+    nickname: str
+
+
+@api_router.post("/admin/users", status_code=201, dependencies=[Depends(get_admin_user)])
+async def admin_create_admin_user(payload: AdminUserCreate):
+    """Create a new admin user. Called by an existing admin from the dashboard."""
+    email = payload.email.lower().strip()
+    nick = payload.nickname.strip()
+    if len(payload.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    if not nick:
+        raise HTTPException(status_code=400, detail="Nickname is required")
+    existing = await db.users.find_one({"email": email})
+    if existing:
+        raise HTTPException(status_code=409, detail="Email already registered")
+    user_id = f"admin_{uuid.uuid4().hex[:12]}"
+    doc = {
+        "id": user_id,
+        "email": email,
+        "name": nick,
+        "nickname": nick,
+        "role": "admin",
+        "user_types": [],
+        "merchant_name": None,
+        "organizer_name": None,
+        "consent_organizer_messages": False,
+        "consent_merchant_offers": False,
+        "paid_messaging_enabled": False,
+        "password_hash": hash_password(payload.password),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.users.insert_one(doc)
+    return {
+        "id": user_id,
+        "email": email,
+        "nickname": nick,
+        "role": "admin",
+        "created_at": doc["created_at"],
+    }
+
+
+# -----------------------------------------------------------------------------
+# Admin: GDPR-compliant user deletion
+# Deletes user record, RSVPs and email reminders. Anonymises message_log
+# sender_id so audit trail of historic messages is kept without PII.
+# -----------------------------------------------------------------------------
+@api_router.delete(
+    "/admin/users/{user_id}",
+    dependencies=[Depends(get_admin_user)],
+)
+async def admin_delete_user(user_id: str, admin: dict = Depends(get_admin_user)):
+    if user_id == admin["id"]:
+        raise HTTPException(status_code=400, detail="Admins cannot delete their own account")
+    target = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1, "role": 1})
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    # Refuse to delete the last remaining admin so the system never gets locked out.
+    if target.get("role") == "admin":
+        admin_count = await db.users.count_documents({"role": "admin"})
+        if admin_count <= 1:
+            raise HTTPException(status_code=400, detail="Cannot delete the last admin user")
+
+    summary = {
+        "user_id": user_id,
+        "email_reminders_deleted": 0,
+        "rsvps_deleted": 0,
+        "messages_anonymised": 0,
+    }
+
+    # 1) Delete RSVPs / attendance rows
+    res_a = await db.event_attendees.delete_many({"user_id": user_id})
+    summary["rsvps_deleted"] = int(res_a.deleted_count or 0)
+
+    # 2) Delete event reminder subscriptions matching the user's email
+    if target.get("email"):
+        res_r = await db.event_reminders.delete_many({"email": target["email"]})
+        summary["email_reminders_deleted"] = int(res_r.deleted_count or 0)
+        # 2b) Newsletter subscription with the same email
+        await db.newsletter_subscribers.delete_many({"email": target["email"]})
+
+    # 3) Anonymise sender_id in message_log so audit trail survives without PII
+    res_m = await db.message_log.update_many(
+        {"sender_id": user_id},
+        {"$set": {"sender_id": "deleted_user"}},
+    )
+    summary["messages_anonymised"] = int(res_m.modified_count or 0)
+
+    # 4) Finally delete the user document itself
+    await db.users.delete_one({"id": user_id})
+
+    return summary
+
+
+# -----------------------------------------------------------------------------
 # Daily reminders — push + email reminders for events in the next 3 days
 # -----------------------------------------------------------------------------
 async def _run_daily_event_reminders(window_days: int = 3) -> dict:
