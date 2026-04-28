@@ -327,5 +327,28 @@
     "browse": "Przeglądaj wydarzenia",
     "count_label": "événements enregistrés",
     "clear": "Wyczyść ulubione"
+  },
+  "account": {
+    "association_name_label": "Stowarzyszenie (opcjonalnie)",
+    "association_name_placeholder": "np. Polskie Stowarzyszenie Wikingów",
+    "association_name_help": "Jeśli należysz do stowarzyszenia, dodaj tu nazwę — widoczna tylko dla Ciebie.",
+    "country_label": "Kraj (opcjonalnie)",
+    "country_none": "Nie wybrano",
+    "country_help": "Zalecamy ustawienie — używamy tego jako domyślnego filtra wyszukiwania i w przypomnieniach.",
+    "avatar_change": "Zmień zdjęcie profilowe",
+    "avatar_remove": "Usuń zdjęcie profilowe",
+    "avatar_too_large": "Plik jest za duży (maks. 3 MB)",
+    "avatar_saved": "Zdjęcie profilowe zapisane",
+    "avatar_removed": "Zdjęcie profilowe usunięte",
+    "country_opt_FI": "Finlandia",
+    "country_opt_SE": "Szwecja",
+    "country_opt_EE": "Estonia",
+    "country_opt_NO": "Norwegia",
+    "country_opt_DK": "Dania",
+    "country_opt_PL": "Polska",
+    "country_opt_DE": "Niemcy",
+    "country_opt_IS": "Islandia",
+    "country_opt_LV": "Łotwa",
+    "country_opt_LT": "Litwa"
   }
 }

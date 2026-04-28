@@ -327,5 +327,28 @@
     "browse": "Sirvige sündmusi",
     "count_label": "sündmust salvestatud",
     "clear": "Kustutage lemmikud"
+  },
+  "account": {
+    "association_name_label": "Selts (valikuline)",
+    "association_name_placeholder": "nt. Eesti Viikingite Selts",
+    "association_name_help": "Kui oled mõne seltsi liige, lisa nimi siia — nähtav ainult sulle.",
+    "country_label": "Riik (valikuline)",
+    "country_none": "Pole valitud",
+    "country_help": "Soovitame selle määrata — kasutame seda vaikimisi filtrina ja meeldetuletustes.",
+    "avatar_change": "Muuda profiilipilti",
+    "avatar_remove": "Eemalda profiilipilt",
+    "avatar_too_large": "Fail on liiga suur (max 3 MB)",
+    "avatar_saved": "Profiilipilt salvestatud",
+    "avatar_removed": "Profiilipilt eemaldatud",
+    "country_opt_FI": "Soome",
+    "country_opt_SE": "Rootsi",
+    "country_opt_EE": "Eesti",
+    "country_opt_NO": "Norra",
+    "country_opt_DK": "Taani",
+    "country_opt_PL": "Poola",
+    "country_opt_DE": "Saksamaa",
+    "country_opt_IS": "Island",
+    "country_opt_LV": "Läti",
+    "country_opt_LT": "Leedu"
   }
 }

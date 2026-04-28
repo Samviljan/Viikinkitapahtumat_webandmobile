@@ -104,6 +104,9 @@ async def get_current_user(request: Request) -> dict:
         user.setdefault("user_types", [])
         user.setdefault("merchant_name", None)
         user.setdefault("organizer_name", None)
+        user.setdefault("association_name", None)
+        user.setdefault("country", None)
+        user.setdefault("profile_image_url", None)
         user.setdefault("consent_organizer_messages", False)
         user.setdefault("consent_merchant_offers", False)
         user.setdefault("saved_search", None)
@@ -149,6 +152,9 @@ class UserOut(BaseModel):
     has_password: bool = True
     merchant_name: Optional[str] = None
     organizer_name: Optional[str] = None
+    association_name: Optional[str] = None
+    country: Optional[str] = None
+    profile_image_url: Optional[str] = None
     consent_organizer_messages: bool = False
     consent_merchant_offers: bool = False
     saved_search: Optional[SavedSearch] = None
@@ -156,6 +162,7 @@ class UserOut(BaseModel):
 
 
 USER_TYPES = {"reenactor", "fighter", "merchant", "organizer"}
+VALID_COUNTRIES = {"FI", "SE", "EE", "NO", "DK", "PL", "DE", "IS", "LV", "LT"}
 
 
 class RegisterRequest(BaseModel):
@@ -174,6 +181,9 @@ class ProfileUpdate(BaseModel):
     user_types: Optional[List[str]] = None
     merchant_name: Optional[str] = None
     organizer_name: Optional[str] = None
+    association_name: Optional[str] = None
+    country: Optional[str] = None
+    profile_image_url: Optional[str] = None
     consent_organizer_messages: Optional[bool] = None
     consent_merchant_offers: Optional[bool] = None
     saved_search: Optional[SavedSearch] = None
@@ -389,6 +399,9 @@ async def login(payload: LoginRequest, response: Response):
         "user_types": user.get("user_types", []),
         "merchant_name": user.get("merchant_name"),
         "organizer_name": user.get("organizer_name"),
+        "association_name": user.get("association_name"),
+        "country": user.get("country"),
+        "profile_image_url": user.get("profile_image_url"),
         "consent_organizer_messages": bool(user.get("consent_organizer_messages", False)),
         "consent_merchant_offers": bool(user.get("consent_merchant_offers", False)),
         "saved_search": user.get("saved_search"),
@@ -600,6 +613,23 @@ async def update_profile(
         update["merchant_name"] = payload.merchant_name.strip() or None
     if payload.organizer_name is not None:
         update["organizer_name"] = payload.organizer_name.strip() or None
+    if payload.association_name is not None:
+        update["association_name"] = payload.association_name.strip() or None
+    if payload.country is not None:
+        cc = payload.country.strip().upper()
+        if cc and cc not in VALID_COUNTRIES:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid country code: {cc}"
+            )
+        update["country"] = cc or None
+    if payload.profile_image_url is not None:
+        url = payload.profile_image_url.strip()
+        # Allow our own /api/uploads/profile-images/* path or empty (=clear)
+        if url and not url.startswith("/api/uploads/profile-images/"):
+            raise HTTPException(
+                status_code=400, detail="Invalid profile image URL"
+            )
+        update["profile_image_url"] = url or None
     if payload.consent_organizer_messages is not None:
         update["consent_organizer_messages"] = bool(payload.consent_organizer_messages)
     if payload.consent_merchant_offers is not None:
@@ -1468,6 +1498,91 @@ async def serve_event_image(filename: str):
         Path(filename).suffix.lower(), "application/octet-stream"
     )
     stream = await _bucket().open_download_stream_by_name(filename)
+    data = await stream.read()
+    return Response(
+        content=data,
+        media_type=ctype,
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
+
+
+# -----------------------------------------------------------------------------
+# Profile image upload (auth required)
+# Stored in a dedicated GridFS bucket so we can apply different size/policy
+# limits later (e.g. 2 MB cap, force square crop) without affecting events.
+# -----------------------------------------------------------------------------
+_profile_bucket: Optional[AsyncIOMotorGridFSBucket] = None
+
+
+def _profile_image_bucket() -> AsyncIOMotorGridFSBucket:
+    global _profile_bucket
+    if _profile_bucket is None:
+        _profile_bucket = AsyncIOMotorGridFSBucket(db, bucket_name="profile_images")
+    return _profile_bucket
+
+
+MAX_PROFILE_IMAGE_BYTES = 3 * 1024 * 1024  # 3 MB — avatars don't need to be huge
+
+
+@api_router.post("/uploads/profile-image", status_code=201)
+async def upload_profile_image(
+    file: UploadFile = File(...), user: dict = Depends(get_current_user)
+):
+    """Upload a profile picture and persist its URL onto the user document.
+
+    Auth required (so anonymous abuse is impossible). Returns the public URL
+    that the client can also store independently (already saved server-side).
+    """
+    ctype = (file.content_type or "").lower()
+    ext = (Path(file.filename or "").suffix or "").lower()
+    if ctype not in ALLOWED_IMAGE_MIME and ext not in ALLOWED_IMAGE_EXT:
+        raise HTTPException(status_code=415, detail="Only image files are allowed")
+    if not ext:
+        ext = {
+            "image/jpeg": ".jpg",
+            "image/png": ".png",
+            "image/webp": ".webp",
+            "image/gif": ".gif",
+        }.get(ctype, ".jpg")
+    if not ctype:
+        ctype = MIME_FOR_EXT.get(ext, "application/octet-stream")
+
+    body = await file.read()
+    if len(body) == 0:
+        raise HTTPException(status_code=400, detail="Empty file")
+    if len(body) > MAX_PROFILE_IMAGE_BYTES:
+        raise HTTPException(status_code=413, detail="Profile picture too large (max 3 MB)")
+
+    filename = f"{user['id']}_{uuid.uuid4().hex[:8]}{ext}"
+    await _profile_image_bucket().upload_from_stream(
+        filename,
+        body,
+        metadata={
+            "content_type": ctype,
+            "owner_id": user["id"],
+            "original_name": file.filename or filename,
+        },
+    )
+    url = f"/api/uploads/profile-images/{filename}"
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"profile_image_url": url}},
+    )
+    return {"url": url}
+
+
+@api_router.get("/uploads/profile-images/{filename}")
+async def serve_profile_image(filename: str):
+    """Stream a profile picture stored in GridFS."""
+    doc = await db["profile_images.files"].find_one(
+        {"filename": filename}, {"_id": 1, "metadata": 1}
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Image not found")
+    ctype = (doc.get("metadata") or {}).get("content_type") or MIME_FOR_EXT.get(
+        Path(filename).suffix.lower(), "application/octet-stream"
+    )
+    stream = await _profile_image_bucket().open_download_stream_by_name(filename)
     data = await stream.read()
     return Response(
         content=data,

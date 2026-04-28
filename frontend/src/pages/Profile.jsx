@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -6,26 +6,36 @@ import { useI18n } from "@/lib/i18n";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { LogOut, Check, Shield } from "lucide-react";
+import { LogOut, Check, Shield, Camera, Trash2 } from "lucide-react";
 import { ConsentBlock } from "@/pages/Register";
 import AttendingList from "@/components/AttendingList";
 import SavedSearchEditor from "@/components/SavedSearchEditor";
+import { api } from "@/lib/api";
 
 const fieldClass =
   "bg-viking-surface border-viking-edge rounded-sm text-viking-bone placeholder:text-viking-stone focus:border-viking-ember focus:ring-viking-ember";
 
 const ALL_TYPES = ["reenactor", "fighter", "merchant", "organizer"];
 
+// ISO-3166 alpha-2 codes valid for the user `country` field.
+// Must stay in sync with VALID_COUNTRIES on the backend.
+const COUNTRIES = ["FI", "SE", "EE", "NO", "DK", "PL", "DE", "IS", "LV", "LT"];
+
 export default function Profile() {
-  const { user, loading, updateProfile, logout } = useAuth();
+  const { user, loading, updateProfile, logout, refresh } = useAuth();
   const { t } = useI18n();
   const [nickname, setNickname] = useState("");
   const [types, setTypes] = useState([]);
   const [merchantName, setMerchantName] = useState("");
   const [organizerName, setOrganizerName] = useState("");
+  const [associationName, setAssociationName] = useState("");
+  const [country, setCountry] = useState("");
+  const [profileImageUrl, setProfileImageUrl] = useState("");
   const [consentOrganizer, setConsentOrganizer] = useState(false);
   const [consentMerchant, setConsentMerchant] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (user && user.role) {
@@ -33,6 +43,9 @@ export default function Profile() {
       setTypes(user.user_types || []);
       setMerchantName(user.merchant_name || "");
       setOrganizerName(user.organizer_name || "");
+      setAssociationName(user.association_name || "");
+      setCountry(user.country || "");
+      setProfileImageUrl(user.profile_image_url || "");
       setConsentOrganizer(!!user.consent_organizer_messages);
       setConsentMerchant(!!user.consent_merchant_offers);
     }
@@ -73,6 +86,8 @@ export default function Profile() {
         user_types: types,
         merchant_name: types.includes("merchant") ? merchantName.trim() : "",
         organizer_name: types.includes("organizer") ? organizerName.trim() : "",
+        association_name: associationName.trim(),
+        country: country || "",
         consent_organizer_messages: consentOrganizer,
         consent_merchant_offers: consentMerchant,
       });
@@ -84,15 +99,95 @@ export default function Profile() {
     }
   }
 
+  async function onPickAvatar(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error(t("account.avatar_too_large"));
+      e.target.value = "";
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const { data } = await api.post("/uploads/profile-image", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setProfileImageUrl(data.url);
+      await refresh();
+      toast.success(t("account.avatar_saved"));
+    } catch (err) {
+      toast.error(t("account.error_generic"));
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function onRemoveAvatar() {
+    if (!profileImageUrl) return;
+    try {
+      await updateProfile({ profile_image_url: "" });
+      setProfileImageUrl("");
+      toast.success(t("account.avatar_removed"));
+    } catch {
+      toast.error(t("account.error_generic"));
+    }
+  }
+
   const initial = (nickname || user.email || "?").charAt(0).toUpperCase();
   const isAdmin = user.role === "admin";
+  const avatarSrc = profileImageUrl
+    ? `${process.env.REACT_APP_BACKEND_URL}${profileImageUrl}`
+    : null;
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-8 py-12 sm:py-16">
       {/* Header */}
       <div className="flex items-center gap-4 mb-10" data-testid="profile-header">
-        <div className="h-14 w-14 rounded-sm border border-viking-gold/60 bg-viking-gold/10 flex items-center justify-center text-viking-gold font-serif text-2xl">
-          {initial}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingAvatar}
+            data-testid="profile-avatar-edit"
+            className="h-16 w-16 rounded-sm border border-viking-gold/60 bg-viking-gold/10 flex items-center justify-center text-viking-gold font-serif text-2xl overflow-hidden relative group hover:border-viking-gold transition-colors"
+            title={t("account.avatar_change")}
+          >
+            {avatarSrc ? (
+              <img
+                src={avatarSrc}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover"
+                data-testid="profile-avatar-image"
+              />
+            ) : (
+              <span>{initial}</span>
+            )}
+            <span className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <Camera className="w-5 h-5 text-viking-bone" />
+            </span>
+          </button>
+          {profileImageUrl && (
+            <button
+              type="button"
+              onClick={onRemoveAvatar}
+              data-testid="profile-avatar-remove"
+              className="absolute -top-1.5 -right-1.5 h-6 w-6 rounded-full bg-viking-surface border border-viking-edge text-viking-stone hover:text-viking-ember hover:border-viking-ember transition-colors flex items-center justify-center"
+              title={t("account.avatar_remove")}
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={onPickAvatar}
+            className="hidden"
+            data-testid="profile-avatar-input"
+          />
         </div>
         <div className="flex-1">
           <div className="text-overline">{t("account.profile")}</div>
@@ -190,6 +285,46 @@ export default function Profile() {
               </p>
             </div>
           )}
+
+          <div className="space-y-2" data-testid="profile-association-block">
+            <Label className="text-overline">
+              {t("account.association_name_label")}
+            </Label>
+            <Input
+              type="text"
+              data-testid="profile-association-name"
+              value={associationName}
+              onChange={(e) => setAssociationName(e.target.value)}
+              className={fieldClass}
+              placeholder={t("account.association_name_placeholder")}
+            />
+            <p className="text-[11px] text-viking-stone italic">
+              {t("account.association_name_help")}
+            </p>
+          </div>
+
+          <div className="space-y-2" data-testid="profile-country-block">
+            <Label className="text-overline" htmlFor="profile-country">
+              {t("account.country_label")}
+            </Label>
+            <select
+              id="profile-country"
+              data-testid="profile-country"
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              className={`${fieldClass} h-11 w-full px-3 cursor-pointer`}
+            >
+              <option value="">{t("account.country_none")}</option>
+              {COUNTRIES.map((c) => (
+                <option key={c} value={c}>
+                  {t(`account.country_opt_${c}`)}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-viking-stone italic">
+              {t("account.country_help")}
+            </p>
+          </div>
 
           <ConsentBlock
             t={t}
