@@ -6,7 +6,8 @@ import { useI18n } from "@/lib/i18n";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { UserCircle2, LogOut, Check, Shield } from "lucide-react";
+import { LogOut, Check, Shield } from "lucide-react";
+import { ConsentBlock } from "@/pages/Register";
 
 const fieldClass =
   "bg-viking-surface border-viking-edge rounded-sm text-viking-bone placeholder:text-viking-stone focus:border-viking-ember focus:ring-viking-ember";
@@ -18,12 +19,20 @@ export default function Profile() {
   const { t } = useI18n();
   const [nickname, setNickname] = useState("");
   const [types, setTypes] = useState([]);
+  const [merchantName, setMerchantName] = useState("");
+  const [organizerName, setOrganizerName] = useState("");
+  const [consentOrganizer, setConsentOrganizer] = useState(false);
+  const [consentMerchant, setConsentMerchant] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (user && user.role) {
       setNickname(user.nickname || user.name || "");
       setTypes(user.user_types || []);
+      setMerchantName(user.merchant_name || "");
+      setOrganizerName(user.organizer_name || "");
+      setConsentOrganizer(!!user.consent_organizer_messages);
+      setConsentMerchant(!!user.consent_merchant_offers);
     }
   }, [user]);
 
@@ -47,9 +56,24 @@ export default function Profile() {
   async function onSave(e) {
     e.preventDefault();
     if (!nickname.trim()) return;
+    if (types.includes("merchant") && !merchantName.trim()) {
+      toast.error(t("account.merchant_name_help"));
+      return;
+    }
+    if (types.includes("organizer") && !organizerName.trim()) {
+      toast.error(t("account.organizer_name_help"));
+      return;
+    }
     setSaving(true);
     try {
-      await updateProfile({ nickname: nickname.trim(), user_types: types });
+      await updateProfile({
+        nickname: nickname.trim(),
+        user_types: types,
+        merchant_name: types.includes("merchant") ? merchantName.trim() : "",
+        organizer_name: types.includes("organizer") ? organizerName.trim() : "",
+        consent_organizer_messages: consentOrganizer,
+        consent_merchant_offers: consentMerchant,
+      });
       toast.success(t("account.profile_saved"));
     } catch (err) {
       toast.error(t("account.error_generic"));
@@ -130,6 +154,51 @@ export default function Profile() {
               })}
             </div>
           </div>
+
+          {types.includes("merchant") && (
+            <div className="space-y-2" data-testid="profile-merchant-name-block">
+              <Label className="text-overline">{t("account.merchant_name_label")}</Label>
+              <Input
+                type="text"
+                required
+                data-testid="profile-merchant-name"
+                value={merchantName}
+                onChange={(e) => setMerchantName(e.target.value)}
+                className={fieldClass}
+              />
+              <p className="text-[11px] text-viking-stone italic">
+                {t("account.merchant_name_help")}
+              </p>
+            </div>
+          )}
+
+          {types.includes("organizer") && (
+            <div className="space-y-2" data-testid="profile-organizer-name-block">
+              <Label className="text-overline">{t("account.organizer_name_label")}</Label>
+              <Input
+                type="text"
+                required
+                data-testid="profile-organizer-name"
+                value={organizerName}
+                onChange={(e) => setOrganizerName(e.target.value)}
+                className={fieldClass}
+              />
+              <p className="text-[11px] text-viking-stone italic">
+                {t("account.organizer_name_help")}
+              </p>
+            </div>
+          )}
+
+          <ConsentBlock
+            t={t}
+            organizer={consentOrganizer}
+            merchant={consentMerchant}
+            onChange={(field, val) => {
+              if (field === "organizer") setConsentOrganizer(val);
+              else setConsentMerchant(val);
+            }}
+            testIdPrefix="profile"
+          />
 
           <Button
             type="submit"

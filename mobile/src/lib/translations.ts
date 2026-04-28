@@ -103,6 +103,25 @@ interface Dict {
     profile_save: string;
     profile_saved: string;
     confirm_sign_out: string;
+    forgot: string;
+    forgot_title: string;
+    forgot_sub: string;
+    forgot_send: string;
+    forgot_sent: string;
+    back_to_signin: string;
+    merchant_name_label: string;
+    merchant_name_help: string;
+    organizer_name_label: string;
+    organizer_name_help: string;
+  };
+  attend: {
+    mark_attending: string;
+    attending: string;
+    sign_in_to_attend: string;
+    notify_title: string;
+    notify_help: string;
+    notify_email: string;
+    notify_push: string;
   };
   info: {
     title: string;
@@ -241,6 +260,28 @@ export const translations: Record<Lang, Dict> = {
       profile_save: "Tallenna",
       profile_saved: "Profiili tallennettu",
       confirm_sign_out: "Kirjaudutaanko ulos?",
+      forgot: "Unohtuiko salasana?",
+      forgot_title: "Salasanan palautus",
+      forgot_sub:
+        "Anna sähköpostisi. Lähetämme linkin uuden salasanan asettamiseen. Linkki vanhenee 60 minuutissa.",
+      forgot_send: "Lähetä palautuslinkki",
+      forgot_sent:
+        "Jos antamasi sähköpostiosoite on rekisteröity, lähetimme sinulle salasanan palautuslinkin.",
+      back_to_signin: "Takaisin kirjautumiseen",
+      merchant_name_label: "Kaupan nimi",
+      merchant_name_help: "Pakollinen kun valittuna 'Kauppias'.",
+      organizer_name_label: "Tapahtuman tai järjestäjän nimi",
+      organizer_name_help: "Pakollinen kun valittuna 'Tapahtumajärjestäjä'.",
+    },
+    attend: {
+      mark_attending: "Merkitse osallistuvaksi",
+      attending: "Osallistut — peruuta",
+      sign_in_to_attend: "Kirjaudu osallistuaksesi",
+      notify_title: "Muistutukset tapahtumasta",
+      notify_help:
+        "Saat muistutuksia ennen tapahtumaa valitsemallasi tavalla. Voit vaihtaa näitä asetuksia milloin tahansa.",
+      notify_email: "Muistuta sähköpostilla",
+      notify_push: "Muistuta push-viestillä",
     },
     info: {
       title: "Tietoa sovelluksesta",
@@ -375,6 +416,28 @@ export const translations: Record<Lang, Dict> = {
       profile_save: "Save",
       profile_saved: "Profile saved",
       confirm_sign_out: "Sign out?",
+      forgot: "Forgot password?",
+      forgot_title: "Reset password",
+      forgot_sub:
+        "Enter your email. We'll send you a link to set a new password. The link expires in 60 minutes.",
+      forgot_send: "Send reset link",
+      forgot_sent:
+        "If that email address is registered, we've sent you a password reset link.",
+      back_to_signin: "Back to sign in",
+      merchant_name_label: "Shop name",
+      merchant_name_help: "Required when 'Merchant' is selected.",
+      organizer_name_label: "Event or organization name",
+      organizer_name_help: "Required when 'Event organizer' is selected.",
+    },
+    attend: {
+      mark_attending: "Mark as attending",
+      attending: "Attending — cancel",
+      sign_in_to_attend: "Sign in to attend",
+      notify_title: "Reminders about this event",
+      notify_help:
+        "You'll receive reminders before the event using the channels you choose. You can change these any time.",
+      notify_email: "Remind me by email",
+      notify_push: "Remind me by push",
     },
     info: {
       title: "About the app",
@@ -508,6 +571,28 @@ export const translations: Record<Lang, Dict> = {
       profile_save: "Spara",
       profile_saved: "Profil sparad",
       confirm_sign_out: "Logga ut?",
+      forgot: "Glömt lösenord?",
+      forgot_title: "Återställ lösenord",
+      forgot_sub:
+        "Ange din e-postadress. Vi skickar en länk för att ange ett nytt lösenord. Länken är giltig i 60 minuter.",
+      forgot_send: "Skicka återställningslänk",
+      forgot_sent:
+        "Om e-postadressen är registrerad har vi skickat en återställningslänk.",
+      back_to_signin: "Tillbaka till inloggning",
+      merchant_name_label: "Butikens namn",
+      merchant_name_help: "Krävs när 'Handelsman' är valt.",
+      organizer_name_label: "Evenemangets eller organisationens namn",
+      organizer_name_help: "Krävs när 'Evenemangsarrangör' är valt.",
+    },
+    attend: {
+      mark_attending: "Markera deltagande",
+      attending: "Deltar — avbryt",
+      sign_in_to_attend: "Logga in för att delta",
+      notify_title: "Påminnelser om evenemanget",
+      notify_help:
+        "Du får påminnelser före evenemanget på de sätt du valt. Du kan ändra inställningarna när som helst.",
+      notify_email: "Påminn via e-post",
+      notify_push: "Påminn via push",
     },
     info: {
       title: "Om appen",

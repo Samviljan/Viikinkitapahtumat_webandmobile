@@ -223,6 +223,47 @@ const TRANSLATIONS = {
       method_google: "Google",
       role_admin: "Ylläpitäjä",
       role_user: "Käyttäjä",
+      // Forgot / reset password
+      forgot_title: "Salasanan palautus",
+      forgot_sub:
+        "Anna sähköpostiosoitteesi. Lähetämme sinulle linkin, jolla voit asettaa uuden salasanan. Linkki vanhenee 60 minuutissa.",
+      forgot_send: "Lähetä palautuslinkki",
+      forgot_sent:
+        "Jos antamasi sähköpostiosoite on rekisteröity, lähetimme sinulle salasanan palautuslinkin.",
+      forgot_sent_help:
+        "Tarkista myös roskapostikansio. Linkki on voimassa 60 minuuttia.",
+      back_to_login: "Takaisin kirjautumiseen",
+      reset_title: "Aseta uusi salasana",
+      reset_sub: "Anna uusi salasanasi. Vähintään 8 merkkiä.",
+      reset_submit: "Vaihda salasana",
+      reset_success: "Salasana vaihdettu. Sinut ohjataan kirjautumissivulle.",
+      reset_error: "Linkki on virheellinen tai vanhentunut. Pyydä uusi linkki.",
+      reset_invalid: "Salasanan palautuslinkki puuttuu tai on virheellinen.",
+      new_password: "Uusi salasana",
+      // Merchant / organizer name
+      merchant_name_label: "Kaupan nimi",
+      merchant_name_help: "Pakollinen kun valittuna 'Kauppias'.",
+      organizer_name_label: "Tapahtuman tai järjestäjän nimi",
+      organizer_name_help: "Pakollinen kun valittuna 'Tapahtumajärjestäjä'.",
+      // Marketing consents (must match /app/frontend/src/lib/consents.js)
+      consents_title: "Viestit osallistumistasi tapahtumista",
+      consents_help:
+        "Saat viestejä vain niistä tapahtumista, joihin olet merkinnyt osallistuvasi. Voit muuttaa valintoja milloin tahansa profiilissa.",
+      consent_organizer_messages:
+        "Haluan vastaanottaa tapahtumajärjestäjiltä tietoa tapahtumista, joihin olen merkinnyt osallistuvani — push-viesteinä tai sähköpostiin.",
+      consent_merchant_offers:
+        "Haluan vastaanottaa kauppiailta tarjouksia ja erikoiskampanjoita osallistumistani tapahtumista — push-viesteinä tai sähköpostiin.",
+      forgot: "Unohtuiko salasana?",
+    },
+    attend: {
+      mark_attending: "Merkitse osallistuvaksi",
+      attending: "Osallistut — peruuta",
+      sign_in_to_attend: "Kirjaudu osallistuaksesi",
+      notify_title: "Muistutukset tapahtumasta",
+      notify_help:
+        "Saat muistutuksia ennen tapahtumaa valitsemallasi tavalla. Voit vaihtaa näitä asetuksia milloin tahansa.",
+      notify_email: "Muistuta sähköpostilla",
+      notify_push: "Muistuta push-viestillä (mobiilisovellus)",
     },
     about: undefined,
     courses: {
@@ -577,6 +618,43 @@ const TRANSLATIONS = {
       method_google: "Google",
       role_admin: "Administrator",
       role_user: "Member",
+      forgot_title: "Reset password",
+      forgot_sub:
+        "Enter your email address. We'll send you a link to set a new password. The link expires in 60 minutes.",
+      forgot_send: "Send reset link",
+      forgot_sent:
+        "If that email address is registered, we've sent you a password reset link.",
+      forgot_sent_help: "Check your spam folder too. The link is valid for 60 minutes.",
+      back_to_login: "Back to sign in",
+      reset_title: "Set a new password",
+      reset_sub: "Enter your new password. At least 8 characters.",
+      reset_submit: "Change password",
+      reset_success: "Password changed. Redirecting to sign in.",
+      reset_error: "The link is invalid or expired. Please request a new one.",
+      reset_invalid: "Password reset link is missing or invalid.",
+      new_password: "New password",
+      merchant_name_label: "Shop name",
+      merchant_name_help: "Required when 'Merchant' is selected.",
+      organizer_name_label: "Event or organization name",
+      organizer_name_help: "Required when 'Event organizer' is selected.",
+      consents_title: "Messages about events you attend",
+      consents_help:
+        "You'll only receive messages about events you've marked as attending. You can change these preferences any time in your profile.",
+      consent_organizer_messages:
+        "I want to receive information from event organizers about events I've marked as attending — by push notification or email.",
+      consent_merchant_offers:
+        "I want to receive offers and special campaigns from merchants about events I've marked as attending — by push notification or email.",
+      forgot: "Forgot password?",
+    },
+    attend: {
+      mark_attending: "Mark as attending",
+      attending: "Attending — cancel",
+      sign_in_to_attend: "Sign in to attend",
+      notify_title: "Reminders about this event",
+      notify_help:
+        "You'll receive reminders before the event using the channels you choose. You can change these any time.",
+      notify_email: "Remind me by email",
+      notify_push: "Remind me by push (mobile app)",
     },
     about: undefined,
     courses: {
@@ -925,6 +1003,43 @@ const TRANSLATIONS = {
       method_google: "Google",
       role_admin: "Administratör",
       role_user: "Medlem",
+      forgot_title: "Återställ lösenord",
+      forgot_sub:
+        "Ange din e-postadress. Vi skickar en länk för att ange ett nytt lösenord. Länken är giltig i 60 minuter.",
+      forgot_send: "Skicka återställningslänk",
+      forgot_sent:
+        "Om e-postadressen är registrerad har vi skickat en återställningslänk.",
+      forgot_sent_help: "Kontrollera även skräpposten. Länken är giltig i 60 minuter.",
+      back_to_login: "Tillbaka till inloggning",
+      reset_title: "Ange nytt lösenord",
+      reset_sub: "Ange ditt nya lösenord. Minst 8 tecken.",
+      reset_submit: "Byt lösenord",
+      reset_success: "Lösenordet ändrat. Du dirigeras till inloggningssidan.",
+      reset_error: "Länken är ogiltig eller utgången. Begär en ny länk.",
+      reset_invalid: "Återställningslänken saknas eller är ogiltig.",
+      new_password: "Nytt lösenord",
+      merchant_name_label: "Butikens namn",
+      merchant_name_help: "Krävs när 'Handelsman' är valt.",
+      organizer_name_label: "Evenemangets eller organisationens namn",
+      organizer_name_help: "Krävs när 'Evenemangsarrangör' är valt.",
+      consents_title: "Meddelanden om evenemang du deltar i",
+      consents_help:
+        "Du får endast meddelanden om evenemang du markerat att du deltar i. Du kan ändra inställningarna när som helst i din profil.",
+      consent_organizer_messages:
+        "Jag vill ta emot information från evenemangsarrangörer om evenemang jag markerat att jag deltar i — som push-meddelande eller e-post.",
+      consent_merchant_offers:
+        "Jag vill ta emot erbjudanden och specialkampanjer från handelsmän om evenemang jag markerat att jag deltar i — som push-meddelande eller e-post.",
+      forgot: "Glömt lösenord?",
+    },
+    attend: {
+      mark_attending: "Markera deltagande",
+      attending: "Deltar — avbryt",
+      sign_in_to_attend: "Logga in för att delta",
+      notify_title: "Påminnelser om evenemanget",
+      notify_help:
+        "Du får påminnelser före evenemanget på de sätt du valt. Du kan ändra inställningarna när som helst.",
+      notify_email: "Påminn via e-post",
+      notify_push: "Påminn via push (mobilappen)",
     },
     about: undefined,
     courses: {

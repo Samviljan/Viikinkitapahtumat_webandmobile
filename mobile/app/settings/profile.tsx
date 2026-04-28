@@ -23,15 +23,21 @@ import { AppBackground } from "@/src/components/AppBackground";
 import { colors, radius, spacing, text } from "@/src/lib/theme";
 import { useSettings } from "@/src/lib/i18n";
 import { useAuth, type UserType } from "@/src/lib/auth";
+import { getConsentTexts } from "@/src/lib/consents";
 
 const ALL_TYPES: UserType[] = ["reenactor", "fighter", "merchant", "organizer"];
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { t } = useSettings();
-  const { user, signOut, updateProfile, loading } = useAuth();
+  const { t, lang } = useSettings();
+  const { user, signOut, updateProfile } = useAuth();
+  const consentTexts = getConsentTexts(lang);
   const [nickname, setNickname] = useState("");
   const [types, setTypes] = useState<UserType[]>([]);
+  const [merchantName, setMerchantName] = useState("");
+  const [organizerName, setOrganizerName] = useState("");
+  const [consentOrganizer, setConsentOrganizer] = useState(false);
+  const [consentMerchant, setConsentMerchant] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedHint, setSavedHint] = useState(false);
 
@@ -39,6 +45,10 @@ export default function ProfileScreen() {
     if (user) {
       setNickname(user.nickname || user.name || "");
       setTypes(user.user_types || []);
+      setMerchantName(user.merchant_name || "");
+      setOrganizerName(user.organizer_name || "");
+      setConsentOrganizer(!!user.consent_organizer_messages);
+      setConsentMerchant(!!user.consent_merchant_offers);
     }
   }, [user]);
 
@@ -50,9 +60,24 @@ export default function ProfileScreen() {
 
   async function save() {
     if (!user) return;
+    if (types.includes("merchant") && !merchantName.trim()) {
+      Alert.alert(t("auth.merchant_name_help"));
+      return;
+    }
+    if (types.includes("organizer") && !organizerName.trim()) {
+      Alert.alert(t("auth.organizer_name_help"));
+      return;
+    }
     setSaving(true);
     try {
-      await updateProfile({ nickname: nickname.trim(), user_types: types });
+      await updateProfile({
+        nickname: nickname.trim(),
+        user_types: types,
+        merchant_name: types.includes("merchant") ? merchantName.trim() : "",
+        organizer_name: types.includes("organizer") ? organizerName.trim() : "",
+        consent_organizer_messages: consentOrganizer,
+        consent_merchant_offers: consentMerchant,
+      });
       setSavedHint(true);
       setTimeout(() => setSavedHint(false), 1500);
     } catch {
@@ -89,7 +114,7 @@ export default function ProfileScreen() {
           <View style={{ width: 40 }} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           {!user ? (
             <View style={styles.signedOut} testID="signed-out-state">
               <Ionicons
@@ -178,6 +203,60 @@ export default function ProfileScreen() {
                 })}
               </View>
 
+              {types.includes("merchant") ? (
+                <View testID="profile-merchant-name-block">
+                  <Text style={[styles.label, { marginTop: spacing.lg }]}>
+                    {t("auth.merchant_name_label")}
+                  </Text>
+                  <TextInput
+                    testID="profile-merchant-name"
+                    value={merchantName}
+                    onChangeText={setMerchantName}
+                    style={styles.input}
+                    placeholderTextColor={colors.stone}
+                    autoCapitalize="words"
+                  />
+                  <Text style={styles.help}>{t("auth.merchant_name_help")}</Text>
+                </View>
+              ) : null}
+
+              {types.includes("organizer") ? (
+                <View testID="profile-organizer-name-block">
+                  <Text style={[styles.label, { marginTop: spacing.lg }]}>
+                    {t("auth.organizer_name_label")}
+                  </Text>
+                  <TextInput
+                    testID="profile-organizer-name"
+                    value={organizerName}
+                    onChangeText={setOrganizerName}
+                    style={styles.input}
+                    placeholderTextColor={colors.stone}
+                    autoCapitalize="words"
+                  />
+                  <Text style={styles.help}>{t("auth.organizer_name_help")}</Text>
+                </View>
+              ) : null}
+
+              {/* Marketing consents — wording must match web app exactly. */}
+              <View style={styles.consentBlock} testID="profile-consents">
+                <Text style={[styles.label, { marginTop: spacing.md }]}>
+                  {consentTexts.section_title}
+                </Text>
+                <Text style={styles.help}>{consentTexts.section_help}</Text>
+                <ConsentRow
+                  testID="profile-consent-organizer"
+                  active={consentOrganizer}
+                  label={consentTexts.consent_organizer_messages}
+                  onPress={() => setConsentOrganizer((v) => !v)}
+                />
+                <ConsentRow
+                  testID="profile-consent-merchant"
+                  active={consentMerchant}
+                  label={consentTexts.consent_merchant_offers}
+                  onPress={() => setConsentMerchant((v) => !v)}
+                />
+              </View>
+
               <Pressable
                 testID="profile-save"
                 onPress={save}
@@ -216,6 +295,34 @@ export default function ProfileScreen() {
         ) : null}
       </SafeAreaView>
     </AppBackground>
+  );
+}
+
+function ConsentRow({
+  testID,
+  active,
+  label,
+  onPress,
+}: {
+  testID: string;
+  active: boolean;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      testID={testID}
+      onPress={onPress}
+      style={[styles.consentRow, active && styles.consentRowActive]}
+    >
+      <Ionicons
+        name={active ? "checkbox" : "square-outline"}
+        size={16}
+        color={active ? colors.gold : colors.stone}
+        style={{ marginTop: 2 }}
+      />
+      <Text style={[styles.consentText, active && styles.consentTextActive]}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -373,5 +480,36 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
     letterSpacing: 1,
+  },
+  consentBlock: {
+    marginTop: spacing.lg,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.edge,
+  },
+  consentRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.edge,
+    backgroundColor: "rgba(26,20,17,0.7)",
+    marginBottom: 8,
+  },
+  consentRowActive: {
+    borderColor: colors.gold,
+    backgroundColor: "rgba(201,161,74,0.12)",
+  },
+  consentText: {
+    flex: 1,
+    color: colors.stone,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  consentTextActive: {
+    color: colors.bone,
   },
 });

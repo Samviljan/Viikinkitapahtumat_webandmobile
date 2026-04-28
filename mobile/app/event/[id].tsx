@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { resolveImageUrl } from "@/src/api/client";
 import { useEvent } from "@/src/hooks/useEvents";
 import { useFavorites } from "@/src/hooks/useFavorites";
+import { AttendBlock } from "@/src/components/AttendBlock";
 import { flagFor } from "@/src/lib/countries";
 import {
   countdownLabel,
@@ -143,6 +144,8 @@ export default function EventDetail() {
             </Pressable>
           ) : null}
         </View>
+
+        <AttendBlock eventId={ev.id} />
 
         <Text style={styles.description}>
           {localized(ev as unknown as Record<string, unknown>, "description", lang) || ev.description_fi}

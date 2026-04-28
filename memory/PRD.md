@@ -361,6 +361,27 @@ See `/app/memory/test_credentials.md`.
 - ✅ **Päästä päähän verifioitu Playwright-skriptillä**: rekisteröinti → automaattinen redirect /profile → muokkaa nickname & user_types → tallenna → kirjaudu ulos → kirjaudu sisään uudelleen → profiili pysyi tallessa. Admin-flow erikseen vahvistettu (admin@viikinkitapahtumat.fi pääsee /admin-paneeliin ja näkee dropdownissa sekä Profiilin että Ylläpito-linkin).
 - ✅ Lint puhdas (ESLint).
 
+## Iteration — Forgot password, RSVP, Marketing consents, Merchant/Organizer profile (Web + Mobile, 2026-04-28)
+- ✅ **Backend laajennukset** (`/app/backend/server.py`):
+  - `users`-skeema sai uudet kentät: `merchant_name`, `organizer_name`, `consent_organizer_messages` (default false), `consent_merchant_offers` (default false), `password_reset_token`, `password_reset_expires`.
+  - `POST /api/auth/forgot-password` (60min TTL, ei email-enumeraatiota — palauttaa aina 200, lähettää sähköpostin Resendin kautta vain jos osoite on rekisteröity password_hashin kanssa).
+  - `POST /api/auth/reset-password` (token+new_password, 8 merkin minimi, kuluttaa tokenin onnistumisessa).
+  - `POST/DELETE/GET /api/events/{id}/attend` — RSVP per-tapahtuma, tallentaa `notify_email` + `notify_push` -preferenssit. `GET /api/users/me/attending` palauttaa kaikki osallistumiset event-objekteineen.
+  - `POST /api/auth/register` validoi `merchant_name`-pakollisuuden kun `merchant` on user_typesissä, vastaava `organizer_name`. `PATCH /api/auth/profile` validoi saman ja TYHJENTÄÄ kentät kun käyttäjä poistaa rooliäänen.
+  - `email_service.py`: lisätty `send_password_reset` (suomenkielinen pohja, iso "Vaihda salasana"-painike, viittaa `PUBLIC_SITE_URL/reset-password?token=...`-sivuun).
+- ✅ **Web — Forgot/Reset password UI**: `/forgot-password` + `/reset-password?token=...` sivut, "Unohtuiko salasana?"-linkki `/login`-sivulla.
+- ✅ **Web — Merchant/Organizer name + opt-in suostumukset**: `Register.jsx` + `Profile.jsx` saivat ehdolliset nimi-kentät (näkyvät vain kun ko. user_type valittuna) ja suostumuskortit. Yhteinen suostumusteksti `/app/frontend/src/lib/consents.js` (FI/EN/SV) + `/app/mobile/src/lib/consents.ts` varmistavat täsmälleen saman muotoilun. Korostettu että viestit koskevat VAIN tapahtumia joihin käyttäjä on merkinnyt osallistuvansa.
+- ✅ **Web — RSVP "Osallistun"-painike** (`components/AttendButton.jsx`): EventDetail-sivulle, anonyymi → "Kirjaudu osallistuaksesi", kirjautunut → "Merkitse osallistuvaksi" + per-tapahtuma push/email-toggle.
+- ✅ **Web — `auth.js` bugi korjattu**: `register`-funktio nielaisi `merchant_name`/consents-kentät. Nyt forwardoidaan koko payload.
+- ✅ **Mobiili — Forgot password screen** (`/app/mobile/app/settings/forgot-password.tsx`): linkki sign-in-modessa, sama UX kuin webissä.
+- ✅ **Mobiili — Auth & Profile -näytöt laajennettu**: ehdolliset merchant/organizer-nimikentät, suostumuskortit (oletuksena pois). Suostumustekstit yhteisestä `consents.ts`-tiedostosta.
+- ✅ **Mobiili — `AttendBlock` lisätty event/[id].tsx-näytölle**: anonyymi → kirjautumis-CTA, kirjautunut → osallistun + push/email-toggle. Synkkaa backendiin per-klikki.
+- ✅ **Profiilisynkronointi vahvistettu**: web ja mobile käyttävät SAMAA backendiä (`/api/auth/me`, `PATCH /api/auth/profile`), SAMAA `users`-kokoelmaa. Päivitys yhdellä alustalla → näkyy heti toisella.
+- ✅ **Päästä päähän vahvistettu Playwrightilla** (web): rekisteröinti merchantina + "Helkas Forge"-kaupanimellä + kauppias-suostumus → kentät säilyivät /profile-sivulla → tapahtumalla "Merkitse osallistuvaksi" → push-toggle → reload säilyttää tilan → uloskirjautuminen → /forgot-password lähetys onnistuu.
+- ✅ **Backend curl-testattu**: register/login/forgot/reset/attend (GET/POST/DELETE)/me/attending kaikki vihreää.
+- ⚠️ **Push-viestien LÄHETTÄMINEN** (Expo Push Service) on ERILLINEN tehtävä (P1). Käyttäjien preferenssit tallentuvat oikein, mutta itse push-viestin lähetys vaatii Expo Push Tokenin tallennuksen + cron-jobin event_attendees-taulun yli.
+- ✅ TypeScript clean (`npx tsc --noEmit`), ESLint clean.
+
 ## Iteration — Mobile i18n + Settings + UX (2026-04-27)
 
 

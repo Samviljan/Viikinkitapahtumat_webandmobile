@@ -27,6 +27,10 @@ export interface AuthUser {
   role: string; // "user" | "admin"
   user_types: UserType[];
   has_password: boolean;
+  merchant_name: string | null;
+  organizer_name: string | null;
+  consent_organizer_messages: boolean;
+  consent_merchant_offers: boolean;
 }
 
 interface AuthCtx {
@@ -37,6 +41,10 @@ interface AuthCtx {
     password: string;
     nickname: string;
     user_types: UserType[];
+    merchant_name?: string | null;
+    organizer_name?: string | null;
+    consent_organizer_messages?: boolean;
+    consent_merchant_offers?: boolean;
   }) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogleSession: (sessionId: string) => Promise<void>;
@@ -44,7 +52,12 @@ interface AuthCtx {
   updateProfile: (patch: {
     nickname?: string;
     user_types?: UserType[];
+    merchant_name?: string | null;
+    organizer_name?: string | null;
+    consent_organizer_messages?: boolean;
+    consent_merchant_offers?: boolean;
   }) => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
 }
 
 const Context = createContext<AuthCtx | null>(null);
@@ -75,7 +88,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signUp = useCallback(
-    async (input: { email: string; password: string; nickname: string; user_types: UserType[] }) => {
+    async (input: {
+      email: string;
+      password: string;
+      nickname: string;
+      user_types: UserType[];
+      merchant_name?: string | null;
+      organizer_name?: string | null;
+      consent_organizer_messages?: boolean;
+      consent_merchant_offers?: boolean;
+    }) => {
       const { data } = await api.post("/auth/register", input);
       setAuthToken(data.token);
       setUser(normalize(data));
@@ -106,12 +128,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateProfile = useCallback(
-    async (patch: { nickname?: string; user_types?: UserType[] }) => {
+    async (patch: {
+      nickname?: string;
+      user_types?: UserType[];
+      merchant_name?: string | null;
+      organizer_name?: string | null;
+      consent_organizer_messages?: boolean;
+      consent_merchant_offers?: boolean;
+    }) => {
       const { data } = await api.patch<AuthUser>("/auth/profile", patch);
       setUser(normalize(data));
     },
     [],
   );
+
+  const forgotPassword = useCallback(async (email: string) => {
+    await api.post("/auth/forgot-password", { email });
+  }, []);
 
   return (
     <Context.Provider
@@ -123,6 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInWithGoogleSession,
         signOut,
         updateProfile,
+        forgotPassword,
       }}
     >
       {children}
@@ -145,5 +179,9 @@ function normalize(raw: Partial<AuthUser>): AuthUser {
     role: raw.role ?? "user",
     user_types: (raw.user_types ?? []) as UserType[],
     has_password: !!raw.has_password,
+    merchant_name: raw.merchant_name ?? null,
+    organizer_name: raw.organizer_name ?? null,
+    consent_organizer_messages: !!raw.consent_organizer_messages,
+    consent_merchant_offers: !!raw.consent_merchant_offers,
   };
 }

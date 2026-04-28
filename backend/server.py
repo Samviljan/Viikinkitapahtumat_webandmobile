@@ -6,6 +6,7 @@ load_dotenv(ROOT_DIR / '.env')
 
 import os
 import logging
+import secrets
 import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Literal
@@ -31,6 +32,7 @@ from email_service import (
     send_weekly_admin_report as svc_send_weekly_admin_report,
     send_reminder_confirmation as svc_send_reminder_confirmation,
     send_event_reminders as svc_send_event_reminders,
+    send_password_reset as svc_send_password_reset,
     make_unsubscribe_token,
 )
 from translation_service import fill_missing_translations
@@ -94,8 +96,14 @@ async def get_current_user(request: Request) -> dict:
         # Google-only users so the frontend can hide the "change password" link.
         user["has_password"] = bool(user.get("password_hash"))
         user.pop("password_hash", None)
+        user.pop("password_reset_token", None)
+        user.pop("password_reset_expires", None)
         user.setdefault("nickname", None)
         user.setdefault("user_types", [])
+        user.setdefault("merchant_name", None)
+        user.setdefault("organizer_name", None)
+        user.setdefault("consent_organizer_messages", False)
+        user.setdefault("consent_merchant_offers", False)
         return user
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
@@ -125,6 +133,10 @@ class UserOut(BaseModel):
     nickname: Optional[str] = None
     user_types: List[str] = []
     has_password: bool = True
+    merchant_name: Optional[str] = None
+    organizer_name: Optional[str] = None
+    consent_organizer_messages: bool = False
+    consent_merchant_offers: bool = False
 
 
 USER_TYPES = {"reenactor", "fighter", "merchant", "organizer"}
@@ -135,15 +147,37 @@ class RegisterRequest(BaseModel):
     password: str
     nickname: str
     user_types: List[str] = []
+    merchant_name: Optional[str] = None
+    organizer_name: Optional[str] = None
+    consent_organizer_messages: bool = False
+    consent_merchant_offers: bool = False
 
 
 class ProfileUpdate(BaseModel):
     nickname: Optional[str] = None
     user_types: Optional[List[str]] = None
+    merchant_name: Optional[str] = None
+    organizer_name: Optional[str] = None
+    consent_organizer_messages: Optional[bool] = None
+    consent_merchant_offers: Optional[bool] = None
 
 
 class GoogleSessionRequest(BaseModel):
     session_id: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
+class AttendRequest(BaseModel):
+    notify_email: bool = True
+    notify_push: bool = False
 
 
 EventCategory = Literal["market", "training_camp", "course", "festival", "meetup", "other"]
@@ -305,6 +339,10 @@ async def login(payload: LoginRequest, response: Response):
         "role": user["role"],
         "nickname": user.get("nickname"),
         "user_types": user.get("user_types", []),
+        "merchant_name": user.get("merchant_name"),
+        "organizer_name": user.get("organizer_name"),
+        "consent_organizer_messages": bool(user.get("consent_organizer_messages", False)),
+        "consent_merchant_offers": bool(user.get("consent_merchant_offers", False)),
         "has_password": True,
         "token": token,
     }
@@ -325,19 +363,33 @@ async def register(payload: RegisterRequest, response: Response):
     bad = [t for t in payload.user_types if t not in USER_TYPES]
     if bad:
         raise HTTPException(status_code=400, detail=f"Invalid user_type(s): {bad}")
+    if "merchant" in payload.user_types and not (payload.merchant_name or "").strip():
+        raise HTTPException(
+            status_code=400, detail="Merchant name (shop name) is required when 'merchant' is selected"
+        )
+    if "organizer" in payload.user_types and not (payload.organizer_name or "").strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Organizer name (event/organization name) is required when 'organizer' is selected",
+        )
 
     existing = await db.users.find_one({"email": email})
     if existing:
         raise HTTPException(status_code=409, detail="Email already registered")
 
     user_id = f"user_{uuid.uuid4().hex[:12]}"
+    types = list(set(payload.user_types))
     doc = {
         "id": user_id,
         "email": email,
         "name": nick,
         "nickname": nick,
         "role": "user",
-        "user_types": list(set(payload.user_types)),
+        "user_types": types,
+        "merchant_name": (payload.merchant_name or "").strip() if "merchant" in types else None,
+        "organizer_name": (payload.organizer_name or "").strip() if "organizer" in types else None,
+        "consent_organizer_messages": bool(payload.consent_organizer_messages),
+        "consent_merchant_offers": bool(payload.consent_merchant_offers),
         "password_hash": hash_password(payload.password),
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -360,6 +412,10 @@ async def register(payload: RegisterRequest, response: Response):
         "nickname": nick,
         "role": "user",
         "user_types": doc["user_types"],
+        "merchant_name": doc["merchant_name"],
+        "organizer_name": doc["organizer_name"],
+        "consent_organizer_messages": doc["consent_organizer_messages"],
+        "consent_merchant_offers": doc["consent_merchant_offers"],
         "has_password": True,
         "token": token,
     }
@@ -466,14 +522,61 @@ async def update_profile(
         if bad:
             raise HTTPException(status_code=400, detail=f"Invalid user_type(s): {bad}")
         update["user_types"] = list(set(payload.user_types))
+        # Require a name when adding merchant/organizer (use the value from this
+        # request OR the value already on file).
+        if "merchant" in update["user_types"]:
+            mname = (
+                (payload.merchant_name or "").strip()
+                if payload.merchant_name is not None
+                else (user.get("merchant_name") or "")
+            )
+            if not mname:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Merchant name is required when 'merchant' is selected",
+                )
+        if "organizer" in update["user_types"]:
+            oname = (
+                (payload.organizer_name or "").strip()
+                if payload.organizer_name is not None
+                else (user.get("organizer_name") or "")
+            )
+            if not oname:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Organizer name is required when 'organizer' is selected",
+                )
+    if payload.merchant_name is not None:
+        update["merchant_name"] = payload.merchant_name.strip() or None
+    if payload.organizer_name is not None:
+        update["organizer_name"] = payload.organizer_name.strip() or None
+    if payload.consent_organizer_messages is not None:
+        update["consent_organizer_messages"] = bool(payload.consent_organizer_messages)
+    if payload.consent_merchant_offers is not None:
+        update["consent_merchant_offers"] = bool(payload.consent_merchant_offers)
+
+    # If user removes "merchant"/"organizer" from user_types, also clear the
+    # corresponding name field so stale data doesn't linger.
+    if "user_types" in update:
+        if "merchant" not in update["user_types"]:
+            update["merchant_name"] = None
+        if "organizer" not in update["user_types"]:
+            update["organizer_name"] = None
+
     if not update:
         return UserOut(**user)
     await db.users.update_one({"id": user["id"]}, {"$set": update})
     fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0})
     fresh["has_password"] = bool(fresh.get("password_hash"))
     fresh.pop("password_hash", None)
+    fresh.pop("password_reset_token", None)
+    fresh.pop("password_reset_expires", None)
     fresh.setdefault("nickname", None)
     fresh.setdefault("user_types", [])
+    fresh.setdefault("merchant_name", None)
+    fresh.setdefault("organizer_name", None)
+    fresh.setdefault("consent_organizer_messages", False)
+    fresh.setdefault("consent_merchant_offers", False)
     return UserOut(**fresh)
 
 
@@ -481,6 +584,151 @@ async def update_profile(
 async def logout(response: Response):
     response.delete_cookie("access_token", path="/")
     return {"ok": True}
+
+
+# -----------------------------------------------------------------------------
+# Password reset
+# -----------------------------------------------------------------------------
+RESET_TOKEN_TTL_MIN = 60  # minutes
+
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(payload: ForgotPasswordRequest, background: BackgroundTasks):
+    """Request a password-reset link.
+
+    Always returns 200 to avoid leaking which addresses are registered.
+    Sends an email only if the address is on file AND the user has a
+    password (Google-only accounts are skipped).
+    """
+    email = payload.email.lower().strip()
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+    if user and user.get("password_hash"):
+        token = secrets.token_urlsafe(32)
+        expires = datetime.now(timezone.utc) + timedelta(minutes=RESET_TOKEN_TTL_MIN)
+        await db.users.update_one(
+            {"id": user["id"]},
+            {
+                "$set": {
+                    "password_reset_token": token,
+                    "password_reset_expires": expires.isoformat(),
+                }
+            },
+        )
+        background.add_task(svc_send_password_reset, email, token)
+    return {"ok": True}
+
+
+@api_router.post("/auth/reset-password")
+async def reset_password(payload: ResetPasswordRequest):
+    if len(payload.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    user = await db.users.find_one({"password_reset_token": payload.token}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+    expires_iso = user.get("password_reset_expires") or ""
+    try:
+        expires = datetime.fromisoformat(expires_iso)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+    if expires < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+    await db.users.update_one(
+        {"id": user["id"]},
+        {
+            "$set": {"password_hash": hash_password(payload.new_password)},
+            "$unset": {"password_reset_token": "", "password_reset_expires": ""},
+        },
+    )
+    return {"ok": True}
+
+
+# -----------------------------------------------------------------------------
+# Event attendance (logged-in users RSVP to events with notification prefs)
+# -----------------------------------------------------------------------------
+def _attendance_doc(event_id: str, user_id: str, payload: AttendRequest) -> dict:
+    return {
+        "event_id": event_id,
+        "user_id": user_id,
+        "notify_email": bool(payload.notify_email),
+        "notify_push": bool(payload.notify_push),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@api_router.post("/events/{event_id}/attend")
+async def attend_event(
+    event_id: str, payload: AttendRequest, user: dict = Depends(get_current_user)
+):
+    ev = await db.events.find_one({"id": event_id, "status": "approved"}, {"_id": 0, "id": 1})
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+    doc = _attendance_doc(event_id, user["id"], payload)
+    existing = await db.event_attendees.find_one(
+        {"event_id": event_id, "user_id": user["id"]}, {"_id": 0}
+    )
+    if existing:
+        await db.event_attendees.update_one(
+            {"event_id": event_id, "user_id": user["id"]}, {"$set": doc}
+        )
+    else:
+        doc["created_at"] = doc["updated_at"]
+        await db.event_attendees.insert_one(doc)
+    return {
+        "attending": True,
+        "notify_email": doc["notify_email"],
+        "notify_push": doc["notify_push"],
+    }
+
+
+@api_router.delete("/events/{event_id}/attend")
+async def cancel_attendance(event_id: str, user: dict = Depends(get_current_user)):
+    await db.event_attendees.delete_one(
+        {"event_id": event_id, "user_id": user["id"]}
+    )
+    return {"attending": False}
+
+
+@api_router.get("/events/{event_id}/attend")
+async def get_attendance(event_id: str, user: dict = Depends(get_current_user)):
+    row = await db.event_attendees.find_one(
+        {"event_id": event_id, "user_id": user["id"]}, {"_id": 0}
+    )
+    if not row:
+        return {"attending": False, "notify_email": True, "notify_push": False}
+    return {
+        "attending": True,
+        "notify_email": bool(row.get("notify_email", True)),
+        "notify_push": bool(row.get("notify_push", False)),
+    }
+
+
+@api_router.get("/users/me/attending")
+async def my_attending_events(user: dict = Depends(get_current_user)):
+    rows = await db.event_attendees.find(
+        {"user_id": user["id"]}, {"_id": 0}
+    ).to_list(1000)
+    if not rows:
+        return []
+    event_ids = [r["event_id"] for r in rows]
+    events = await db.events.find(
+        {"id": {"$in": event_ids}, "status": "approved"}, {"_id": 0}
+    ).to_list(1000)
+    by_id = {e["id"]: e for e in events}
+    out = []
+    for r in rows:
+        ev = by_id.get(r["event_id"])
+        if not ev:
+            continue
+        out.append(
+            {
+                **ev,
+                "attendance": {
+                    "notify_email": bool(r.get("notify_email", True)),
+                    "notify_push": bool(r.get("notify_push", False)),
+                },
+            }
+        )
+    return out
 
 
 # -----------------------------------------------------------------------------

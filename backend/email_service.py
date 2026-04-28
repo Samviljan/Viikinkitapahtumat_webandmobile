@@ -490,3 +490,38 @@ async def send_monthly_digest(db, days: int = 60) -> dict:
         if res.get("sent"):
             sent += 1
     return {"recipients": len(subscribers), "sent": sent, "events_in_digest": len(upcoming)}
+
+
+
+# -----------------------------------------------------------------------------
+# Password reset
+# -----------------------------------------------------------------------------
+def render_password_reset(email: str, reset_url: str) -> tuple[str, str]:
+    """Multilingual (FI primary) password-reset email."""
+    subject = "Salasanan palautus · Viikinkitapahtumat"
+    html = f"""
+<div style="{BASE_STYLE}">
+  <div style="{CARD_STYLE}">
+    <h1 style="{H1_STYLE}">Salasanan palautus</h1>
+    <p>Pyysit salasanan vaihtoa Viikinkitapahtumat-palveluun tunnuksellesi
+    <strong>{escape(email)}</strong>. Klikkaa alla olevaa painiketta asettaaksesi uuden salasanan.</p>
+    <p style="margin: 24px 0;">
+      <a href="{reset_url}" style="{BTN_STYLE}">Vaihda salasana</a>
+    </p>
+    <p style="{META_STYLE}">Linkki vanhenee 60 minuutin kuluttua. Jos et pyytänyt salasanan vaihtoa,
+    voit jättää tämän viestin huomiotta — tilisi pysyy ennallaan.</p>
+    <hr style="border: none; border-top: 1px solid #352A23; margin: 24px 0;">
+    <p style="{META_STYLE}">Reset password / Återställ lösenord<br>
+    If the button does not work, copy this URL into your browser:<br>
+    <a href="{reset_url}" style="color: #C19C4D;">{reset_url}</a></p>
+  </div>
+</div>
+"""
+    return subject, html
+
+
+async def send_password_reset(email: str, token: str) -> dict:
+    site = _site_url() or "https://viikinkitapahtumat.fi"
+    reset_url = f"{site}/reset-password?token={token}"
+    subject, html = render_password_reset(email, reset_url)
+    return await send_email(email, subject, html)

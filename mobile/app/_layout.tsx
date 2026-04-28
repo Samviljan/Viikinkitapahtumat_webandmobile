@@ -31,6 +31,7 @@ export default function RootLayout() {
             <Stack.Screen name="settings/profile" options={{ headerShown: false }} />
             <Stack.Screen name="settings/search" options={{ headerShown: false }} />
             <Stack.Screen name="settings/auth" options={{ headerShown: false }} />
+            <Stack.Screen name="settings/forgot-password" options={{ headerShown: false }} />
           </Stack>
         </SafeAreaProvider>
       </AuthProvider>

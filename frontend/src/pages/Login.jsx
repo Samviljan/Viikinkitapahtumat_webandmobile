@@ -100,6 +100,16 @@ export default function Login() {
           >
             {loading ? "..." : t("account.submit_signin")}
           </Button>
+
+          <div className="text-center pt-1">
+            <Link
+              to="/forgot-password"
+              data-testid="goto-forgot"
+              className="text-[11px] font-rune text-viking-stone hover:text-viking-gold transition-colors"
+            >
+              {t("account.forgot")}
+            </Link>
+          </div>
         </form>
 
         <div className="mt-7 pt-5 border-t border-viking-edge/60 text-center">

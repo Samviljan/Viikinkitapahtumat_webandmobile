@@ -30,6 +30,7 @@ import { AppBackground } from "@/src/components/AppBackground";
 import { colors, radius, spacing, text } from "@/src/lib/theme";
 import { useSettings } from "@/src/lib/i18n";
 import { useAuth, type UserType } from "@/src/lib/auth";
+import { getConsentTexts } from "@/src/lib/consents";
 
 const ALL_TYPES: UserType[] = ["reenactor", "fighter", "merchant", "organizer"];
 const EMERGENT_AUTH_URL = "https://auth.emergentagent.com";
@@ -38,13 +39,18 @@ type Mode = "signin" | "signup";
 
 export default function AuthScreen() {
   const router = useRouter();
-  const { t } = useSettings();
+  const { t, lang } = useSettings();
   const { signIn, signUp, signInWithGoogleSession, user } = useAuth();
+  const consentTexts = getConsentTexts(lang);
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nickname, setNickname] = useState("");
+  const [merchantName, setMerchantName] = useState("");
+  const [organizerName, setOrganizerName] = useState("");
   const [types, setTypes] = useState<UserType[]>([]);
+  const [consentOrganizer, setConsentOrganizer] = useState(false);
+  const [consentMerchant, setConsentMerchant] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -92,11 +98,25 @@ export default function AuthScreen() {
           setSubmitting(false);
           return;
         }
+        if (types.includes("merchant") && !merchantName.trim()) {
+          setError(t("auth.merchant_name_help"));
+          setSubmitting(false);
+          return;
+        }
+        if (types.includes("organizer") && !organizerName.trim()) {
+          setError(t("auth.organizer_name_help"));
+          setSubmitting(false);
+          return;
+        }
         await signUp({
           email: email.trim(),
           password,
           nickname: nickname.trim(),
           user_types: types,
+          merchant_name: types.includes("merchant") ? merchantName.trim() : null,
+          organizer_name: types.includes("organizer") ? organizerName.trim() : null,
+          consent_organizer_messages: consentOrganizer,
+          consent_merchant_offers: consentMerchant,
         });
       }
     } catch (e: unknown) {
@@ -186,6 +206,16 @@ export default function AuthScreen() {
             style={styles.input}
           />
 
+          {mode === "signin" ? (
+            <Pressable
+              testID="auth-forgot"
+              onPress={() => router.push("/settings/forgot-password" as never)}
+              style={styles.forgotBtn}
+            >
+              <Text style={styles.forgotText}>{t("auth.forgot")}</Text>
+            </Pressable>
+          ) : null}
+
           {mode === "signup" ? (
             <>
               <Text style={[styles.label, { marginTop: spacing.md }]}>
@@ -226,6 +256,61 @@ export default function AuthScreen() {
                   );
                 })}
               </View>
+
+              {types.includes("merchant") ? (
+                <View testID="auth-merchant-name-block">
+                  <Text style={[styles.label, { marginTop: spacing.md }]}>
+                    {t("auth.merchant_name_label")}
+                  </Text>
+                  <TextInput
+                    testID="auth-merchant-name"
+                    value={merchantName}
+                    onChangeText={setMerchantName}
+                    autoCapitalize="words"
+                    placeholderTextColor={colors.stone}
+                    style={styles.input}
+                  />
+                  <Text style={styles.help}>{t("auth.merchant_name_help")}</Text>
+                </View>
+              ) : null}
+
+              {types.includes("organizer") ? (
+                <View testID="auth-organizer-name-block">
+                  <Text style={[styles.label, { marginTop: spacing.md }]}>
+                    {t("auth.organizer_name_label")}
+                  </Text>
+                  <TextInput
+                    testID="auth-organizer-name"
+                    value={organizerName}
+                    onChangeText={setOrganizerName}
+                    autoCapitalize="words"
+                    placeholderTextColor={colors.stone}
+                    style={styles.input}
+                  />
+                  <Text style={styles.help}>{t("auth.organizer_name_help")}</Text>
+                </View>
+              ) : null}
+
+              {/* Marketing consents — opt-in (off by default).
+                  Wording must match the web app exactly (see consents.ts). */}
+              <View style={styles.consentBlock} testID="auth-consents">
+                <Text style={[styles.label, { marginTop: spacing.md }]}>
+                  {consentTexts.section_title}
+                </Text>
+                <Text style={styles.help}>{consentTexts.section_help}</Text>
+                <ConsentRow
+                  testID="auth-consent-organizer"
+                  active={consentOrganizer}
+                  label={consentTexts.consent_organizer_messages}
+                  onPress={() => setConsentOrganizer((v) => !v)}
+                />
+                <ConsentRow
+                  testID="auth-consent-merchant"
+                  active={consentMerchant}
+                  label={consentTexts.consent_merchant_offers}
+                  onPress={() => setConsentMerchant((v) => !v)}
+                />
+              </View>
             </>
           ) : null}
 
@@ -265,6 +350,34 @@ export default function AuthScreen() {
         </ScrollView>
       </SafeAreaView>
     </AppBackground>
+  );
+}
+
+function ConsentRow({
+  testID,
+  active,
+  label,
+  onPress,
+}: {
+  testID: string;
+  active: boolean;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      testID={testID}
+      onPress={onPress}
+      style={[styles.consentRow, active && styles.consentRowActive]}
+    >
+      <Ionicons
+        name={active ? "checkbox" : "square-outline"}
+        size={16}
+        color={active ? colors.gold : colors.stone}
+        style={{ marginTop: 2 }}
+      />
+      <Text style={[styles.consentText, active && styles.consentTextActive]}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -389,5 +502,47 @@ const styles = StyleSheet.create({
     color: colors.gold,
     fontSize: 12,
     fontWeight: "600",
+  },
+  forgotBtn: {
+    alignSelf: "flex-end",
+    paddingVertical: 6,
+    marginTop: 4,
+  },
+  forgotText: {
+    color: colors.gold,
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.4,
+  },
+  consentBlock: {
+    marginTop: spacing.lg,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.edge,
+  },
+  consentRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.edge,
+    backgroundColor: "rgba(26,20,17,0.7)",
+    marginBottom: 8,
+  },
+  consentRowActive: {
+    borderColor: colors.gold,
+    backgroundColor: "rgba(201,161,74,0.12)",
+  },
+  consentText: {
+    flex: 1,
+    color: colors.stone,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  consentTextActive: {
+    color: colors.bone,
   },
 });

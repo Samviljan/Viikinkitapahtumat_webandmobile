@@ -21,6 +21,10 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [nickname, setNickname] = useState("");
   const [types, setTypes] = useState([]);
+  const [merchantName, setMerchantName] = useState("");
+  const [organizerName, setOrganizerName] = useState("");
+  const [consentOrganizer, setConsentOrganizer] = useState(false);
+  const [consentMerchant, setConsentMerchant] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -45,6 +49,14 @@ export default function Register() {
       setError(t("account.nickname"));
       return;
     }
+    if (types.includes("merchant") && !merchantName.trim()) {
+      setError(t("account.merchant_name_help"));
+      return;
+    }
+    if (types.includes("organizer") && !organizerName.trim()) {
+      setError(t("account.organizer_name_help"));
+      return;
+    }
     setLoading(true);
     try {
       await register({
@@ -52,6 +64,10 @@ export default function Register() {
         password,
         nickname: nickname.trim(),
         user_types: types,
+        merchant_name: types.includes("merchant") ? merchantName.trim() : null,
+        organizer_name: types.includes("organizer") ? organizerName.trim() : null,
+        consent_organizer_messages: consentOrganizer,
+        consent_merchant_offers: consentMerchant,
       });
       nav("/profile");
     } catch (err) {
@@ -153,6 +169,52 @@ export default function Register() {
             </div>
           </div>
 
+          {types.includes("merchant") && (
+            <div className="space-y-2" data-testid="register-merchant-name-block">
+              <Label className="text-overline">{t("account.merchant_name_label")}</Label>
+              <Input
+                type="text"
+                required
+                data-testid="register-merchant-name"
+                value={merchantName}
+                onChange={(e) => setMerchantName(e.target.value)}
+                className={fieldClass}
+              />
+              <p className="text-[11px] text-viking-stone italic">
+                {t("account.merchant_name_help")}
+              </p>
+            </div>
+          )}
+
+          {types.includes("organizer") && (
+            <div className="space-y-2" data-testid="register-organizer-name-block">
+              <Label className="text-overline">{t("account.organizer_name_label")}</Label>
+              <Input
+                type="text"
+                required
+                data-testid="register-organizer-name"
+                value={organizerName}
+                onChange={(e) => setOrganizerName(e.target.value)}
+                className={fieldClass}
+              />
+              <p className="text-[11px] text-viking-stone italic">
+                {t("account.organizer_name_help")}
+              </p>
+            </div>
+          )}
+
+          {/* Marketing consents — opt-in (off by default). */}
+          <ConsentBlock
+            t={t}
+            organizer={consentOrganizer}
+            merchant={consentMerchant}
+            onChange={(field, val) => {
+              if (field === "organizer") setConsentOrganizer(val);
+              else setConsentMerchant(val);
+            }}
+            testIdPrefix="register"
+          />
+
           {error && (
             <p data-testid="register-error" className="text-sm text-viking-ember font-rune">
               {error}
@@ -180,5 +242,59 @@ export default function Register() {
         </div>
       </div>
     </div>
+  );
+}
+
+export function ConsentBlock({ t, organizer, merchant, onChange, testIdPrefix }) {
+  return (
+    <div
+      className="space-y-3 pt-5 border-t border-viking-edge/60"
+      data-testid={`${testIdPrefix}-consents`}
+    >
+      <div>
+        <Label className="text-overline">{t("account.consents_title")}</Label>
+        <p className="text-[11px] text-viking-stone italic mt-1 leading-relaxed">
+          {t("account.consents_help")}
+        </p>
+      </div>
+      <ConsentRow
+        active={organizer}
+        onChange={() => onChange("organizer", !organizer)}
+        label={t("account.consent_organizer_messages")}
+        testId={`${testIdPrefix}-consent-organizer`}
+      />
+      <ConsentRow
+        active={merchant}
+        onChange={() => onChange("merchant", !merchant)}
+        label={t("account.consent_merchant_offers")}
+        testId={`${testIdPrefix}-consent-merchant`}
+      />
+    </div>
+  );
+}
+
+function ConsentRow({ active, onChange, label, testId }) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      data-testid={testId}
+      className={`w-full flex items-start gap-3 p-3 rounded-sm border text-left transition-colors ${
+        active
+          ? "border-viking-gold/60 bg-viking-gold/10"
+          : "border-viking-edge hover:border-viking-gold/40"
+      }`}
+    >
+      <span
+        className={`mt-0.5 h-4 w-4 flex-shrink-0 rounded-sm border flex items-center justify-center ${
+          active ? "border-viking-gold bg-viking-gold/20" : "border-viking-edge"
+        }`}
+      >
+        {active && <Check size={10} className="text-viking-gold" />}
+      </span>
+      <span className={`text-xs leading-relaxed ${active ? "text-viking-bone" : "text-viking-stone"}`}>
+        {label}
+      </span>
+    </button>
   );
 }

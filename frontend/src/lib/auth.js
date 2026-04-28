@@ -37,6 +37,10 @@ export function AuthProvider({ children }) {
       nickname: data.nickname ?? null,
       user_types: data.user_types ?? [],
       has_password: data.has_password ?? true,
+      merchant_name: data.merchant_name ?? null,
+      organizer_name: data.organizer_name ?? null,
+      consent_organizer_messages: !!data.consent_organizer_messages,
+      consent_merchant_offers: !!data.consent_merchant_offers,
     };
   }
 
@@ -48,12 +52,12 @@ export function AuthProvider({ children }) {
     return data;
   }, []);
 
-  const register = useCallback(async ({ email, password, nickname, user_types }) => {
+  const register = useCallback(async (payload) => {
+    // Forward all fields (merchant_name, organizer_name, consents) — backend
+    // ignores unknown ones.
     const { data } = await api.post("/auth/register", {
-      email,
-      password,
-      nickname,
-      user_types: user_types || [],
+      ...payload,
+      user_types: payload.user_types || [],
     });
     setUser(pickProfile(data));
     return data;
