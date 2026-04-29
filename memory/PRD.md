@@ -526,6 +526,18 @@ See `/app/memory/test_credentials.md`.
   - Added `GET /api/sitemap.xml` in `server.py` — dynamic XML listing 7 static paths + every approved event with hreflang alternates for all 7 languages, lastmod from `updated_at` or `start_date`. Verified: HTTP 200, 34 KB. Cache-Control: public, max-age=3600.
   - Added `admin.action_cancel` translations FI/EN/SV/DA/DE/ET/PL.
 
+## Iteration — Admin user-profile inspector tool (2026-04-29c)
+- ✅ **New admin tool**: lets admin inspect any individual user profile from two entry points:
+  1. **`/admin/users` user list**: each row is now clickable → opens `AdminUserProfileDialog` modal showing email, profile picture, country (with flag), association, merchant/organizer name, user_types, fighter card & equipment passport PDF links (open in new tab — same-origin httpOnly cookie auth carries through), and the user's full RSVP history.
+  2. **`/admin/events` events list**: each event row has a new "**Osallistujat**" button → opens `AdminEventAttendeesDialog` showing all RSVP'd users (avatar, name, email, country flag, types, email/push notification flags). Click any attendee → opens the same `AdminUserProfileDialog`.
+- ✅ Two new admin-only backend endpoints:
+  - `GET /api/admin/users/{user_id}` — full profile + enriched RSVPs (each RSVP includes the resolved event object). Excludes `hashed_password`, `password_hash`, `password_reset_tokens`. Returns 404 if user not found.
+  - `GET /api/admin/events/{event_id}/attendees` — full attendee list for one event with profile previews. Returns [] if no attendees.
+- ✅ New components: `AdminUserProfileDialog.jsx`, `AdminEventAttendeesDialog.jsx`. Reusable; `AdminEventAttendeesDialog` accepts `onPickUser` callback to chain to the profile dialog.
+- ✅ Clickable user rows in `AdminUsersPanel.jsx` with proper `e.stopPropagation()` on the Switch and Trash2 button so toggling/deleting doesn't accidentally open the profile.
+- ✅ i18n: `admin.user_profile.{title,open_hint,documents,rsvps,no_rsvps}` + `admin.events.{attendees_btn,no_attendees}` for all 7 languages (FI/EN/SV/DA/DE/ET/PL).
+- ✅ Tested end-to-end: click user row → profile dialog opens with correct localized labels (MAA, YHDISTYS, TYYPIT, ILMOITTAUTUMISET); click "Osallistujat" on 25 approved events → attendees dialog opens; clicking an attendee chains to the profile dialog. Lint clean.
+
 ## Backlog (priorities)
 - **P1** Stripe integration for paid messaging (currently admin manually toggles `paid_messaging_enabled`).
 - **P1** Mobile DA/DE/ET/PL native dictionaries (currently fall back to EN; covers ~80 string keys vs 250 on web).

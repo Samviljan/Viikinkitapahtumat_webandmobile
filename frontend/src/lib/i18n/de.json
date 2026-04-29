@@ -288,7 +288,18 @@
       "test_no_token": "Du hast noch kein Push-Token registriert. Installiere die mobile App und melde dich an.",
       "empty_help": "Push-Nachrichten erreichen niemanden, da noch kein Benutzer einen Push-Token über die App registriert hat. Installiere die App, melde dich an, erlaube Benachrichtigungen — die App registriert das Token automatisch."
     },
-    "action_cancel": "Abbrechen"
+    "action_cancel": "Abbrechen",
+    "user_profile": {
+      "title": "Benutzerprofil",
+      "open_hint": "Profil öffnen",
+      "documents": "Dokumente",
+      "rsvps": "Anmeldungen",
+      "no_rsvps": "Noch keine Anmeldungen."
+    },
+    "events": {
+      "attendees_btn": "Teilnehmer",
+      "no_attendees": "Niemand hat sich noch für diese Veranstaltung angemeldet."
+    }
   },
   "account": {
     "sign_in": "Anmelden",

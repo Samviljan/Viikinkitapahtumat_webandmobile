@@ -23,6 +23,7 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import AdminUserCreateDialog from "@/components/admin/AdminUserCreateDialog";
+import AdminUserProfileDialog from "@/components/admin/AdminUserProfileDialog";
 
 export default function AdminUsersPanel() {
   const { t } = useI18n();
@@ -33,6 +34,7 @@ export default function AdminUsersPanel() {
   const [showCreate, setShowCreate] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null); // user obj or null
   const [deleting, setDeleting] = useState(false);
+  const [profileUserId, setProfileUserId] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -160,7 +162,9 @@ export default function AdminUsersPanel() {
                 <tr
                   key={u.id}
                   data-testid={`user-row-${u.id}`}
-                  className="border-b border-viking-edge/40 hover:bg-viking-surface2/30"
+                  onClick={() => setProfileUserId(u.id)}
+                  className="border-b border-viking-edge/40 hover:bg-viking-surface2/30 cursor-pointer transition-colors"
+                  title={t("admin.user_profile.open_hint") || "Avaa profiili"}
                 >
                   <td className="py-3 pr-3">
                     <div className="text-viking-bone font-rune text-xs">
@@ -201,14 +205,14 @@ export default function AdminUsersPanel() {
                       ))}
                     </div>
                   </td>
-                  <td className="py-3 px-3 text-right">
+                  <td className="py-3 px-3 text-right" onClick={(e) => e.stopPropagation()}>
                     <Switch
                       data-testid={`toggle-paid-${u.id}`}
                       checked={!!u.paid_messaging_enabled}
                       onCheckedChange={() => toggle(u)}
                     />
                   </td>
-                  <td className="py-3 pl-3 text-right">
+                  <td className="py-3 pl-3 text-right" onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       onClick={() => deleteUser(u)}
@@ -234,6 +238,13 @@ export default function AdminUsersPanel() {
         open={showCreate}
         onOpenChange={setShowCreate}
         onCreated={() => load()}
+      />
+      <AdminUserProfileDialog
+        userId={profileUserId}
+        open={!!profileUserId}
+        onOpenChange={(open) => {
+          if (!open) setProfileUserId(null);
+        }}
       />
       <AlertDialog
         open={!!confirmDelete}

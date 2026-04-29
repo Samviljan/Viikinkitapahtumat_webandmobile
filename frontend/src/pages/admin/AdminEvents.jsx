@@ -9,6 +9,8 @@ import { useI18n } from "@/lib/i18n";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import AdminEventEditDialog from "@/components/AdminEventEditDialog";
 import AdminEventRow from "@/components/admin/AdminEventRow";
+import AdminEventAttendeesDialog from "@/components/admin/AdminEventAttendeesDialog";
+import AdminUserProfileDialog from "@/components/admin/AdminUserProfileDialog";
 
 const STATUSES = ["pending", "approved", "rejected", "all"];
 
@@ -17,6 +19,8 @@ export default function AdminEvents() {
   const [status, setStatus] = useState("pending");
   const [items, setItems] = useState([]);
   const [editingEvent, setEditingEvent] = useState(null);
+  const [attendeesEvent, setAttendeesEvent] = useState(null);
+  const [profileUserId, setProfileUserId] = useState(null);
 
   const load = useCallback(
     async (s = status) => {
@@ -94,6 +98,7 @@ export default function AdminEvents() {
                     onReject={() => setEventStatus(ev.id, "rejected")}
                     onDelete={() => remove(ev.id)}
                     onEdit={() => setEditingEvent(ev)}
+                    onShowAttendees={() => setAttendeesEvent(ev)}
                   />
                 ))}
               </div>
@@ -107,6 +112,19 @@ export default function AdminEvents() {
         open={!!editingEvent}
         onOpenChange={(o) => !o && setEditingEvent(null)}
         onSaved={() => load()}
+      />
+
+      <AdminEventAttendeesDialog
+        event={attendeesEvent}
+        open={!!attendeesEvent}
+        onOpenChange={(o) => !o && setAttendeesEvent(null)}
+        onPickUser={(uid) => setProfileUserId(uid)}
+      />
+
+      <AdminUserProfileDialog
+        userId={profileUserId}
+        open={!!profileUserId}
+        onOpenChange={(o) => !o && setProfileUserId(null)}
       />
     </div>
   );

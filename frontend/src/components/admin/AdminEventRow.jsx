@@ -11,6 +11,7 @@ import {
   User,
   ExternalLink,
   Pencil,
+  Users,
 } from "lucide-react";
 
 const STATUS_CLASS = {
@@ -27,6 +28,7 @@ export default function AdminEventRow({
   onReject,
   onDelete,
   onEdit,
+  onShowAttendees,
 }) {
   return (
     <div
@@ -86,6 +88,18 @@ export default function AdminEventRow({
           <Pencil size={12} className="mr-1" />
           {t("admin.edit")}
         </Button>
+        {onShowAttendees && (
+          <Button
+            size="sm"
+            data-testid={`attendees-${ev.id}`}
+            onClick={onShowAttendees}
+            variant="outline"
+            className="border-viking-edge text-viking-bone hover:border-viking-gold hover:text-viking-gold rounded-sm font-rune text-[10px]"
+          >
+            <Users size={12} className="mr-1" />
+            {t("admin.events.attendees_btn") || "Osallistujat"}
+          </Button>
+        )}
         {ev.status !== "approved" && (
           <Button
             size="sm"

@@ -289,7 +289,18 @@
       "test_no_token": "Sinulla ei ole vielä push-tokenia rekisteröitynyt. Asenna mobiilisovellus puhelimellesi ja kirjaudu sisään.",
       "empty_help": "Push-viestit eivät tavoita ketään koska kukaan ei ole vielä rekisteröinyt push-tokenia mobiilisovelluksen kautta. Asenna sovellus, kirjaudu, salli notifikaatiot — ja sovellus rekisteröi tokenin automaattisesti."
     },
-    "action_cancel": "Peruuta"
+    "action_cancel": "Peruuta",
+    "user_profile": {
+      "title": "Käyttäjäprofiili",
+      "open_hint": "Avaa profiili",
+      "documents": "Asiakirjat",
+      "rsvps": "Ilmoittautumiset",
+      "no_rsvps": "Ei vielä ilmoittautumisia."
+    },
+    "events": {
+      "attendees_btn": "Osallistujat",
+      "no_attendees": "Tähän tapahtumaan ei ole vielä ilmoittautunut ketään."
+    }
   },
   "account": {
     "sign_in": "Kirjaudu",

@@ -1168,6 +1168,111 @@ async def admin_list_users(role: Optional[str] = None):
     return docs
 
 
+@api_router.get("/admin/users/{user_id}", dependencies=[Depends(get_admin_user)])
+async def admin_get_user(user_id: str):
+    """Full user profile for the admin profile-card modal.
+
+    Returns: all visible profile fields + the list of events the user has
+    RSVP'd to. Excludes hashed_password and internal Mongo _id.
+    """
+    user = await db.users.find_one(
+        {"id": user_id},
+        {
+            "_id": 0,
+            "hashed_password": 0,
+            "password_hash": 0,
+            "password_reset_tokens": 0,
+        },
+    )
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    rsvps = await db.event_attendees.find(
+        {"user_id": user_id},
+        {"_id": 0, "event_id": 1, "notify_email": 1, "notify_push": 1, "created_at": 1},
+    ).sort("created_at", -1).to_list(500)
+
+    event_ids = [r["event_id"] for r in rsvps]
+    events_by_id: dict[str, dict] = {}
+    if event_ids:
+        ev_docs = await db.events.find(
+            {"id": {"$in": event_ids}},
+            {
+                "_id": 0,
+                "id": 1,
+                "title_fi": 1,
+                "title_en": 1,
+                "start_date": 1,
+                "end_date": 1,
+                "location": 1,
+                "country": 1,
+                "category": 1,
+                "status": 1,
+            },
+        ).to_list(500)
+        events_by_id = {e["id"]: e for e in ev_docs}
+
+    enriched_rsvps = []
+    for r in rsvps:
+        ev = events_by_id.get(r["event_id"])
+        if ev:
+            enriched_rsvps.append({**r, "event": ev})
+    user["rsvps"] = enriched_rsvps
+    user.setdefault("user_types", [])
+    user.setdefault("paid_messaging_enabled", False)
+    return user
+
+
+@api_router.get(
+    "/admin/events/{event_id}/attendees",
+    dependencies=[Depends(get_admin_user)],
+)
+async def admin_event_attendees(event_id: str):
+    """Full attendee list for one event with profile previews — used by the
+    admin event row's "View attendees" expand panel."""
+    ev = await db.events.find_one({"id": event_id}, {"_id": 0, "id": 1, "title_fi": 1})
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+    rows = await db.event_attendees.find(
+        {"event_id": event_id},
+        {"_id": 0, "user_id": 1, "notify_email": 1, "notify_push": 1, "created_at": 1},
+    ).sort("created_at", 1).to_list(5000)
+    if not rows:
+        return []
+    user_ids = [r["user_id"] for r in rows]
+    users = await db.users.find(
+        {"id": {"$in": user_ids}},
+        {
+            "_id": 0,
+            "id": 1,
+            "email": 1,
+            "nickname": 1,
+            "name": 1,
+            "role": 1,
+            "user_types": 1,
+            "association_name": 1,
+            "country": 1,
+            "profile_image_url": 1,
+            "merchant_name": 1,
+            "organizer_name": 1,
+        },
+    ).to_list(5000)
+    by_id = {u["id"]: u for u in users}
+    out = []
+    for r in rows:
+        u = by_id.get(r["user_id"])
+        if u:
+            out.append(
+                {
+                    **u,
+                    "rsvp_at": r.get("created_at"),
+                    "notify_email": bool(r.get("notify_email")),
+                    "notify_push": bool(r.get("notify_push")),
+                }
+            )
+    return out
+
+
 @api_router.patch(
     "/admin/users/{user_id}/paid-messaging",
     dependencies=[Depends(get_admin_user)],

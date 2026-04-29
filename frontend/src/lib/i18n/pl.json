@@ -245,7 +245,18 @@
       "test_no_token": "Nie masz jeszcze zarejestrowanego tokenu push. Zainstaluj aplikację i zaloguj się.",
       "empty_help": "Wiadomości push nie docierają do nikogo, bo żaden użytkownik nie zarejestrował jeszcze tokenu push w aplikacji mobilnej. Zainstaluj aplikację, zaloguj się, zezwól na powiadomienia — aplikacja zarejestruje token automatycznie."
     },
-    "action_cancel": "Anuluj"
+    "action_cancel": "Anuluj",
+    "user_profile": {
+      "title": "Profil użytkownika",
+      "open_hint": "Otwórz profil",
+      "documents": "Dokumenty",
+      "rsvps": "Zgłoszenia",
+      "no_rsvps": "Brak zgłoszeń."
+    },
+    "events": {
+      "attendees_btn": "Uczestnicy",
+      "no_attendees": "Nikt jeszcze nie zgłosił się na to wydarzenie."
+    }
   },
   "courses": {
     "title": "Kursy i warsztaty",

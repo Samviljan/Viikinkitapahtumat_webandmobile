@@ -288,7 +288,18 @@
       "test_no_token": "You don't have a push token registered yet. Install the mobile app and sign in.",
       "empty_help": "Push messages can't reach anyone yet because no user has registered a push token via the mobile app. Install the app, sign in, allow notifications — the app will register the token automatically."
     },
-    "action_cancel": "Cancel"
+    "action_cancel": "Cancel",
+    "user_profile": {
+      "title": "User profile",
+      "open_hint": "Open profile",
+      "documents": "Documents",
+      "rsvps": "RSVPs",
+      "no_rsvps": "No RSVPs yet."
+    },
+    "events": {
+      "attendees_btn": "Attendees",
+      "no_attendees": "No one has RSVP'd to this event yet."
+    }
   },
   "account": {
     "sign_in": "Sign in",

@@ -266,7 +266,18 @@
       "test_no_token": "Du har ingen push-token registrerad ännu. Installera mobilappen och logga in.",
       "empty_help": "Push-notiser når ingen ännu eftersom ingen har registrerat en push-token via mobilappen. Installera appen, logga in, tillåt notiser — appen registrerar token automatiskt."
     },
-    "action_cancel": "Avbryt"
+    "action_cancel": "Avbryt",
+    "user_profile": {
+      "title": "Användarprofil",
+      "open_hint": "Öppna profil",
+      "documents": "Dokument",
+      "rsvps": "Anmälningar",
+      "no_rsvps": "Inga anmälningar än."
+    },
+    "events": {
+      "attendees_btn": "Deltagare",
+      "no_attendees": "Ingen har anmält sig till detta evenemang än."
+    }
   },
   "account": {
     "sign_in": "Logga in",

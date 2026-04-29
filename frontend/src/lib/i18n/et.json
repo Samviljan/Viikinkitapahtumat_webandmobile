@@ -245,7 +245,18 @@
       "test_no_token": "Sul pole veel push-tokenit registreeritud. Paigalda mobiilirakendus ja logi sisse.",
       "empty_help": "Push-sõnumid ei jõua kelleltki, kuna keegi pole veel mobiilirakenduse kaudu push-tokenit registreerinud. Paigalda rakendus, logi sisse, luba teated — rakendus registreerib tokeni automaatselt."
     },
-    "action_cancel": "Tühista"
+    "action_cancel": "Tühista",
+    "user_profile": {
+      "title": "Kasutajaprofiil",
+      "open_hint": "Ava profiil",
+      "documents": "Dokumendid",
+      "rsvps": "Registreeringud",
+      "no_rsvps": "Veel ühtegi registreerimist."
+    },
+    "events": {
+      "attendees_btn": "Osalejad",
+      "no_attendees": "Sellele üritusele pole veel keegi registreerunud."
+    }
   },
   "courses": {
     "title": "Kursused ja töötoad",
