@@ -605,7 +605,10 @@ See `/app/memory/test_credentials.md`.
 
 ## Backlog (priorities)
 - **P1** Stripe integration for paid messaging (currently admin manually toggles `paid_messaging_enabled`).
+- **P1** **📧 Email-template-editori** admin-paneeliin — *user expressed interest 2026-04-29, suggest again when next touching messaging features*. Kauppiaat/järjestäjät tallentavat valmiita pohjia toistuviin viesteihin ("Muistutus tapahtumaan", "Kiitos osallistumisesta", "Aikataulumuutos"). Muuttujat kuten `{{event_title}}`, `{{date}}`, `{{nickname}}`. Säästää aikaa, parantaa viestien laatua. Admin voi luoda yhteisiä pohjia kaikille kauppiaille.
 - **P1** Mobile DA/DE/ET/PL native dictionaries (currently fall back to EN; covers ~80 string keys vs 250 on web).
 - **P1 (mobile vaihe 2)** Push-notifikaatiot suosikkitapahtumista, käyttäjätilit, premium-versio (lipunmyynti, ennakkotarjoukset), offline-välimuisti.
 - **P2** Shadcn Calendar+Popover date-pickeriksi, PWA push, brute-force-rate-limit, OG-tagit, custom favicon, lisämuistutus 1 vrk ennen, admin "Valitse galleriasta" -kuvavalitsin, ET/PL auto-käännös tapahtumasisällölle, lat/lon-kentät tapahtumiin (Android-geocode-luotettavuus).
+- **P2** Per-event Open Graph -kuva (jokaisen tapahtumasivun jakopreview tapahtuman omalla kuvalla).
+- **P2** Telegram-bot tilausvaihtoehto push-notifikaatioille (rinnakkainen FCM:lle, vähemmän riippuvuutta Firebase-credentialeista).
 - **P3** Preview→prod data sync utility.
