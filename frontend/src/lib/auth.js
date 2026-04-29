@@ -43,6 +43,7 @@ export function AuthProvider({ children }) {
       consent_merchant_offers: !!data.consent_merchant_offers,
       saved_search: data.saved_search ?? null,
       paid_messaging_enabled: !!data.paid_messaging_enabled,
+      language: data.language ?? null,
     };
   }
 

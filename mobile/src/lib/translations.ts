@@ -193,6 +193,9 @@ interface Dict {
     result: string;
     result_text: string;
     nav_label: string;
+    cta_send: string;
+    quota_used: string;
+    quota_reached_title: string;
   };
   info: {
     title: string;
@@ -435,6 +438,9 @@ export const translations: Partial<Record<Lang, Dict>> = {
       result_text:
         "Push: {push}, sähköposti: {email}, vastaanottajia: {recipients}",
       nav_label: "Lähetä viesti",
+      cta_send: "Viesti",
+      quota_used: "Käytetty {used}/{limit} viestiä",
+      quota_reached_title: "Viestiraja täyttyi",
     },
     info: {
       title: "Tietoa sovelluksesta",
@@ -672,6 +678,9 @@ export const translations: Partial<Record<Lang, Dict>> = {
       result_text:
         "Push: {push}, email: {email}, recipients: {recipients}",
       nav_label: "Send message",
+      cta_send: "Message",
+      quota_used: "Used {used}/{limit} messages",
+      quota_reached_title: "Message limit reached",
     },
     info: {
       title: "About the app",
@@ -905,6 +914,9 @@ export const translations: Partial<Record<Lang, Dict>> = {
       result: "Resultat",
       result_text: "Push: {push}, e-post: {email}, mottagare: {recipients}",
       nav_label: "Skicka meddelande",
+      cta_send: "Meddelande",
+      quota_used: "Använt {used}/{limit} meddelanden",
+      quota_reached_title: "Meddelandekvoten uppnådd",
     },
     info: {
       title: "Om appen",

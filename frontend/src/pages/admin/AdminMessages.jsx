@@ -9,12 +9,14 @@ import { Megaphone, ArrowRight } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import AdminStatsPanel from "@/components/admin/AdminStatsPanel";
 import AdminPushHealthCard from "@/components/admin/AdminPushHealthCard";
+import AdminMessagingQuotaPanel from "@/components/admin/AdminMessagingQuotaPanel";
 
 export default function AdminMessages() {
   const { t } = useI18n();
   return (
     <div className="space-y-8" data-testid="admin-messages-page">
       <AdminPushHealthCard />
+      <AdminMessagingQuotaPanel />
       <Link
         to="/messages"
         data-testid="admin-compose-link"

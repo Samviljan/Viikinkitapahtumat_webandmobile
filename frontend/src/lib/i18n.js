@@ -10,7 +10,9 @@
  * to English first, then to the canonical Finnish source. `t()` always
  * returns a non-empty value (or the key as a last resort).
  */
-import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useAuth } from "./auth";
+import { api } from "./api";
 import fi from "./i18n/fi.json";
 import en from "./i18n/en.json";
 import sv from "./i18n/sv.json";
@@ -23,15 +25,79 @@ const TRANSLATIONS = { fi, en, sv, et, pl, da, de };
 
 const I18nContext = createContext(null);
 
-export function I18nProvider({ children }) {
-  const [lang, setLangState] = useState(() => localStorage.getItem("vk_lang") || "fi");
+const ANON_LANG_KEY = "vk_lang";
+function readAnonLang() {
+  try {
+    return localStorage.getItem(ANON_LANG_KEY) || "fi";
+  } catch {
+    return "fi";
+  }
+}
 
-  const setLang = useCallback((l) => {
-    if (!TRANSLATIONS[l]) return;
-    localStorage.setItem("vk_lang", l);
-    document.documentElement.lang = l;
-    setLangState(l);
-  }, []);
+export function I18nProvider({ children }) {
+  const { user } = useAuth();
+  // Track the previously-rendered user identity so we can react to logins,
+  // logouts and account swaps. Also remember whether the user has explicitly
+  // chosen a language during this session — this prevents the auth-driven
+  // re-sync from clobbering the active selection right after the user changed
+  // it but before /auth/me has caught up.
+  const lastUserIdRef = useRef(null);
+  const sessionPickedRef = useRef(false);
+
+  const [lang, setLangState] = useState(() => readAnonLang());
+
+  // Sync language when the auth state changes:
+  //  - logged-in user with stored language → use that
+  //  - logged-in user without stored language → fall back to anon localStorage
+  //  - logged-out → revert to anonymous localStorage value
+  // Identity comparison via id ensures swapping account A → B re-syncs.
+  useEffect(() => {
+    if (user === null) return; // initial /auth/me check still in flight
+    const uid = user && user.id ? user.id : null;
+    if (uid !== lastUserIdRef.current) {
+      lastUserIdRef.current = uid;
+      sessionPickedRef.current = false;
+      const candidate = user && user.language;
+      const next =
+        candidate && TRANSLATIONS[candidate] ? candidate : readAnonLang();
+      setLangState(next);
+    } else if (
+      user &&
+      user.language &&
+      TRANSLATIONS[user.language] &&
+      !sessionPickedRef.current &&
+      user.language !== lang
+    ) {
+      // Same user, server-side profile updated by another tab → reflect it.
+      setLangState(user.language);
+    }
+    // We intentionally don't depend on `lang` here — only auth changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  const setLang = useCallback(
+    (l) => {
+      if (!TRANSLATIONS[l]) return;
+      sessionPickedRef.current = true;
+      // Anonymous users always get localStorage. Logged-in users also get it
+      // (so a future logout falls back to the latest choice), but the source
+      // of truth is the server profile.
+      try {
+        localStorage.setItem(ANON_LANG_KEY, l);
+      } catch {
+        /* ignore quota errors */
+      }
+      document.documentElement.lang = l;
+      setLangState(l);
+      if (user && user.id) {
+        // Persist server-side, fire-and-forget. Failure simply means the
+        // choice will not survive logout / device change — local state is
+        // already updated either way.
+        api.patch("/auth/profile", { language: l }).catch(() => {});
+      }
+    },
+    [user],
+  );
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -55,7 +121,7 @@ export function I18nProvider({ children }) {
       }
       return path;
     },
-    [lang]
+    [lang],
   );
 
   const value = useMemo(() => ({ lang, setLang, t }), [lang, setLang, t]);

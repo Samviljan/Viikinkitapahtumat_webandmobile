@@ -44,8 +44,8 @@ import UserGuide from "@/pages/UserGuide";
 
 function App() {
   return (
-    <I18nProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <I18nProvider>
         <BrowserRouter>
           <Layout>
             <Routes>
@@ -101,8 +101,8 @@ function App() {
             }}
           />
         </BrowserRouter>
-      </AuthProvider>
-    </I18nProvider>
+      </I18nProvider>
+    </AuthProvider>
   );
 }
 

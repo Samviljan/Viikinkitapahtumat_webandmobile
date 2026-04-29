@@ -473,7 +473,35 @@ See `/app/memory/test_credentials.md`.
   - User downloads `.aab` from above URL when Expo finishes (~10-15 min) and uploads to Play Console manually.
 
 
-## Iteration — FCM credentials + build 0.4.6 (versionCode 17) (2026-04-29)
+## Iteration — Per-user web language + Mobile messaging restored + Quota config (2026-04-29)
+- ✅ **Web — käyttäjäkohtainen kielivalinta** (`/app/frontend/src/lib/i18n.js` + `auth.js`):
+  - Backend: `User`-malliin `language`-kenttä, `PATCH /api/auth/profile` hyväksyy sen, login + `/me` palauttaa.
+  - Web: I18nProvider lukee `useAuth()`:n kautta käyttäjän kielen kirjautumisen yhteydessä; käyttäjien välinen kytkös (UserId-tracking) varmistaa että A→B→A-vaihto seuraa kunkin käyttäjän omaa valintaa, ei vuoda. localStorage `vk_lang` säilyy fall-backina anonyymeille käyttäjille.
+  - App.js: `<AuthProvider>` on nyt `<I18nProvider>`:n ULKOPUOLELLA jotta i18n voi käyttää `useAuth`:ia.
+  - Verifioitu Playwrightilla: User A (en) → logout → User B (sv) → User A re-login → palasi en:ään (ei vuotanut B:ltä).
+- ✅ **Mobiilin viestin lähetys palautettu** (`/app/mobile/app/(tabs)/favorites.tsx` + `app/settings/messages.tsx`):
+  - **Sääntö 1**: "Tapahtumani"-välilehden `attending`-osion tapahtumakortteihin lisätty `data-testid="message-event-{id}"`-painike "Viesti".
+  - **Sääntö 2**: Painike näkyy VAIN kun käyttäjällä on `paid_messaging_enabled=true` JA jokin rooli `merchant`/`organizer`/`admin`.
+  - **Sääntö 3**: Painike avaa `/settings/messages?event_id={id}` — alkutilan tapahtuma esivalittu, takaisin-ikoni ylhäällä, dropdown vain "viestittävät" tapahtumat (RSVP-pohjaiset 14 vrk taakse + tulevat).
+  - Backend uusi endpointti `GET /api/users/me/messageable-events` palauttaa nämä: admin näkee kaikki, merchant/organizer omat RSVP'd-tapahtumat 14 vrk-window:lla.
+- ✅ **Sääntö 4 — Per-event-kvootta** (`/app/backend/server.py`):
+  - Globaali `system_config`-kokoelma (`_id="messaging_quota"`).
+  - Presetit: **A=10 (oletus), B=20, C=30, D=vapaa (oletus 50)**.
+  - `POST /api/messages/send` tarkistaa `message_log.count_documents({sender_id, event_id})` ja palauttaa `429` jos rajan yli. Admin-viestit eivät kuluta kvootaa (ohittaa).
+  - Vastaukseen lisätty `quota_used`, `quota_limit`, `quota_remaining`-kentät jotta UI voi näyttää tilan.
+  - Uusi endpointti `GET /api/messages/quota/{event_id}` per-käyttäjä-per-tapahtuma kvoottatilaan.
+  - Web: uusi `<AdminMessagingQuotaPanel>` `/admin/messages`-sivulla → preset-chipit A/B/C/D + custom-input + Tallenna.
+- ✅ **Sääntö 5 — Lähettäjän nimimerkki**: viesteihin (sekä push että email) lisätään automaattisesti `— {nickname}` (priority: nickname → merchant_name → organizer_name → "Viikinkitapahtumat").
+- ✅ **Sääntö 6 — Kvootan pysyvyys**: laskuri laskee `message_log`-rivit per (sender_id, event_id) historiallisesti. RSVP:n poisto + uudelleen-RSVP **EI** nollaa kvootan käyttöä (verifioitu päästä päähän).
+- ✅ **Mobiili — Quota-indikaattori** (`messages.tsx`): kun event valittu, näytetään käytetty/kokonais-laskuri (`X/Y`) sekä lähetä-painike disabloituu kun raja on saavutettu.
+- ✅ **Versio**: mobile `0.4.6 → 0.4.7`. Web-export 2.85 MB.
+- ✅ **Curl-testit kaikki vihreitä**:
+  - Per-event quota D=2: msg 1 → 200/quota_used:1, msg 2 → 200/quota_used:2, msg 3 → 429 ✓
+  - RSVP-cycle: drop+add → quota_used säilyy 2/2 ✓
+  - Multi-user kielitestit: A→en, B→sv, A re-login → en (säilyy) ✓
+  - PATCH `/admin/messaging-quota` kaikille preseteille A/B/C/D ✓
+
+
 - ✅ **Käyttäjä loi Firebase-projektin**: `viikinkitapahtumat-push` (project_number `181106688918`).
 - ✅ **`google-services.json` ladattu** Firebase Consolesta ja tallennettu `/app/mobile/google-services.json` (704 B, gitignored). Package name verifioitu `fi.viikinkitapahtumat.mobile`.
 - ✅ **FCM V1 service-account-avain ladattu Expo Webin Credentials-näkymästä**: `firebase-adminsdk-fbsvc@viikinkitapahtumat-push.iam.gserviceaccount.com`. Avain tallennettu myös backupiksi `/app/mobile/.secrets/fcm-service-account.json` (gitignored).

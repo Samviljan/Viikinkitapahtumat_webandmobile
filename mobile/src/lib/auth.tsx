@@ -39,6 +39,7 @@ export interface AuthUser {
   consent_merchant_offers: boolean;
   saved_search: SavedSearch | null;
   paid_messaging_enabled: boolean;
+  language: string | null;
   association_name: string | null;
   country: string | null;
   profile_image_url: string | null;
@@ -217,6 +218,7 @@ function normalize(raw: Partial<AuthUser>): AuthUser {
     consent_merchant_offers: !!raw.consent_merchant_offers,
     saved_search: raw.saved_search ?? null,
     paid_messaging_enabled: !!raw.paid_messaging_enabled,
+    language: raw.language ?? null,
     association_name: raw.association_name ?? null,
     country: raw.country ?? null,
     profile_image_url: raw.profile_image_url ?? null,

@@ -13,19 +13,20 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { AppBackground } from "@/src/components/AppBackground";
 import { EventCard } from "@/src/components/EventCard";
 import { useEvents } from "@/src/hooks/useEvents";
 import { useFavorites } from "@/src/hooks/useFavorites";
 import { useAuth } from "@/src/lib/auth";
-import { colors, spacing, text } from "@/src/lib/theme";
+import { colors, radius, spacing, text } from "@/src/lib/theme";
 import { useSettings } from "@/src/lib/i18n";
 import { api } from "@/src/api/client";
 import type { VikingEvent } from "@/src/types";
@@ -36,15 +37,27 @@ interface AttendingApiEvent {
 
 type Row =
   | { kind: "header"; key: string; label: string; count: number }
-  | { kind: "event"; key: string; event: VikingEvent };
+  | { kind: "event"; key: string; event: VikingEvent; canMessage: boolean };
 
 export default function MyEventsScreen() {
   const { events } = useEvents();
   const { ids: favIds } = useFavorites();
   const { t } = useSettings();
   const { user } = useAuth();
+  const router = useRouter();
   const [attendingIds, setAttendingIds] = useState<string[]>([]);
   const [loadingAtt, setLoadingAtt] = useState(false);
+
+  // The "Viesti" button must only appear for paid messaging users in the
+  // merchant/organizer/admin roles. Reading these flags from the auth context
+  // means the button updates instantly when the admin flips the toggle (next
+  // /auth/me refresh).
+  const canSendMessages =
+    !!user &&
+    (user.role === "admin" ||
+      (user.paid_messaging_enabled &&
+        ((user.user_types || []).includes("merchant") ||
+          (user.user_types || []).includes("organizer"))));
 
   // Pull attending list when authenticated. Anonymous → keep empty.
   useEffect(() => {
@@ -94,7 +107,7 @@ export default function MyEventsScreen() {
         count: attending.length,
       });
       for (const e of attending) {
-        out.push({ kind: "event", key: `att-${e.id}`, event: e });
+        out.push({ kind: "event", key: `att-${e.id}`, event: e, canMessage: canSendMessages });
       }
     }
     if (favourites.length) {
@@ -105,11 +118,11 @@ export default function MyEventsScreen() {
         count: favourites.length,
       });
       for (const e of favourites) {
-        out.push({ kind: "event", key: `fav-${e.id}`, event: e });
+        out.push({ kind: "event", key: `fav-${e.id}`, event: e, canMessage: false });
       }
     }
     return out;
-  }, [events, favIds, attendingIds, user, t]);
+  }, [events, favIds, attendingIds, user, t, canSendMessages]);
 
   // Empty state — both lists empty
   if (rows.length === 0 && !loadingAtt) {
@@ -144,7 +157,33 @@ export default function MyEventsScreen() {
                 </Text>
               </View>
             ) : (
-              <EventCard event={item.event} />
+              <View>
+                <EventCard event={item.event} />
+                {item.canMessage ? (
+                  <Pressable
+                    testID={`message-event-${item.event.id}`}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/settings/messages" as never,
+                        params: { event_id: item.event.id },
+                      })
+                    }
+                    style={({ pressed }) => [
+                      styles.messageBtn,
+                      pressed && { opacity: 0.7 },
+                    ]}
+                  >
+                    <Ionicons
+                      name="paper-plane-outline"
+                      size={14}
+                      color={colors.gold}
+                    />
+                    <Text style={styles.messageBtnText}>
+                      {t("messaging.cta_send")}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
             )
           }
           contentContainerStyle={styles.list}
@@ -212,5 +251,27 @@ const styles = StyleSheet.create({
   sectionCount: {
     color: colors.stone,
     fontSize: 11,
+  },
+  messageBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    marginTop: -spacing.sm,
+    marginBottom: spacing.md,
+    marginLeft: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.gold,
+    backgroundColor: "rgba(201,161,74,0.08)",
+  },
+  messageBtnText: {
+    color: colors.gold,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
+    textTransform: "uppercase",
   },
 });

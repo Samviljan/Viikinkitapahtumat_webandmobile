@@ -17,7 +17,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { AppBackground } from "@/src/components/AppBackground";
 import { colors, radius, spacing, text } from "@/src/lib/theme";
 import { useSettings } from "@/src/lib/i18n";
@@ -44,20 +44,35 @@ interface SendResult {
   recipients: number;
   push_eligible?: number;
   email_eligible?: number;
+  quota_used?: number;
+  quota_limit?: number;
+  quota_remaining?: number;
+}
+
+interface QuotaState {
+  unlimited: boolean;
+  used: number;
+  limit: number;
+  remaining: number;
 }
 
 export default function MessagesScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ event_id?: string | string[] }>();
+  const initialEventId = Array.isArray(params.event_id)
+    ? params.event_id[0]
+    : params.event_id || "";
   const { t, lang } = useSettings();
   const { user } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
-  const [eventId, setEventId] = useState("");
+  const [eventId, setEventId] = useState(initialEventId);
   const [channel, setChannel] = useState<Channel>("both");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [targets, setTargets] = useState<Target[]>([]);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<SendResult | null>(null);
+  const [quota, setQuota] = useState<QuotaState | null>(null);
 
   const types = user?.user_types || [];
   const isAdmin = user?.role === "admin";
@@ -66,16 +81,38 @@ export default function MessagesScreen() {
     (!!user?.paid_messaging_enabled &&
       (types.includes("merchant") || types.includes("organizer")));
 
-  // Admins see all events (site-wide announcements). Merchants/organizers only
-  // see events they have RSVPed to — backend enforces the same gate.
+  // Backend's /users/me/messageable-events endpoint returns:
+  //   - admin: every approved event ≤ 14 days old + every future event
+  //   - merchant/organizer: their RSVPed events ≤ 14 days old + future
+  // This matches the product rule: messages can be sent up to 2 weeks after
+  // the event ended (post-event recap) and to any event the user is going to.
   useEffect(() => {
     if (!allowed) return;
-    const url = isAdmin ? "/events?limit=200" : "/users/me/attending";
     api
-      .get<Event[]>(url)
-      .then((r) => setEvents(r.data || []))
+      .get<{ events: Event[] }>("/users/me/messageable-events")
+      .then((r) => setEvents(r.data?.events || []))
       .catch(() => setEvents([]));
-  }, [allowed, isAdmin]);
+  }, [allowed]);
+
+  // Load quota whenever the selected event changes (skip for admin = unlimited).
+  useEffect(() => {
+    if (!allowed || !eventId || isAdmin) {
+      setQuota(null);
+      return;
+    }
+    let cancelled = false;
+    api
+      .get<QuotaState>(`/messages/quota/${eventId}`)
+      .then((r) => {
+        if (!cancelled) setQuota(r.data);
+      })
+      .catch(() => {
+        if (!cancelled) setQuota(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [allowed, eventId, isAdmin, result]);
 
   function toggleTarget(c: Target) {
     setTargets((prev) =>
@@ -103,7 +140,9 @@ export default function MessagesScreen() {
       const errResp = (e as { response?: { status?: number; data?: { detail?: string } } })?.response;
       const status = errResp?.status;
       const detail = errResp?.data?.detail;
-      if (status === 403 && typeof detail === "string") {
+      if (status === 429 && typeof detail === "string") {
+        Alert.alert(t("messaging.quota_reached_title"), detail);
+      } else if (status === 403 && typeof detail === "string") {
         Alert.alert(detail);
       } else if (status === 402) {
         Alert.alert(t("messaging.blocked_title"));
@@ -188,6 +227,34 @@ export default function MessagesScreen() {
                   );
                 })}
               </ScrollView>
+
+              {/* Quota indicator (non-admin only) */}
+              {quota && !quota.unlimited && eventId ? (
+                <View
+                  testID="messaging-quota"
+                  style={[
+                    styles.quotaBox,
+                    quota.remaining === 0 && styles.quotaBoxEmpty,
+                  ]}
+                >
+                  <Ionicons
+                    name={quota.remaining === 0 ? "lock-closed-outline" : "speedometer-outline"}
+                    size={14}
+                    color={quota.remaining === 0 ? colors.ember : colors.gold}
+                  />
+                  <Text
+                    style={[
+                      styles.quotaText,
+                      quota.remaining === 0 && { color: colors.ember },
+                    ]}
+                  >
+                    {t("messaging.quota_used", {
+                      used: quota.used,
+                      limit: quota.limit,
+                    })}
+                  </Text>
+                </View>
+              ) : null}
 
               {/* Channel */}
               <Text style={[styles.label, { marginTop: spacing.lg }]}>
@@ -275,11 +342,22 @@ export default function MessagesScreen() {
               <Pressable
                 testID="msg-send"
                 onPress={send}
-                disabled={sending || !eventId || !subject.trim() || !body.trim()}
+                disabled={
+                  sending ||
+                  !eventId ||
+                  !subject.trim() ||
+                  !body.trim() ||
+                  (quota ? !quota.unlimited && quota.remaining === 0 : false)
+                }
                 style={({ pressed }) => [
                   styles.primaryBtn,
                   { marginTop: spacing.lg },
-                  (pressed || sending || !eventId || !subject.trim() || !body.trim()) && {
+                  (pressed ||
+                    sending ||
+                    !eventId ||
+                    !subject.trim() ||
+                    !body.trim() ||
+                    (quota ? !quota.unlimited && quota.remaining === 0 : false)) && {
                     opacity: 0.6,
                   },
                 ]}
@@ -388,6 +466,29 @@ const styles = StyleSheet.create({
   eventChipText: { color: colors.bone, fontSize: 13, fontWeight: "600" },
   eventChipTextActive: { color: colors.gold },
   eventChipDate: { color: colors.stone, fontSize: 11, marginTop: 2 },
+  quotaBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    marginTop: spacing.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.gold,
+    backgroundColor: "rgba(201,161,74,0.06)",
+  },
+  quotaBoxEmpty: {
+    borderColor: colors.ember,
+    backgroundColor: "rgba(180,70,52,0.08)",
+  },
+  quotaText: {
+    color: colors.gold,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+  },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
     paddingVertical: 8,

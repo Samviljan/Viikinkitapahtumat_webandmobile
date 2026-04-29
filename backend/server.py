@@ -113,6 +113,7 @@ async def get_current_user(request: Request) -> dict:
         user.setdefault("consent_merchant_offers", False)
         user.setdefault("saved_search", None)
         user.setdefault("paid_messaging_enabled", False)
+        user.setdefault("language", None)
         return user
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
@@ -163,6 +164,7 @@ class UserOut(BaseModel):
     consent_merchant_offers: bool = False
     saved_search: Optional[SavedSearch] = None
     paid_messaging_enabled: bool = False
+    language: Optional[str] = None
 
 
 USER_TYPES = {"reenactor", "fighter", "merchant", "organizer"}
@@ -196,6 +198,7 @@ class ProfileUpdate(BaseModel):
     consent_organizer_messages: Optional[bool] = None
     consent_merchant_offers: Optional[bool] = None
     saved_search: Optional[SavedSearch] = None
+    language: Optional[str] = None
 
 
 class GoogleSessionRequest(BaseModel):
@@ -253,6 +256,46 @@ class SendMessageRequest(BaseModel):
     subject: str
     body: str
     target_categories: List[Literal["reenactor", "fighter", "merchant", "organizer"]] = []
+
+
+# -----------------------------------------------------------------------------
+# Messaging quota — global config that limits how many push/email messages a
+# single non-admin sender may dispatch per event over its lifetime.
+# Stored in the `system_config` collection under key="messaging_quota". The
+# counter is the count of `message_log` rows for (sender_id, event_id), so
+# unsubscribing and re-subscribing to an event does NOT reset the counter.
+# -----------------------------------------------------------------------------
+QUOTA_PRESETS = {"A": 10, "B": 20, "C": 30}
+DEFAULT_QUOTA_PRESET = "A"
+DEFAULT_CUSTOM_QUOTA = 50
+
+
+class MessagingQuotaConfig(BaseModel):
+    preset: Literal["A", "B", "C", "D"] = DEFAULT_QUOTA_PRESET
+    custom_value: int = DEFAULT_CUSTOM_QUOTA
+
+
+class MessagingQuotaUpdate(BaseModel):
+    preset: Literal["A", "B", "C", "D"]
+    custom_value: Optional[int] = None  # required when preset="D"
+
+
+async def get_messaging_quota_config() -> MessagingQuotaConfig:
+    """Read the current messaging quota config from system_config. Defaults to
+    preset A (10 messages per event) when no config row exists."""
+    row = await db.system_config.find_one({"_id": "messaging_quota"})
+    if not row:
+        return MessagingQuotaConfig()
+    return MessagingQuotaConfig(
+        preset=row.get("preset", DEFAULT_QUOTA_PRESET),
+        custom_value=int(row.get("custom_value", DEFAULT_CUSTOM_QUOTA)),
+    )
+
+
+def quota_value(cfg: MessagingQuotaConfig) -> int:
+    if cfg.preset == "D":
+        return max(1, int(cfg.custom_value or DEFAULT_CUSTOM_QUOTA))
+    return QUOTA_PRESETS[cfg.preset]
 
 
 EventCategory = Literal["market", "training_camp", "course", "festival", "meetup", "other"]
@@ -457,6 +500,7 @@ async def login(payload: LoginRequest, response: Response):
         "consent_merchant_offers": bool(user.get("consent_merchant_offers", False)),
         "saved_search": user.get("saved_search"),
         "paid_messaging_enabled": bool(user.get("paid_messaging_enabled", False)),
+        "language": user.get("language"),
         "has_password": True,
         "token": token,
     }
@@ -704,6 +748,11 @@ async def update_profile(
             "categories": list(ss.categories or []),
             "countries": list(ss.countries or []),
         }
+    if payload.language is not None:
+        # Free-form language code (e.g. "fi", "en", "sv", "da", "de", "et", "pl").
+        # We don't strictly validate so new languages can be added later.
+        lang = (payload.language or "").strip().lower()[:8]
+        update["language"] = lang or None
 
     # If user removes "merchant"/"organizer" from user_types, also clear the
     # corresponding name field so stale data doesn't linger.
@@ -729,6 +778,7 @@ async def update_profile(
     fresh.setdefault("consent_merchant_offers", False)
     fresh.setdefault("saved_search", None)
     fresh.setdefault("paid_messaging_enabled", False)
+    fresh.setdefault("language", None)
     return UserOut(**fresh)
 
 
@@ -1064,6 +1114,23 @@ async def send_message_to_attendees(
                 detail="You can only message attendees of events you yourself attend",
             )
 
+    # Per-event quota for non-admin senders. Counter = total message_log rows
+    # by this sender for this event; this means leaving and re-RSVPing does
+    # NOT reset the counter (counter is intentionally persistent).
+    quota_used = 0
+    quota_limit = 0
+    if not is_admin:
+        cfg = await get_messaging_quota_config()
+        quota_limit = quota_value(cfg)
+        quota_used = await db.message_log.count_documents(
+            {"sender_id": user["id"], "event_id": payload.event_id}
+        )
+        if quota_used >= quota_limit:
+            raise HTTPException(
+                status_code=429,
+                detail=f"Message quota for this event reached ({quota_used}/{quota_limit})",
+            )
+
     # Pick the consent filter matching the sender. Admins reach everyone who has
     # given EITHER consent (site-wide announcements). Merchants/organizers stay
     # bound to their respective consent flag.
@@ -1111,14 +1178,25 @@ async def send_message_to_attendees(
         if payload.channel in ("email", "both") and r.get("notify_email"):
             email_recipients.append(consenter_emails[uid])
 
+    # Sender nickname is appended to every push/email body so recipients always
+    # know who the message is from. Admin uses "Viikinkitapahtumat" since the
+    # site itself is the sender for site-wide announcements.
+    sender_label = (
+        user.get("nickname")
+        or user.get("merchant_name")
+        or user.get("organizer_name")
+        or ("Viikinkitapahtumat" if is_admin else "Viestin lähettäjä")
+    )
+
     sent_push = 0
     if push_user_ids:
+        push_body = f"{payload.body[:140]}\n— {sender_label}"
         result = await push_send_to_users(
             db,
             push_user_ids,
             title=payload.subject,
-            body=payload.body[:160],
-            data={"event_id": payload.event_id},
+            body=push_body[:200],
+            data={"event_id": payload.event_id, "sender": sender_label},
         )
         sent_push = result.get("sent", 0)
 
@@ -1128,15 +1206,15 @@ async def send_message_to_attendees(
         from email_service import send_email as svc_send_email
         site = os.environ.get("PUBLIC_SITE_URL", "https://viikinkitapahtumat.fi")
         ev_title = ev.get("title_fi") or ev.get("title") or "Viikinkitapahtumat"
-        sender_name = user.get("organizer_name") or user.get("merchant_name") or user.get("nickname") or "Viikinkitapahtumat"
         html = (
             f"<div style='font-family:system-ui,Arial,sans-serif;background:#0E0B09;color:#E8E2D5;padding:24px;'>"
             f"<div style='max-width:560px;margin:auto;border:1px solid #352A23;padding:24px;'>"
             f"<div style='font-size:11px;letter-spacing:1.6px;color:#C19C4D;text-transform:uppercase;'>{html_escape(ev_title)}</div>"
             f"<h1 style='font-family:Georgia,serif;color:#E8E2D5;margin:8px 0 16px;'>{html_escape(payload.subject)}</h1>"
             f"<div style='white-space:pre-wrap;line-height:1.55;color:#E8E2D5;'>{html_escape(payload.body)}</div>"
+            f"<div style='margin-top:18px;font-size:13px;color:#C19C4D;'>— {html_escape(sender_label)}</div>"
             f"<hr style='border:none;border-top:1px solid #352A23;margin:24px 0;'>"
-            f"<div style='font-size:11px;color:#8E8276;'>Lähettäjä: {html_escape(sender_name)} · "
+            f"<div style='font-size:11px;color:#8E8276;'>Lähettäjä: {html_escape(sender_label)} · "
             f"<a href='{site}/profile' style='color:#C19C4D;'>Hallinnoi viestiasetuksia</a></div>"
             f"</div></div>"
         )
@@ -1156,7 +1234,7 @@ async def send_message_to_attendees(
         "push_eligible": len(push_user_ids),
         "email_eligible": len(email_recipients),
     }
-    # Audit trail — used by /admin/stats/messages.
+    # Audit trail — used by /admin/stats/messages AND for per-event quota.
     await db.message_log.insert_one(
         {
             "event_id": payload.event_id,
@@ -1171,7 +1249,110 @@ async def send_message_to_attendees(
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
     )
+    if not is_admin:
+        return_payload["quota_used"] = quota_used + 1
+        return_payload["quota_limit"] = quota_limit
+        return_payload["quota_remaining"] = max(0, quota_limit - (quota_used + 1))
     return return_payload
+
+
+# -----------------------------------------------------------------------------
+# Messaging quota — admin GET/PATCH + per-user "remaining quota" probe so the
+# mobile app can disable the send button when the user is at the limit.
+# -----------------------------------------------------------------------------
+@api_router.get(
+    "/admin/messaging-quota",
+    dependencies=[Depends(get_admin_user)],
+)
+async def admin_get_messaging_quota():
+    cfg = await get_messaging_quota_config()
+    return {
+        "preset": cfg.preset,
+        "custom_value": cfg.custom_value,
+        "current_limit": quota_value(cfg),
+        "presets": {"A": 10, "B": 20, "C": 30, "D_default": DEFAULT_CUSTOM_QUOTA},
+    }
+
+
+@api_router.patch(
+    "/admin/messaging-quota",
+    dependencies=[Depends(get_admin_user)],
+)
+async def admin_update_messaging_quota(payload: MessagingQuotaUpdate):
+    cfg = await get_messaging_quota_config()
+    new_custom = (
+        max(1, int(payload.custom_value))
+        if payload.custom_value is not None
+        else cfg.custom_value
+    )
+    new_doc = {
+        "_id": "messaging_quota",
+        "preset": payload.preset,
+        "custom_value": new_custom,
+    }
+    await db.system_config.update_one(
+        {"_id": "messaging_quota"}, {"$set": new_doc}, upsert=True
+    )
+    fresh = MessagingQuotaConfig(preset=payload.preset, custom_value=new_custom)
+    return {
+        "preset": fresh.preset,
+        "custom_value": fresh.custom_value,
+        "current_limit": quota_value(fresh),
+    }
+
+
+@api_router.get("/messages/quota/{event_id}")
+async def get_event_quota_for_user(
+    event_id: str, user: dict = Depends(get_current_user)
+):
+    """Return the messaging quota state for the current user on a single event.
+    Admin gets `unlimited=True`."""
+    if user.get("role") == "admin":
+        return {"unlimited": True, "used": 0, "limit": 0, "remaining": -1}
+    cfg = await get_messaging_quota_config()
+    limit = quota_value(cfg)
+    used = await db.message_log.count_documents(
+        {"sender_id": user["id"], "event_id": event_id}
+    )
+    return {
+        "unlimited": False,
+        "used": used,
+        "limit": limit,
+        "remaining": max(0, limit - used),
+    }
+
+
+# -----------------------------------------------------------------------------
+# Messageable events — for the mobile compose screen. Returns events where the
+# current user can plausibly send a message: events they are RSVPd to (today
+# onward) PLUS any events that started ≤ 14 days ago (so post-event recap
+# messages still go through). Admin gets all approved events in this same
+# window. Result is enriched with the same fields EventOut returns.
+# -----------------------------------------------------------------------------
+@api_router.get("/users/me/messageable-events")
+async def list_messageable_events(user: dict = Depends(get_current_user)):
+    today = datetime.now(timezone.utc).date()
+    from_iso = (today - timedelta(days=14)).isoformat()
+    is_admin = user.get("role") == "admin"
+    base_filter = {
+        "status": "approved",
+        "$or": [
+            {"start_date": {"$gte": from_iso}},
+            {"end_date": {"$gte": from_iso}},
+        ],
+    }
+    if is_admin:
+        events = await db.events.find(base_filter, {"_id": 0}).sort("start_date", 1).to_list(2000)
+    else:
+        rsvps = await db.event_attendees.find(
+            {"user_id": user["id"]}, {"_id": 0, "event_id": 1}
+        ).to_list(5000)
+        ids = [r["event_id"] for r in rsvps]
+        if not ids:
+            return {"events": []}
+        f = dict(base_filter, id={"$in": ids})
+        events = await db.events.find(f, {"_id": 0}).sort("start_date", 1).to_list(2000)
+    return {"events": events}
 
 
 @api_router.get(
