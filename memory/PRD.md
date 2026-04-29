@@ -473,7 +473,16 @@ See `/app/memory/test_credentials.md`.
   - User downloads `.aab` from above URL when Expo finishes (~10-15 min) and uploads to Play Console manually.
 
 
-## Iteration — Mobile GPS toggle + FCM setup guide (2026-04-29)
+## Iteration — FCM credentials + build 0.4.6 (versionCode 17) (2026-04-29)
+- ✅ **Käyttäjä loi Firebase-projektin**: `viikinkitapahtumat-push` (project_number `181106688918`).
+- ✅ **`google-services.json` ladattu** Firebase Consolesta ja tallennettu `/app/mobile/google-services.json` (704 B, gitignored). Package name verifioitu `fi.viikinkitapahtumat.mobile`.
+- ✅ **FCM V1 service-account-avain ladattu Expo Webin Credentials-näkymästä**: `firebase-adminsdk-fbsvc@viikinkitapahtumat-push.iam.gserviceaccount.com`. Avain tallennettu myös backupiksi `/app/mobile/.secrets/fcm-service-account.json` (gitignored).
+- ✅ **EAS file environment variable** luotu: `GOOGLE_SERVICES_JSON` (production scope, secret visibility) → EAS bundlaa Firebase-konfiguraation builderille ilman että tiedosto on Gitissä.
+- ✅ **`app.config.js` luotu**: dynamicaalinen wrapper joka injektoi `process.env.GOOGLE_SERVICES_JSON` -arvon `android.googleServicesFile`-kenttään build-aikana. `app.json` säilytetty staattisena, `app.config.js` ottaa precedenssin.
+- 🚧 **EAS production build käynnissä**: Build ID `e603237d-4723-49f4-8355-fddf290da8c3`, versio 0.4.6, versionCode 17. Logs: https://expo.dev/accounts/samviljan/projects/viikinkitapahtumat/builds/e603237d-4723-49f4-8355-fddf290da8c3
+- 🚧 **Käyttäjän vuoro buildin valmistuttua**: Lataa AAB Play Console → Closed testing → Create new release → asenna laitteelle → Profiili → Push diagnostics.
+
+
 - ✅ **Mobiilin GPS-toggle** (`/app/mobile/src/lib/i18n.tsx`, `useLocation.ts`, `app/settings/search.tsx`, `app/(tabs)/index.tsx`):
   - `UserDefaults.locationEnabled` (default `true`) lisätty SettingsContextiin + AsyncStorage-persistointiin.
   - `useLocation()` -hook tarkistaa togglen ennen `Location.requestForegroundPermissionsAsync()`-kutsua → status muuttuu `"disabled"`-tilaan jos pois käytöstä, eikä koskaan kysy GPS-lupaa.
