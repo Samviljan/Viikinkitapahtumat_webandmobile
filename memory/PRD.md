@@ -515,6 +515,17 @@ See `/app/memory/test_credentials.md`.
   - Logs / artifact: https://expo.dev/accounts/samviljan/projects/viikinkitapahtumat/builds/c9b4d2be-2216-48ce-82ef-5ae398e4ba91
   - Version 0.4.3, versionCode 12, includes: 21-country support + full profile feature parity.
 
+## Iteration — Admin delete UX + RSVP messaging confirm + SEO (2026-04-29)
+- ✅ **Admin user delete fixed**: replaced `window.confirm()` (which is sometimes silently blocked in PWAs / mobile browsers) with a proper shadcn `AlertDialog`. Deletion now opens a styled confirmation modal showing the email, with cancel + danger-colored "Poista käyttäjä" buttons. Loading spinner during the call. Tested via Playwright: 4 deletable users → click trash → AlertDialog opens → confirm → 3 deletable users (cascade DELETE worked, GDPR cleanup ran).
+- ✅ **Messaging RSVP restriction confirmed already implemented**: backend `POST /api/messages/send` (server.py:974-983) returns 403 when a non-admin sender lacks RSVP for the chosen event; frontend `SendMessage.jsx:47` only fetches events the user has RSVP'd to (`/users/me/attending`). No code change needed; verified by code review.
+- ✅ **SEO optimization** for the requested keyword set: viikinkitapahtumat, historianelävöitys, keskiaika, viikingit, vikings, reenactment, history, historia, living history events:
+  - Rewrote `frontend/public/index.html` with: SEO `<title>` + `<meta description/keywords/author/robots/geo>`; canonical link; 8 `hreflang` alternates (fi/en/sv/da/de/et/pl + x-default); Open Graph (og:title/description/url/image/locale + 6 alternate locales); Twitter card; **two JSON-LD blocks**: `WebSite` (with SearchAction) and `Organization` (with knowsAbout viking/reenactment/keskiaika).
+  - Created `frontend/src/lib/seo.js` — minimal `useDocumentSeo` hook (no React Helmet dep; pure DOM mutation) for per-page title/description/canonical/og:image/keywords overrides.
+  - Wired into `Home.jsx`, `Events.jsx`, `EventDetail.jsx` (per-event localized title + image as og:image, og:type=event).
+  - Created `frontend/public/robots.txt` — allow-all, disallows /admin /api /profile /messages /reset-password, points to `/api/sitemap.xml`.
+  - Added `GET /api/sitemap.xml` in `server.py` — dynamic XML listing 7 static paths + every approved event with hreflang alternates for all 7 languages, lastmod from `updated_at` or `start_date`. Verified: HTTP 200, 34 KB. Cache-Control: public, max-age=3600.
+  - Added `admin.action_cancel` translations FI/EN/SV/DA/DE/ET/PL.
+
 ## Backlog (priorities)
 - **P1** Stripe integration for paid messaging (currently admin manually toggles `paid_messaging_enabled`).
 - **P1** Mobile DA/DE/ET/PL native dictionaries (currently fall back to EN; covers ~80 string keys vs 250 on web).

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
+import { useDocumentSeo } from "@/lib/seo";
 import EventCard from "@/components/EventCard";
 import EventCalendar from "@/components/EventCalendar";
 import PageHero from "@/components/PageHero";
@@ -36,6 +37,25 @@ export default function Events() {
   const [selectedCountries, setSelectedCountries] = useState(() => new Set());
   const [loaded, setLoaded] = useState(false);
   const [seeded, setSeeded] = useState(false);
+
+  useDocumentSeo({
+    title:
+      "Tapahtumat — Viikinkitapahtumat · Vikings, reenactment, keskiaika",
+    description:
+      "Pohjoismaiset viikinki- ja rauta-aikatapahtumat: markkinat, taisteluleirit, kurssit, festivaalit. Vikings, reenactment, living history events Suomessa, Ruotsissa, Virossa, Norjassa, Tanskassa.",
+    canonicalPath: "/events",
+    keywords: [
+      "viikinkitapahtumat",
+      "viikingit",
+      "vikings",
+      "historianelävöitys",
+      "reenactment",
+      "keskiaika",
+      "viikinkimarkkinat",
+      "viking market",
+      "living history events",
+    ],
+  });
 
   // Seed filters from the user's saved_search defaults exactly once when the
   // session resolves. We never overwrite an already-edited filter on later

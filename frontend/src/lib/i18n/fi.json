@@ -288,7 +288,8 @@
       "test_sent": "Testi lähetetty {n} laitteelle",
       "test_no_token": "Sinulla ei ole vielä push-tokenia rekisteröitynyt. Asenna mobiilisovellus puhelimellesi ja kirjaudu sisään.",
       "empty_help": "Push-viestit eivät tavoita ketään koska kukaan ei ole vielä rekisteröinyt push-tokenia mobiilisovelluksen kautta. Asenna sovellus, kirjaudu, salli notifikaatiot — ja sovellus rekisteröi tokenin automaattisesti."
-    }
+    },
+    "action_cancel": "Peruuta"
   },
   "account": {
     "sign_in": "Kirjaudu",

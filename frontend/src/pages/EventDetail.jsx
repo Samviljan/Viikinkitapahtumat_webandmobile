@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "@/lib/api";
 import { useI18n, pickLocalized } from "@/lib/i18n";
+import { useDocumentSeo } from "@/lib/seo";
 import { Calendar, MapPin, User, Mail, Globe, ChevronLeft, Hourglass, Clock, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDateRange, computeEventTiming } from "@/components/EventCard";
@@ -24,6 +25,35 @@ export default function EventDetail() {
       .then((r) => setEvent(r.data))
       .catch(() => setError("not_found"));
   }, [id]);
+
+  // Localized strings — when event hasn't loaded yet these are empty strings.
+  // Computed BEFORE early returns so the hook order is stable.
+  const title = event ? pickLocalized(event, lang, "title") : "";
+  const desc = event ? pickLocalized(event, lang, "description") : "";
+
+  // SEO: per-event title/description/canonical/og:image. Helps Google index
+  // each event with a localized title and an image card preview when shared.
+  // MUST be called every render (not conditionally) — react-hooks/rules-of-hooks.
+  useDocumentSeo({
+    title: title ? `${title} — Viikinkitapahtumat` : undefined,
+    description: desc
+      ? desc.slice(0, 200).replace(/\s+/g, " ").trim()
+      : undefined,
+    canonicalPath: event ? `/events/${event.id}` : undefined,
+    image: event?.image_url ? resolveImageUrl(event.image_url) : undefined,
+    keywords: [
+      "viikinkitapahtumat",
+      "viikingit",
+      "vikings",
+      "historianelävöitys",
+      "reenactment",
+      "keskiaika",
+      "living history events",
+      event?.location || "",
+      event?.category || "",
+    ].filter(Boolean),
+    type: "event",
+  });
 
   if (error) {
     return (
@@ -48,8 +78,6 @@ export default function EventDetail() {
     );
   }
 
-  const title = pickLocalized(event, lang, "title");
-  const desc = pickLocalized(event, lang, "description");
   const flag = flagFor(event.country || "FI");
   const { daysUntil, durationDays } = computeEventTiming(event.start_date, event.end_date);
   const gallery = Array.isArray(event.gallery) ? event.gallery.filter(Boolean) : [];

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
+import { useDocumentSeo } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import EventCard from "@/components/EventCard";
 import PageHero from "@/components/PageHero";
@@ -17,6 +18,28 @@ export default function Home() {
   const { t } = useI18n();
   const [events, setEvents] = useState([]);
   const [loaded, setLoaded] = useState(false);
+
+  useDocumentSeo({
+    title:
+      "Viikinkitapahtumat — viikingit, historianelävöitys, keskiaika, vikings, reenactment",
+    description:
+      "Viikinkitapahtumat.fi: pohjoismainen viikinki- ja rauta-aikakalenteri. Markkinat, taisteluleirit, kurssit, festivaalit. Living history events, vikings, reenactment, historia, medieval, Iron Age — Suomi, Ruotsi, Viro, Norja, Tanska.",
+    canonicalPath: "/",
+    keywords: [
+      "viikinkitapahtumat",
+      "viikingit",
+      "vikings",
+      "historianelävöitys",
+      "reenactment",
+      "keskiaika",
+      "history",
+      "historia",
+      "living history events",
+      "medieval",
+      "viking market",
+      "viikinkimarkkinat",
+    ],
+  });
 
   useEffect(() => {
     api

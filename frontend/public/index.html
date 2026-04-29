@@ -4,7 +4,104 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#110E0C" />
-        <meta name="description" content="Viikinkitapahtumat — pohjoisen viikinki- ja rauta-aikaharrastajien kalenteri, kurssit ja yhteisö." />
+
+        <!-- SEO -->
+        <title>Viikinkitapahtumat — viikingit, historianelävöitys, keskiaika</title>
+        <meta
+            name="description"
+            content="Viikinkitapahtumat.fi — pohjoismainen viikinki- ja rauta-aikatapahtumien kalenteri: keskiaika, viikingit, historianelävöitys ja living history events. Markkinat, taisteluleirit, kurssit. Vikings, reenactment, history."
+        />
+        <meta
+            name="keywords"
+            content="viikinkitapahtumat, viikingit, vikings, historianelävöitys, reenactment, keskiaika, medieval, history, historia, living history events, viikinkimarkkinat, viking market, historiakurssit, reenactor, fighter, taistelijat, viikinki festivaali"
+        />
+        <meta name="author" content="Viikinkitapahtumat.fi" />
+        <meta name="robots" content="index, follow, max-image-preview:large" />
+        <meta name="language" content="fi" />
+        <meta name="geo.region" content="FI" />
+        <meta name="geo.placename" content="Suomi · Pohjoismaat · Eurooppa" />
+        <link rel="canonical" href="https://viikinkitapahtumat.fi/" />
+
+        <!-- Multilingual hreflang alternates -->
+        <link rel="alternate" hreflang="fi" href="https://viikinkitapahtumat.fi/?lang=fi" />
+        <link rel="alternate" hreflang="en" href="https://viikinkitapahtumat.fi/?lang=en" />
+        <link rel="alternate" hreflang="sv" href="https://viikinkitapahtumat.fi/?lang=sv" />
+        <link rel="alternate" hreflang="da" href="https://viikinkitapahtumat.fi/?lang=da" />
+        <link rel="alternate" hreflang="de" href="https://viikinkitapahtumat.fi/?lang=de" />
+        <link rel="alternate" hreflang="et" href="https://viikinkitapahtumat.fi/?lang=et" />
+        <link rel="alternate" hreflang="pl" href="https://viikinkitapahtumat.fi/?lang=pl" />
+        <link rel="alternate" hreflang="x-default" href="https://viikinkitapahtumat.fi/" />
+
+        <!-- Open Graph (Facebook, LinkedIn, WhatsApp, Slack) -->
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Viikinkitapahtumat" />
+        <meta property="og:locale" content="fi_FI" />
+        <meta property="og:locale:alternate" content="en_US" />
+        <meta property="og:locale:alternate" content="sv_SE" />
+        <meta property="og:locale:alternate" content="da_DK" />
+        <meta property="og:locale:alternate" content="de_DE" />
+        <meta property="og:locale:alternate" content="et_EE" />
+        <meta property="og:locale:alternate" content="pl_PL" />
+        <meta property="og:title" content="Viikinkitapahtumat — viikingit, historianelävöitys, keskiaika" />
+        <meta
+            property="og:description"
+            content="Pohjoismainen viikinki- ja rauta-aikatapahtumien kalenteri. Markkinat, taisteluleirit, kurssit. Vikings, reenactment, living history events."
+        />
+        <meta property="og:url" content="https://viikinkitapahtumat.fi/" />
+        <meta property="og:image" content="https://viikinkitapahtumat.fi/og-cover.jpg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="Viikinkitapahtumat — historianelävöitys, viikingit, keskiaika" />
+
+        <!-- Twitter / X card -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Viikinkitapahtumat — viikingit, historianelävöitys, keskiaika" />
+        <meta
+            name="twitter:description"
+            content="Pohjoismainen viikinki- ja rauta-aikatapahtumien kalenteri. Vikings, reenactment, living history events."
+        />
+        <meta name="twitter:image" content="https://viikinkitapahtumat.fi/og-cover.jpg" />
+
+        <!-- Structured data (schema.org) — boosts visibility in Google rich results -->
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "Viikinkitapahtumat",
+          "alternateName": ["Viking Events", "Vikings & reenactment calendar"],
+          "url": "https://viikinkitapahtumat.fi/",
+          "inLanguage": ["fi", "en", "sv", "da", "de", "et", "pl"],
+          "description": "Pohjoismainen viikinki- ja rauta-aikatapahtumien kalenteri. Keskiaika, historianelävöitys, vikings, reenactment, living history events.",
+          "keywords": "viikinkitapahtumat, viikingit, vikings, historianelävöitys, reenactment, keskiaika, history, living history events",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://viikinkitapahtumat.fi/events?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }
+        </script>
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "Viikinkitapahtumat",
+          "url": "https://viikinkitapahtumat.fi/",
+          "logo": "https://viikinkitapahtumat.fi/icon-512.png",
+          "sameAs": [],
+          "areaServed": ["Finland", "Sweden", "Norway", "Denmark", "Estonia", "Iceland", "Germany", "Poland"],
+          "knowsAbout": [
+            "Viking Age",
+            "Viikingit",
+            "Historianelävöitys",
+            "Reenactment",
+            "Keskiaika",
+            "Medieval history",
+            "Living history events",
+            "Iron Age"
+          ]
+        }
+        </script>
+
         <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
         <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
         <link rel="apple-touch-icon" href="%PUBLIC_URL%/favicon.ico" />
@@ -16,7 +113,6 @@
             href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Cinzel:wght@500;600;700&family=Outfit:wght@300;400;500;600&display=swap"
             rel="stylesheet"
         />
-        <title>Viikinkitapahtumat</title>
         <script>window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);</script>
         <script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>
     </head>

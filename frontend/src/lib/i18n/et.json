@@ -244,7 +244,8 @@
       "test_sent": "Test saadetud {n} seadmesse",
       "test_no_token": "Sul pole veel push-tokenit registreeritud. Paigalda mobiilirakendus ja logi sisse.",
       "empty_help": "Push-sõnumid ei jõua kelleltki, kuna keegi pole veel mobiilirakenduse kaudu push-tokenit registreerinud. Paigalda rakendus, logi sisse, luba teated — rakendus registreerib tokeni automaatselt."
-    }
+    },
+    "action_cancel": "Tühista"
   },
   "courses": {
     "title": "Kursused ja töötoad",

@@ -287,7 +287,8 @@
       "test_sent": "Test sendt til {n} enhed(er)",
       "test_no_token": "Du har endnu ikke registreret en push-token. Installer mobilappen og log ind.",
       "empty_help": "Push-beskeder når ingen endnu, da ingen har registreret en push-token via mobilappen. Installer appen, log ind, tillad notifikationer — appen registrerer token automatisk."
-    }
+    },
+    "action_cancel": "Annuller"
   },
   "account": {
     "sign_in": "Log ind",

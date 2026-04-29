@@ -244,7 +244,8 @@
       "test_sent": "Test wysłany do {n} urządzeń",
       "test_no_token": "Nie masz jeszcze zarejestrowanego tokenu push. Zainstaluj aplikację i zaloguj się.",
       "empty_help": "Wiadomości push nie docierają do nikogo, bo żaden użytkownik nie zarejestrował jeszcze tokenu push w aplikacji mobilnej. Zainstaluj aplikację, zaloguj się, zezwól na powiadomienia — aplikacja zarejestruje token automatycznie."
-    }
+    },
+    "action_cancel": "Anuluj"
   },
   "courses": {
     "title": "Kursy i warsztaty",

@@ -287,7 +287,8 @@
       "test_sent": "Test sent to {n} device(s)",
       "test_no_token": "You don't have a push token registered yet. Install the mobile app and sign in.",
       "empty_help": "Push messages can't reach anyone yet because no user has registered a push token via the mobile app. Install the app, sign in, allow notifications — the app will register the token automatically."
-    }
+    },
+    "action_cancel": "Cancel"
   },
   "account": {
     "sign_in": "Sign in",

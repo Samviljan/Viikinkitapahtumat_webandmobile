@@ -2577,6 +2577,87 @@ async def shutdown_db_client():
     client.close()
 
 
+# -----------------------------------------------------------------------------
+# SEO: sitemap + robots (must be reachable on /sitemap.xml and /robots.txt).
+# Ingress only routes /api/* to the backend, so we expose sitemap under
+# /api/sitemap.xml and rely on a frontend rewrite (or redirect) for the
+# canonical /sitemap.xml URL. robots.txt itself lives in /frontend/public.
+# -----------------------------------------------------------------------------
+@api_router.get("/sitemap.xml", include_in_schema=False)
+async def sitemap_xml():
+    """Generate a multi-language sitemap of all approved events + key static
+    pages. Uses canonical https://viikinkitapahtumat.fi as the host (override
+    via PUBLIC_SITE_URL env)."""
+    base = (
+        os.environ.get("PUBLIC_SITE_URL", "https://viikinkitapahtumat.fi")
+        .rstrip("/")
+    )
+    today = datetime.now(timezone.utc).date().isoformat()
+    static_paths = [
+        ("/", "1.0", "daily"),
+        ("/events", "0.95", "daily"),
+        ("/calendar", "0.8", "weekly"),
+        ("/about", "0.5", "monthly"),
+        ("/guide", "0.6", "monthly"),
+        ("/privacy", "0.3", "yearly"),
+        ("/submit", "0.5", "monthly"),
+    ]
+    parts = ['<?xml version="1.0" encoding="UTF-8"?>']
+    parts.append(
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+        'xmlns:xhtml="http://www.w3.org/1999/xhtml">'
+    )
+    for path, prio, freq in static_paths:
+        parts.append(
+            f"  <url><loc>{base}{path}</loc>"
+            f"<lastmod>{today}</lastmod>"
+            f"<changefreq>{freq}</changefreq>"
+            f"<priority>{prio}</priority></url>"
+        )
+    # All approved events
+    cursor = db.events.find(
+        {"status": "approved"},
+        {
+            "_id": 0,
+            "id": 1,
+            "start_date": 1,
+            "title_fi": 1,
+            "title_en": 1,
+            "title_sv": 1,
+            "title_da": 1,
+            "title_de": 1,
+            "title_et": 1,
+            "title_pl": 1,
+            "updated_at": 1,
+        },
+    )
+    async for ev in cursor:
+        ev_id = ev.get("id")
+        if not ev_id:
+            continue
+        lastmod = ev.get("updated_at") or ev.get("start_date") or today
+        if isinstance(lastmod, datetime):
+            lastmod = lastmod.date().isoformat()
+        elif isinstance(lastmod, str) and "T" in lastmod:
+            lastmod = lastmod.split("T", 1)[0]
+        url = f"{base}/events/{ev_id}"
+        parts.append(f"  <url><loc>{url}</loc><lastmod>{lastmod}</lastmod>"
+                     f"<changefreq>weekly</changefreq><priority>0.85</priority>")
+        # hreflang alternates per language
+        for code in ("fi", "en", "sv", "da", "de", "et", "pl"):
+            parts.append(
+                f'    <xhtml:link rel="alternate" hreflang="{code}" '
+                f'href="{url}?lang={code}" />'
+            )
+        parts.append("  </url>")
+    parts.append("</urlset>")
+    return Response(
+        content="\n".join(parts),
+        media_type="application/xml",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
+
+
 # Include router
 app.include_router(api_router)
 

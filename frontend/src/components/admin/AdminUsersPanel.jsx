@@ -6,9 +6,19 @@
  */
 import React, { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Trash2, UserPlus } from "lucide-react";
+import { Trash2, UserPlus, Loader2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
@@ -21,6 +31,8 @@ export default function AdminUsersPanel() {
   const [loaded, setLoaded] = useState(false);
   const [filter, setFilter] = useState("all"); // all | merchant | organizer | admin
   const [showCreate, setShowCreate] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null); // user obj or null
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -59,15 +71,23 @@ export default function AdminUsersPanel() {
   }
 
   async function deleteUser(u) {
-    const label = u.email || u.nickname || u.id;
-    if (!window.confirm(t("admin.users.confirm_delete").replace("{user}", label))) return;
+    setConfirmDelete(u);
+  }
+
+  async function performDelete() {
+    const u = confirmDelete;
+    if (!u) return;
+    setDeleting(true);
     try {
       await api.delete(`/admin/users/${u.id}`);
       setUsers((prev) => prev.filter((x) => x.id !== u.id));
       toast.success(t("admin.users.delete_success"));
+      setConfirmDelete(null);
     } catch (err) {
       const detail = err?.response?.data?.detail;
       toast.error(typeof detail === "string" ? detail : t("admin.action_error"));
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -215,6 +235,52 @@ export default function AdminUsersPanel() {
         onOpenChange={setShowCreate}
         onCreated={() => load()}
       />
+      <AlertDialog
+        open={!!confirmDelete}
+        onOpenChange={(open) => {
+          if (!open && !deleting) setConfirmDelete(null);
+        }}
+      >
+        <AlertDialogContent
+          className="bg-viking-bg border-viking-edge"
+          data-testid="confirm-delete-user-dialog"
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-serif text-viking-bone">
+              {t("admin.users.delete_btn")}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-viking-stone text-sm">
+              {(t("admin.users.confirm_delete") || "")
+                .replace(
+                  "{user}",
+                  confirmDelete?.email || confirmDelete?.nickname || "",
+                )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={deleting}
+              data-testid="confirm-delete-cancel"
+              className="border-viking-edge text-viking-stone"
+            >
+              {t("admin.action_cancel") || t("common.cancel") || "Peruuta"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={performDelete}
+              data-testid="confirm-delete-confirm"
+              className="bg-red-700 hover:bg-red-700/90 text-white"
+            >
+              {deleting ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+              )}
+              {t("admin.users.delete_btn")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

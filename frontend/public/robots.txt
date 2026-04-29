@@ -1,0 +1,23 @@
+# https://viikinkitapahtumat.fi/robots.txt
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /profile
+Disallow: /messages
+Disallow: /reset-password
+
+# Search engines: full crawl welcome
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+# Sitemap (dynamic, served by FastAPI backend; reachable on the canonical
+# path because Kubernetes ingress routes `/api/*` → backend on port 8001).
+Sitemap: https://viikinkitapahtumat.fi/api/sitemap.xml

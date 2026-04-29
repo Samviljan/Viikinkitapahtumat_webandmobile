@@ -287,7 +287,8 @@
       "test_sent": "Test an {n} Gerät(e) gesendet",
       "test_no_token": "Du hast noch kein Push-Token registriert. Installiere die mobile App und melde dich an.",
       "empty_help": "Push-Nachrichten erreichen niemanden, da noch kein Benutzer einen Push-Token über die App registriert hat. Installiere die App, melde dich an, erlaube Benachrichtigungen — die App registriert das Token automatisch."
-    }
+    },
+    "action_cancel": "Abbrechen"
   },
   "account": {
     "sign_in": "Anmelden",

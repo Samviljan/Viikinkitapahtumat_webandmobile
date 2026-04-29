@@ -265,7 +265,8 @@
       "test_sent": "Test skickat till {n} enhet(er)",
       "test_no_token": "Du har ingen push-token registrerad ännu. Installera mobilappen och logga in.",
       "empty_help": "Push-notiser når ingen ännu eftersom ingen har registrerat en push-token via mobilappen. Installera appen, logga in, tillåt notiser — appen registrerar token automatiskt."
-    }
+    },
+    "action_cancel": "Avbryt"
   },
   "account": {
     "sign_in": "Logga in",
