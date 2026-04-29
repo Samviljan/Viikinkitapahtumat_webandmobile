@@ -2586,12 +2586,10 @@ async def shutdown_db_client():
 @api_router.get("/sitemap.xml", include_in_schema=False)
 async def sitemap_xml():
     """Generate a multi-language sitemap of all approved events + key static
-    pages. Uses canonical https://viikinkitapahtumat.fi as the host (override
-    via PUBLIC_SITE_URL env)."""
-    base = (
-        os.environ.get("PUBLIC_SITE_URL", "https://viikinkitapahtumat.fi")
-        .rstrip("/")
-    )
+    pages. The base URL is intentionally hard-coded to the canonical public
+    domain — Google Search Console rejects sitemaps containing URLs from a
+    different host than the property where the sitemap was submitted."""
+    base = "https://viikinkitapahtumat.fi"
     today = datetime.now(timezone.utc).date().isoformat()
     static_paths = [
         ("/", "1.0", "daily"),
