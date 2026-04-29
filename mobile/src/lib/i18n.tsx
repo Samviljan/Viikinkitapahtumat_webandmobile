@@ -38,6 +38,11 @@ export interface UserDefaults {
   defaultNearMe: boolean;
   /** km radius for the "Near me" filter (default 200 km). */
   nearMeRadiusKm: number;
+  /**
+   * Master toggle: when false, the app will never request the GPS permission
+   * nor read coordinates. The "Lähellä minua" filter is hidden.
+   */
+  locationEnabled: boolean;
 }
 
 const DEFAULTS: UserDefaults = {
@@ -45,6 +50,7 @@ const DEFAULTS: UserDefaults = {
   defaultDateRange: "any",
   defaultNearMe: false,
   nearMeRadiusKm: 200,
+  locationEnabled: true,
 };
 
 const STORAGE_LANG = "vk_lang";

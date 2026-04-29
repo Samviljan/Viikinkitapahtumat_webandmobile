@@ -77,6 +77,16 @@ export default function SearchSettings() {
     flashSaved();
   }
 
+  function toggleLocationEnabled() {
+    const next = !defaults.locationEnabled;
+    // When disabling, also force-disable the per-default "Near me" so the home
+    // screen does not try to filter by an unavailable signal next time.
+    setDefaults(
+      next ? { locationEnabled: true } : { locationEnabled: false, defaultNearMe: false },
+    );
+    flashSaved();
+  }
+
   function reset() {
     Alert.alert(
       t("settings.reset"),
@@ -92,6 +102,7 @@ export default function SearchSettings() {
               defaultDateRange: "any",
               defaultNearMe: false,
               nearMeRadiusKm: 200,
+              locationEnabled: true,
             });
             flashSaved();
           },
@@ -221,51 +232,80 @@ export default function SearchSettings() {
             </View>
           </Section>
 
-          {/* Near me */}
-          <Section title={t("settings.section_near_me")}>
+          {/* Privacy / Location master toggle */}
+          <Section title={t("settings.section_privacy")}>
             <Pressable
-              testID="default-near-me-toggle"
-              onPress={toggleNearMe}
+              testID="location-enabled-toggle"
+              onPress={toggleLocationEnabled}
               style={styles.toggleRow}
             >
               <Ionicons
-                name={defaults.defaultNearMe ? "checkbox" : "square-outline"}
+                name={defaults.locationEnabled ? "checkbox" : "square-outline"}
                 size={18}
-                color={defaults.defaultNearMe ? colors.gold : colors.stone}
+                color={defaults.locationEnabled ? colors.gold : colors.stone}
               />
               <Text style={styles.toggleText}>
-                {t("settings.default_near_me")}
+                {t("settings.location_enabled")}
               </Text>
             </Pressable>
-
-            <Text style={[styles.label, { marginTop: spacing.md }]}>
-              {t("settings.near_me_radius_label")} ({t("units.km")})
-            </Text>
-            <View style={styles.chipRow}>
-              {RADIUS_OPTIONS.map((km) => {
-                const active = defaults.nearMeRadiusKm === km;
-                return (
-                  <Pressable
-                    key={km}
-                    testID={`radius-${km}`}
-                    onPress={() => pickRadius(km)}
-                    style={[styles.chip, active && styles.chipActive]}
-                  >
-                    <Text
-                      style={[
-                        styles.chipLabel,
-                        active && styles.chipLabelActive,
-                      ]}
-                    >
-                      {km} {t("units.km")}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
             <Text style={styles.helpText}>
-              {t("settings.near_me_radius_help")}
+              {t("settings.location_enabled_help")}
             </Text>
+          </Section>
+
+          {/* Near me */}
+          <Section title={t("settings.section_near_me")}>
+            {defaults.locationEnabled ? (
+              <>
+                <Pressable
+                  testID="default-near-me-toggle"
+                  onPress={toggleNearMe}
+                  style={styles.toggleRow}
+                >
+                  <Ionicons
+                    name={defaults.defaultNearMe ? "checkbox" : "square-outline"}
+                    size={18}
+                    color={defaults.defaultNearMe ? colors.gold : colors.stone}
+                  />
+                  <Text style={styles.toggleText}>
+                    {t("settings.default_near_me")}
+                  </Text>
+                </Pressable>
+
+                <Text style={[styles.label, { marginTop: spacing.md }]}>
+                  {t("settings.near_me_radius_label")} ({t("units.km")})
+                </Text>
+                <View style={styles.chipRow}>
+                  {RADIUS_OPTIONS.map((km) => {
+                    const active = defaults.nearMeRadiusKm === km;
+                    return (
+                      <Pressable
+                        key={km}
+                        testID={`radius-${km}`}
+                        onPress={() => pickRadius(km)}
+                        style={[styles.chip, active && styles.chipActive]}
+                      >
+                        <Text
+                          style={[
+                            styles.chipLabel,
+                            active && styles.chipLabelActive,
+                          ]}
+                        >
+                          {km} {t("units.km")}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                <Text style={styles.helpText}>
+                  {t("settings.near_me_radius_help")}
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.helpText} testID="near-me-disabled-note">
+                {t("settings.location_disabled_note")}
+              </Text>
+            )}
           </Section>
 
           <Pressable

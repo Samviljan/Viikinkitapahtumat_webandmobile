@@ -2,7 +2,7 @@
   "expo": {
     "name": "Viikinkitapahtumat",
     "slug": "viikinkitapahtumat",
-    "version": "0.4.5",
+    "version": "0.4.6",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "viikinki",
@@ -22,7 +22,8 @@
     },
     "android": {
       "package": "fi.viikinkitapahtumat.mobile",
-      "versionCode": 14,
+      "versionCode": 15,
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0E0B09"
@@ -31,7 +32,8 @@
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     "plugins": [
@@ -49,6 +51,13 @@
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Käytämme sijaintiasi näyttääksemme lähimmät viikinkitapahtumat."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#C9A14A",
+          "defaultChannel": "default"
         }
       ]
     ],

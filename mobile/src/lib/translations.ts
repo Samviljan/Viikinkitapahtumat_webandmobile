@@ -67,6 +67,10 @@ interface Dict {
     section_near_me: string;
     section_about: string;
     section_profile: string;
+    section_privacy: string;
+    location_enabled: string;
+    location_enabled_help: string;
+    location_disabled_note: string;
     nav_profile: string;
     nav_search: string;
     nav_about: string;
@@ -308,6 +312,12 @@ export const translations: Partial<Record<Lang, Dict>> = {
       default_date_range: "Oletus aikaväli",
       default_countries: "Oletus maat",
       default_near_me: "Lähellä minua oletuksena päällä",
+      section_privacy: "Yksityisyys",
+      location_enabled: "Salli paikannus",
+      location_enabled_help:
+        "Kun paikannus on käytössä, voit suodattaa tapahtumia sijaintisi mukaan. Sammuttamalla estät sovellusta pyytämästä GPS-lupaa ja Lähellä minua -suodatin piilotetaan.",
+      location_disabled_note:
+        "Paikannus on pois päältä. Salli se yllä ottaaksesi Lähellä minua -suodattimen käyttöön.",
       open_about: "Tietoa sovelluksesta",
     },
     auth: {
@@ -539,6 +549,12 @@ export const translations: Partial<Record<Lang, Dict>> = {
       default_date_range: "Default date range",
       default_countries: "Default countries",
       default_near_me: "Near me on by default",
+      section_privacy: "Privacy",
+      location_enabled: "Allow location",
+      location_enabled_help:
+        "When enabled, you can filter events by your location. Turning this off prevents the app from asking for the GPS permission and hides the Near me filter.",
+      location_disabled_note:
+        "Location is turned off. Enable it above to use the Near me filter.",
       open_about: "About the app",
     },
     auth: {
@@ -769,6 +785,12 @@ export const translations: Partial<Record<Lang, Dict>> = {
       default_date_range: "Förvalt datumintervall",
       default_countries: "Förvalda länder",
       default_near_me: "Nära mig som förval",
+      section_privacy: "Integritet",
+      location_enabled: "Tillåt platsdata",
+      location_enabled_help:
+        "När platsdata är på kan du filtrera evenemang efter din plats. Stäng av för att hindra appen från att begära GPS-behörighet och dölja Nära mig-filtret.",
+      location_disabled_note:
+        "Platsdata är avstängt. Aktivera ovan för att använda Nära mig-filtret.",
       open_about: "Om appen",
     },
     auth: {

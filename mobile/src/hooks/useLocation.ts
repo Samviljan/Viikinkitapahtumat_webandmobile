@@ -1,5 +1,6 @@
 import * as Location from "expo-location";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useSettings } from "@/src/lib/i18n";
 
 export interface Coords {
   lat: number;
@@ -8,15 +9,20 @@ export interface Coords {
 
 interface State {
   coords: Coords | null;
-  status: "idle" | "requesting" | "granted" | "denied" | "unavailable";
+  status: "idle" | "requesting" | "granted" | "denied" | "unavailable" | "disabled";
   error: string | null;
 }
 
 /**
  * Lazy GPS hook — does NOT prompt at app launch. Call `request()` when the user
  * taps "Lähellä minua". Once granted, the coordinate is cached for the session.
+ *
+ * Honors the `locationEnabled` privacy toggle from user settings: when the
+ * toggle is off, `request()` immediately returns null with status="disabled"
+ * and never asks the OS for permission.
  */
 export function useLocation() {
+  const { defaults } = useSettings();
   const [state, setState] = useState<State>({
     coords: null,
     status: "idle",
@@ -24,6 +30,10 @@ export function useLocation() {
   });
 
   const request = useCallback(async () => {
+    if (!defaults.locationEnabled) {
+      setState({ coords: null, status: "disabled", error: null });
+      return null;
+    }
     setState((s) => ({ ...s, status: "requesting", error: null }));
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -42,10 +52,7 @@ export function useLocation() {
       setState({ coords: null, status: "unavailable", error: msg });
       return null;
     }
-  }, []);
-
-  // Auto-clear coords if user revokes permission across app sessions
-  useEffect(() => {}, []);
+  }, [defaults.locationEnabled]);
 
   return { ...state, request };
 }

@@ -14,3 +14,9 @@ expo-env.d.ts
 # @end expo-cli
 
 .secrets/
+
+# Firebase / FCM credentials — must NEVER be committed
+google-services.json
+GoogleService-Info.plist
+*-service-account*.json
+fcm-service-account*.json

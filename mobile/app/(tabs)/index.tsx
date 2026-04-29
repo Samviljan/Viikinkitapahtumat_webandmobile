@@ -51,9 +51,15 @@ export default function HomeScreen() {
     if (!loaded || defaultsApplied) return;
     setSelectedCountries(new Set(defaults.defaultCountries));
     setDateFilter(defaults.defaultDateRange);
-    setNearMe(defaults.defaultNearMe);
+    setNearMe(defaults.locationEnabled && defaults.defaultNearMe);
     setDefaultsApplied(true);
   }, [loaded, defaults, defaultsApplied]);
+
+  // If the user toggles GPS off in settings while "Near me" was active, clear
+  // the session filter so the list expands back to the full set.
+  useEffect(() => {
+    if (!defaults.locationEnabled && nearMe) setNearMe(false);
+  }, [defaults.locationEnabled, nearMe]);
 
   // Recompute distances when GPS or events change.
   useEffect(() => {
@@ -238,17 +244,19 @@ export default function HomeScreen() {
 
               <SearchPanelSection label={t("home.near_me")}>
                 <FilterChipsRow>
-                  <FilterChip
-                    testID="chip-near-me"
-                    active={nearMe}
-                    onPress={onTapNearMe}
-                    icon="location"
-                    label={
-                      status === "requesting"
-                        ? t("home.loading")
-                        : `${t("home.near_me")} · ${t("home.near_me_radius", { km: defaults.nearMeRadiusKm })}`
-                    }
-                  />
+                  {defaults.locationEnabled ? (
+                    <FilterChip
+                      testID="chip-near-me"
+                      active={nearMe}
+                      onPress={onTapNearMe}
+                      icon="location"
+                      label={
+                        status === "requesting"
+                          ? t("home.loading")
+                          : `${t("home.near_me")} · ${t("home.near_me_radius", { km: defaults.nearMeRadiusKm })}`
+                      }
+                    />
+                  ) : null}
                   <FilterChip
                     testID="chip-week"
                     active={dateFilter === "this_week"}

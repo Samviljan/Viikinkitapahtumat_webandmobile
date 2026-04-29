@@ -473,7 +473,21 @@ See `/app/memory/test_credentials.md`.
   - User downloads `.aab` from above URL when Expo finishes (~10-15 min) and uploads to Play Console manually.
 
 
-## Iteration — Push verification + Mobile build 0.4.1 (2026-04-28)
+## Iteration — Mobile GPS toggle + FCM setup guide (2026-04-29)
+- ✅ **Mobiilin GPS-toggle** (`/app/mobile/src/lib/i18n.tsx`, `useLocation.ts`, `app/settings/search.tsx`, `app/(tabs)/index.tsx`):
+  - `UserDefaults.locationEnabled` (default `true`) lisätty SettingsContextiin + AsyncStorage-persistointiin.
+  - `useLocation()` -hook tarkistaa togglen ennen `Location.requestForegroundPermissionsAsync()`-kutsua → status muuttuu `"disabled"`-tilaan jos pois käytöstä, eikä koskaan kysy GPS-lupaa.
+  - `app/settings/search.tsx` sai uuden "YKSITYISYYS"-sektion: `data-testid="location-enabled-toggle"` -kytkin + selitysteksti FI/EN/SV (DA/DE/ET/PL fall back EN). Kun pois käytöstä, "LÄHELLÄ MINUA" -sektion sisältö korvataan selittävällä viestillä `near-me-disabled-note`.
+  - Etusivu (`(tabs)/index.tsx`) piilottaa `chip-near-me`-suodattimen kun toggle on pois ja resetoi `nearMe`-tilan automaattisesti jos käyttäjä sulkee togglen toisessa näytössä.
+  - Versio bumpattu `0.4.5 → 0.4.6` ja Android `versionCode 14 → 15`.
+  - Verifioitu Playwright 414×896: toggle päällä → near-me chip + radius-chipit näkyvät. Toggle pois → disabled-note + radius-chipit piilossa, etusivulla `chip-near-me` count=0.
+- ✅ **FCM (Firebase Cloud Messaging) -konfiguraatio**: käyttäjän laitteen diagnostiikka paljasti "Default FirebaseApp is not initialized" -virheen → Expo SDK 54 vaatii `google-services.json`-tiedoston ja FCM V1 service-account-avaimen.
+  - `app.json` päivitetty: `android.googleServicesFile: "./google-services.json"`, `expo-notifications`-plugin lisätty (default-channel, brand-väri `#C9A14A`), `android.permission.POST_NOTIFICATIONS` lisätty Android 13+ -tukea varten.
+  - `.gitignore` päivitetty: `google-services.json`, `GoogleService-Info.plist`, `*-service-account*.json` eivät vahingossa committoidu.
+  - Yksityiskohtainen step-by-step ohje käyttäjälle luotu: `/app/docs/FCM_SETUP_GUIDE.md` (Firebase-projektin luonti → google-services.json -lataus → FCM V1 service-account → `eas credentials` -upload → uusi build → Play Console → testaus laitteella).
+  - 🚧 Käyttäjä jatkaa: 1) luo Firebase-projekti, 2) lataa `google-services.json` osoitteeseen `/app/mobile/`, 3) lataa service-account-avain EAS:lle `eas credentials`-komennolla, 4) `eas build --profile production --platform android`.
+
+
 - ✅ **Admin Push Health card verified** at `/admin/messages` — shows `EXPO_ACCESS_TOKEN: Yes`, `users_with_push_token: 0`, with explanatory help text and "Send test" button. Card is rendered by `AdminPushHealthCard.jsx` and powered by `GET /api/admin/push/health` + `POST /api/admin/push/test`. Confirms previous push send returned `sent_push:0` because nobody has a registered Expo token (expected — testing was on web, not mobile).
 - ✅ **Mobile production AAB build 0.4.1 kicked off** via EAS for Play Console closed testing track:
   - Build ID `3a72772a-4c1c-43f7-8060-1ad2974751db`
