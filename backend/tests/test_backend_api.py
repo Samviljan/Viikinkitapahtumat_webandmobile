@@ -6,7 +6,9 @@ import os
 import pytest
 
 ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "admin@viikinkitapahtumat.fi")
-ADMIN_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD", "***REDACTED***")
+# Admin password is NEVER hardcoded. Export TEST_ADMIN_PASSWORD to run tests.
+ADMIN_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD")
+assert ADMIN_PASSWORD, "TEST_ADMIN_PASSWORD env var is required to run tests"
 
 
 # ---------- Health ----------
