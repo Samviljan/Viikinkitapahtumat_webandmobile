@@ -129,7 +129,7 @@ export default function EventDetail() {
           </Pressable>
           <Pressable testID="action-map" style={styles.actionBtn} onPress={openMap}>
             <Ionicons name="map-outline" size={16} color={colors.bone} />
-            <Text style={styles.actionText}>{t("home.near_me")}</Text>
+            <Text style={styles.actionText}>{t("event.open_in_maps")}</Text>
           </Pressable>
           {ev.link ? (
             <Pressable

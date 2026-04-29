@@ -57,7 +57,9 @@
     "in_one_day": "1 dag",
     "in_n_days": "{n} dagar",
     "duration_one": "Pågår i 1 dag",
-    "duration_n": "Pågår i {n} dagar"
+    "duration_n": "Pågår i {n} dagar",
+    "open_in_maps": "Öppna i Kartor",
+    "open_website": "Öppna webbplats"
   },
   "submit": {
     "title": "Anmäl evenemang",
@@ -277,7 +279,16 @@
     "events": {
       "attendees_btn": "Deltagare",
       "no_attendees": "Ingen har anmält sig till detta evenemang än."
-    }
+    },
+    "translations": {
+      "title": "Översättningstäckning",
+      "help": "Varje evenemang översätts automatiskt till alla stödda språk (FI, EN, SV, DA, DE, ET, PL). En bakgrundskontroll söker saknade översättningar var 6:e timme; du kan också köra kontrollen manuellt nedan.",
+      "supported_langs": "Stödda språk",
+      "events_with_gaps": "Evenemang med luckor",
+      "run_btn": "Kör översättningssvep nu",
+      "show_gaps": "Visa saknade översättningar"
+    },
+    "refresh": "Uppdatera"
   },
   "account": {
     "sign_in": "Logga in",

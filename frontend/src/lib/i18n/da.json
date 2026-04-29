@@ -57,7 +57,9 @@
     "in_one_day": "1 dag",
     "in_n_days": "{n} dage",
     "duration_one": "1-dages begivenhed",
-    "duration_n": "{n}-dages begivenhed"
+    "duration_n": "{n}-dages begivenhed",
+    "open_in_maps": "Åbn i Kort",
+    "open_website": "Åbn websted"
   },
   "submit": {
     "title": "Indsend et arrangement",
@@ -299,7 +301,16 @@
     "events": {
       "attendees_btn": "Deltagere",
       "no_attendees": "Ingen har tilmeldt sig dette arrangement endnu."
-    }
+    },
+    "translations": {
+      "title": "Oversættelsesdækning",
+      "help": "Hvert arrangement oversættes automatisk til alle understøttede sprog (FI, EN, SV, DA, DE, ET, PL). En baggrundskørsel tjekker for manglende oversættelser hver 6. time.",
+      "supported_langs": "Understøttede sprog",
+      "events_with_gaps": "Arrangementer med huller",
+      "run_btn": "Kør oversættelsesfejning nu",
+      "show_gaps": "Vis manglende oversættelser"
+    },
+    "refresh": "Opdater"
   },
   "account": {
     "sign_in": "Log ind",

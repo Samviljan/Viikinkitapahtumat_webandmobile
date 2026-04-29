@@ -58,7 +58,9 @@
     "in_one_day": "1 päivä",
     "in_n_days": "{n} päivää",
     "duration_one": "Kestää 1 päivän",
-    "duration_n": "Kestää {n} päivää"
+    "duration_n": "Kestää {n} päivää",
+    "open_in_maps": "Avaa kartalla",
+    "open_website": "Avaa verkkosivu"
   },
   "submit": {
     "title": "Ilmoita tapahtuma",
@@ -300,7 +302,16 @@
     "events": {
       "attendees_btn": "Osallistujat",
       "no_attendees": "Tähän tapahtumaan ei ole vielä ilmoittautunut ketään."
-    }
+    },
+    "translations": {
+      "title": "Käännösten kattavuus",
+      "help": "Tapahtumalle luodaan automaattisesti käännökset kaikkiin tuettuihin kieliin (FI, EN, SV, DA, DE, ET, PL). Tausta-ajo tarkistaa puuttuvat käännökset 6 tunnin välein, mutta voit ajaa tarkistuksen myös käsin alla olevasta painikkeesta.",
+      "supported_langs": "Tuetut kielet",
+      "events_with_gaps": "Aukkoja tapahtumissa",
+      "run_btn": "Aja käännöstarkistus nyt",
+      "show_gaps": "Näytä puuttuvat käännökset"
+    },
+    "refresh": "Päivitä"
   },
   "account": {
     "sign_in": "Kirjaudu",

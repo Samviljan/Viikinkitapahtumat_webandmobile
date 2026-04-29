@@ -57,7 +57,9 @@
     "in_one_day": "1 Tag",
     "in_n_days": "{n} Tage",
     "duration_one": "1-Tages-Veranstaltung",
-    "duration_n": "{n}-Tages-Veranstaltung"
+    "duration_n": "{n}-Tages-Veranstaltung",
+    "open_in_maps": "In Karten öffnen",
+    "open_website": "Webseite öffnen"
   },
   "submit": {
     "title": "Ein Event einreichen",
@@ -299,7 +301,16 @@
     "events": {
       "attendees_btn": "Teilnehmer",
       "no_attendees": "Niemand hat sich noch für diese Veranstaltung angemeldet."
-    }
+    },
+    "translations": {
+      "title": "Übersetzungsabdeckung",
+      "help": "Jede Veranstaltung wird automatisch in alle unterstützten Sprachen übersetzt (FI, EN, SV, DA, DE, ET, PL). Ein Hintergrundlauf prüft alle 6 Stunden auf fehlende Übersetzungen.",
+      "supported_langs": "Unterstützte Sprachen",
+      "events_with_gaps": "Veranstaltungen mit Lücken",
+      "run_btn": "Übersetzungslauf jetzt starten",
+      "show_gaps": "Fehlende Übersetzungen anzeigen"
+    },
+    "refresh": "Aktualisieren"
   },
   "account": {
     "sign_in": "Anmelden",

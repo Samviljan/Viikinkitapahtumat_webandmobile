@@ -58,7 +58,9 @@
     "in_one_day": "1 dzień",
     "in_n_days": "{n} dni",
     "duration_one": "Trwa 1 dzień",
-    "duration_n": "Trwa {n} dni"
+    "duration_n": "Trwa {n} dni",
+    "open_in_maps": "Otwórz w Mapach",
+    "open_website": "Otwórz stronę"
   },
   "submit": {
     "title": "Zgłoś wydarzenie",
@@ -256,7 +258,16 @@
     "events": {
       "attendees_btn": "Uczestnicy",
       "no_attendees": "Nikt jeszcze nie zgłosił się na to wydarzenie."
-    }
+    },
+    "translations": {
+      "title": "Pokrycie tłumaczeń",
+      "help": "Każde wydarzenie jest automatycznie tłumaczone na wszystkie obsługiwane języki (FI, EN, SV, DA, DE, ET, PL). Zadanie w tle sprawdza brakujące tłumaczenia co 6 godzin.",
+      "supported_langs": "Obsługiwane języki",
+      "events_with_gaps": "Wydarzenia z brakami",
+      "run_btn": "Uruchom skanowanie tłumaczeń",
+      "show_gaps": "Pokaż brakujące tłumaczenia"
+    },
+    "refresh": "Odśwież"
   },
   "courses": {
     "title": "Kursy i warsztaty",

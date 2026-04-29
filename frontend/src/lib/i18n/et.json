@@ -58,7 +58,9 @@
     "in_one_day": "1 päiv",
     "in_n_days": "{n} päeva",
     "duration_one": "Kestab 1 päeva",
-    "duration_n": "Kestab {n} päeva"
+    "duration_n": "Kestab {n} päeva",
+    "open_in_maps": "Ava kaardil",
+    "open_website": "Ava veebisait"
   },
   "submit": {
     "title": "Teatage üritusest",
@@ -256,7 +258,16 @@
     "events": {
       "attendees_btn": "Osalejad",
       "no_attendees": "Sellele üritusele pole veel keegi registreerunud."
-    }
+    },
+    "translations": {
+      "title": "Tõlke kate",
+      "help": "Iga üritus tõlgitakse automaatselt kõikidesse toetatud keeltesse (FI, EN, SV, DA, DE, ET, PL). Taustaprotsess kontrollib puuduvaid tõlkeid iga 6 tunni järel.",
+      "supported_langs": "Toetatud keeled",
+      "events_with_gaps": "Lünkadega üritused",
+      "run_btn": "Käivita tõlkekontroll kohe",
+      "show_gaps": "Kuva puuduvad tõlked"
+    },
+    "refresh": "Värskenda"
   },
   "courses": {
     "title": "Kursused ja töötoad",

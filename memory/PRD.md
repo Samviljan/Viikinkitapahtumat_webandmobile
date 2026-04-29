@@ -538,6 +538,20 @@ See `/app/memory/test_credentials.md`.
 - ✅ i18n: `admin.user_profile.{title,open_hint,documents,rsvps,no_rsvps}` + `admin.events.{attendees_btn,no_attendees}` for all 7 languages (FI/EN/SV/DA/DE/ET/PL).
 - ✅ Tested end-to-end: click user row → profile dialog opens with correct localized labels (MAA, YHDISTYS, TYYPIT, ILMOITTAUTUMISET); click "Osallistujat" on 25 approved events → attendees dialog opens; clicking an attendee chains to the profile dialog. Lint clean.
 
+## Iteration — Map link button + Translation sweep job (2026-04-29d)
+- ✅ **"Open in Maps" button restored** on event detail (web + mobile):
+  - Web (`EventDetail.jsx`): new action row with two buttons — "Avaa kartalla" (opens `https://www.google.com/maps/search/?api=1&query=<location>` in new tab) and "Avaa verkkosivu" (when `event.link` is set). Translated FI/EN/SV/DA/DE/ET/PL.
+  - Mobile (`app/event/[id].tsx`): map button text was incorrectly using `t("home.near_me")` ("Lähellä minua") — corrected to dedicated `t("event.open_in_maps")` key. Added the key to all 3 mobile language packs (FI/EN/SV).
+- ✅ **Translation sweep — automated check for missing language translations** across all events:
+  - New `translation_service.find_events_with_missing_translations(db)` — cheap projection check across `title_*` and `description_*` for all 7 supported langs (fi/en/sv/da/de/et/pl).
+  - New `translation_service.sweep_missing_translations(db, max_events=50)` — finds gaps + calls existing `fill_missing_translations` for each, capping cost at 50 events/run (overflow logged + processed next run).
+  - **APScheduler job** registered: `translation_sweep` runs **every 6 hours at :20**. Logs `summary: {candidates, processed, fields_filled, errors, throttled}`.
+  - Two new admin endpoints:
+    - `GET /api/admin/translations/health` — diagnostic listing all events with gaps (event title + missing field names + status)
+    - `POST /api/admin/translations/sweep?max_events=N` — manual trigger
+  - **Admin UI** (`/admin/system → AdminTranslationsPanel.jsx`): shows supported language count, current gap count, refresh button, "Run sweep now" button, and an expandable list of every event with missing fields. Works for all 7 admin locales.
+  - **Verified end-to-end**: API found 24 events with gaps in preview → manual sweep with `max=3` filled 27 fields across 3 events with 0 errors, throttled the rest for next run.
+
 ## Backlog (priorities)
 - **P1** Stripe integration for paid messaging (currently admin manually toggles `paid_messaging_enabled`).
 - **P1** Mobile DA/DE/ET/PL native dictionaries (currently fall back to EN; covers ~80 string keys vs 250 on web).

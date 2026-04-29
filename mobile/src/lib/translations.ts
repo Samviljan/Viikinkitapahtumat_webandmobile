@@ -48,7 +48,7 @@ interface Dict {
     meetup: string;
     other: string;
   };
-  event: { back: string; favorite: string; unfavorite: string; share: string };
+  event: { back: string; favorite: string; unfavorite: string; share: string; open_in_maps: string };
   favorites: { title: string; empty: string; browse: string };
   myevents: {
     eyebrow: string;
@@ -268,6 +268,7 @@ export const translations: Partial<Record<Lang, Dict>> = {
       favorite: "Lisää suosikkeihin",
       unfavorite: "Poista suosikeista",
       share: "Jaa",
+      open_in_maps: "Avaa kartalla",
     },
     favorites: {
       title: "Suosikit",
@@ -499,7 +500,7 @@ export const translations: Partial<Record<Lang, Dict>> = {
       meetup: "Meetup",
       other: "Other",
     },
-    event: { back: "Back", favorite: "Add to favorites", unfavorite: "Remove from favorites", share: "Share" },
+    event: { back: "Back", favorite: "Add to favorites", unfavorite: "Remove from favorites", share: "Share", open_in_maps: "Open in Maps" },
     favorites: {
       title: "Favorites",
       empty: "You haven't favorited any events yet.",
@@ -729,7 +730,7 @@ export const translations: Partial<Record<Lang, Dict>> = {
       meetup: "Träff",
       other: "Övrigt",
     },
-    event: { back: "Tillbaka", favorite: "Lägg till favorit", unfavorite: "Ta bort favorit", share: "Dela" },
+    event: { back: "Tillbaka", favorite: "Lägg till favorit", unfavorite: "Ta bort favorit", share: "Dela", open_in_maps: "Öppna i Kartor" },
     favorites: {
       title: "Favoriter",
       empty: "Du har inte sparat några favoriter ännu.",

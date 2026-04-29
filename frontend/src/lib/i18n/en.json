@@ -57,7 +57,9 @@
     "in_one_day": "1 day",
     "in_n_days": "{n} days",
     "duration_one": "1-day event",
-    "duration_n": "{n}-day event"
+    "duration_n": "{n}-day event",
+    "open_in_maps": "Open in Maps",
+    "open_website": "Open website"
   },
   "submit": {
     "title": "Submit an event",
@@ -299,7 +301,16 @@
     "events": {
       "attendees_btn": "Attendees",
       "no_attendees": "No one has RSVP'd to this event yet."
-    }
+    },
+    "translations": {
+      "title": "Translation coverage",
+      "help": "Each event is automatically translated into all supported languages (FI, EN, SV, DA, DE, ET, PL). A background sweep checks for missing translations every 6 hours; you can also run the check manually with the button below.",
+      "supported_langs": "Supported languages",
+      "events_with_gaps": "Events with gaps",
+      "run_btn": "Run translation sweep now",
+      "show_gaps": "Show missing translations"
+    },
+    "refresh": "Refresh"
   },
   "account": {
     "sign_in": "Sign in",

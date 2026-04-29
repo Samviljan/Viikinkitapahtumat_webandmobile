@@ -105,3 +105,68 @@ async def fill_missing_translations(db, event_id: str) -> dict:
         await db.events.update_one({"id": event_id}, {"$set": updates})
         logger.info("auto-translated event %s fields=%s", event_id, list(updates.keys()))
     return {"ok": True, "updated": list(updates.keys())}
+
+
+async def find_events_with_missing_translations(db) -> list[dict]:
+    """Return events that have at least one empty title_* or description_*
+    field across SUPPORTED_LANGS. Cheap projection — only checks the
+    presence/length of each language column."""
+    proj = {"_id": 0, "id": 1, "status": 1}
+    for base in ("title", "description"):
+        for lang in SUPPORTED_LANGS:
+            proj[f"{base}_{lang}"] = 1
+    cursor = db.events.find({"status": {"$in": ["approved", "pending"]}}, proj)
+    out: list[dict] = []
+    async for ev in cursor:
+        missing = []
+        for base in ("title", "description"):
+            for lang in SUPPORTED_LANGS:
+                if not (ev.get(f"{base}_{lang}") or "").strip():
+                    missing.append(f"{base}_{lang}")
+        if missing:
+            out.append({"id": ev["id"], "missing": missing})
+    return out
+
+
+async def sweep_missing_translations(db, max_events: int = 50) -> dict:
+    """Scheduled job: find every event with at least one missing translation
+    field and trigger `fill_missing_translations` on it. Caps the number of
+    events processed per run so the LLM cost stays bounded.
+
+    Returns a summary of how many events were checked / translated /
+    skipped + any errors.
+    """
+    candidates = await find_events_with_missing_translations(db)
+    summary = {
+        "candidates": len(candidates),
+        "processed": 0,
+        "fields_filled": 0,
+        "errors": 0,
+    }
+    if not candidates:
+        logger.info("translation sweep: no events with missing fields")
+        return summary
+
+    for cand in candidates[:max_events]:
+        try:
+            result = await fill_missing_translations(db, cand["id"])
+            updated = result.get("updated") or []
+            summary["processed"] += 1
+            summary["fields_filled"] += len(updated)
+            if updated:
+                logger.info(
+                    "translation sweep: event=%s filled=%d fields=%s",
+                    cand["id"],
+                    len(updated),
+                    updated,
+                )
+        except Exception as e:  # pragma: no cover — best-effort
+            summary["errors"] += 1
+            logger.error("translation sweep: event=%s failed: %s", cand["id"], e)
+
+    if len(candidates) > max_events:
+        summary["throttled"] = len(candidates) - max_events
+        logger.info(
+            "translation sweep: %d events left for next run", summary["throttled"]
+        )
+    return summary

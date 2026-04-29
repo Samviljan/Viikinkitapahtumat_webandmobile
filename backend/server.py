@@ -37,7 +37,7 @@ from email_service import (
     make_unsubscribe_token,
 )
 from push_service import send_to_users as push_send_to_users
-from translation_service import fill_missing_translations
+from translation_service import fill_missing_translations, sweep_missing_translations
 
 
 # -----------------------------------------------------------------------------
@@ -1271,6 +1271,50 @@ async def admin_event_attendees(event_id: str):
                 }
             )
     return out
+
+
+@api_router.get(
+    "/admin/translations/health",
+    dependencies=[Depends(get_admin_user)],
+)
+async def admin_translations_health():
+    """Diagnostic: list every event with at least one missing localized
+    title_* / description_* field across the supported language set
+    (fi/en/sv/da/de/et/pl). Used by AdminSystem to surface gaps."""
+    from translation_service import (
+        find_events_with_missing_translations,
+        SUPPORTED_LANGS,
+    )
+    items = await find_events_with_missing_translations(db)
+    if items:
+        ev_ids = [i["id"] for i in items]
+        evs = await db.events.find(
+            {"id": {"$in": ev_ids}},
+            {"_id": 0, "id": 1, "title_fi": 1, "title_en": 1, "status": 1},
+        ).to_list(5000)
+        ev_by_id = {e["id"]: e for e in evs}
+        for it in items:
+            ev = ev_by_id.get(it["id"], {})
+            it["title_fi"] = ev.get("title_fi")
+            it["title_en"] = ev.get("title_en")
+            it["status"] = ev.get("status")
+    return {
+        "supported_langs": list(SUPPORTED_LANGS),
+        "events_with_gaps": items,
+        "total_events_with_gaps": len(items),
+    }
+
+
+@api_router.post(
+    "/admin/translations/sweep",
+    dependencies=[Depends(get_admin_user)],
+)
+async def admin_translations_sweep(max_events: int = 50):
+    """Manual trigger for the translation sweep — same logic the scheduler
+    runs every 6h. Caps at `max_events` per call (default 50) to bound the
+    LLM cost."""
+    summary = await sweep_missing_translations(db, max_events=max_events)
+    return summary
 
 
 @api_router.patch(
@@ -2579,6 +2623,17 @@ async def _scheduled_prod_events_sync():
         logger.exception("Prod → preview events sync failed: %s", e)
 
 
+async def _scheduled_translation_sweep():
+    """Background job: every 6h, fill missing language columns on all
+    events. Cheap projection check first → only spends LLM tokens on events
+    that actually have empty fields."""
+    try:
+        summary = await sweep_missing_translations(db, max_events=50)
+        logger.info("translation sweep summary: %s", summary)
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Translation sweep failed: %s", e)
+
+
 # -----------------------------------------------------------------------------
 # Startup
 # -----------------------------------------------------------------------------
@@ -2658,6 +2713,16 @@ async def on_startup():
         id="rsvp_reminders_daily",
         replace_existing=True,
     )
+    # Translation sweep — every 6 hours, fill any missing language columns
+    # (title_da, title_de, title_pl, title_et, description_*…) using Claude
+    # Haiku via emergentintegrations. Caps at 50 events/run to keep LLM
+    # cost bounded — overflow is processed in subsequent runs.
+    scheduler.add_job(
+        _scheduled_translation_sweep,
+        CronTrigger(hour="*/6", minute=20),
+        id="translation_sweep",
+        replace_existing=True,
+    )
     # Sync events from production into preview/test DB twice daily — 06:00 + 18:00 Europe/Helsinki.
     # Only enabled when the env flag opts in (the production deployment must NOT pull from itself).
     if os.environ.get("PROD_SYNC_ENABLED", "true").lower() in ("1", "true", "yes"):
@@ -2670,7 +2735,7 @@ async def on_startup():
     scheduler.start()
     logger.info(
         "APScheduler started — monthly digest 1st@09:00, weekly admin report Mon@09:00, "
-        "event reminders daily@09:00, prod events sync 06:00+18:00, Europe/Helsinki"
+        "event reminders daily@09:00, translation sweep every 6h, prod events sync 06:00+18:00, Europe/Helsinki"
     )
 
 
