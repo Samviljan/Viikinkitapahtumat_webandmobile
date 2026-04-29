@@ -600,5 +600,25 @@
     "col_created": "Tilattu",
     "delete_btn": "Poista tilaaja",
     "confirm_delete": "Poistetaanko tilaaja {email}? Toimintoa ei voi peruuttaa."
+  },
+  "password": {
+    "change_title": "Vaihda salasana",
+    "change_btn": "Vaihda salasana",
+    "current": "Nykyinen salasana",
+    "new": "Uusi salasana",
+    "confirm": "Vahvista uusi salasana",
+    "too_short": "Salasanan tulee olla vähintään 8 merkkiä",
+    "mismatch": "Salasanat eivät täsmää",
+    "changed_ok": "Salasana vaihdettu",
+    "change_failed": "Salasanan vaihto epäonnistui",
+    "admin_reset_title": "Resetoi käyttäjän salasana",
+    "admin_reset_btn": "Aseta salasana",
+    "admin_reset_help": "Tämä asettaa käyttäjälle uuden salasanan. Toimita uusi salasana käyttäjälle turvallista kanavaa pitkin (esim. tekstiviesti tai henkilökohtaisesti). Käyttäjä voi vaihtaa sen sisäänkirjautumisen jälkeen profiilista.",
+    "admin_reset_done": "Salasana vaihdettu",
+    "admin_reset_hint": "Tallennettaessa salasana kopioidaan automaattisesti leikepöydälle.",
+    "regenerate": "Luo uusi",
+    "copy": "Kopioi",
+    "copied": "Kopioitu leikepöydälle",
+    "copy_failed": "Kopiointi epäonnistui"
   }
 }

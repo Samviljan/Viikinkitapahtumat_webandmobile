@@ -599,5 +599,25 @@
     "col_created": "Abonniert",
     "delete_btn": "Abonnent löschen",
     "confirm_delete": "Abonnent {email} löschen? Dies kann nicht rückgängig gemacht werden."
+  },
+  "password": {
+    "change_title": "Passwort ändern",
+    "change_btn": "Passwort ändern",
+    "current": "Aktuelles Passwort",
+    "new": "Neues Passwort",
+    "confirm": "Neues Passwort bestätigen",
+    "too_short": "Das Passwort muss mindestens 8 Zeichen lang sein",
+    "mismatch": "Passwörter stimmen nicht überein",
+    "changed_ok": "Passwort geändert",
+    "change_failed": "Passwortänderung fehlgeschlagen",
+    "admin_reset_title": "Benutzerpasswort zurücksetzen",
+    "admin_reset_btn": "Passwort festlegen",
+    "admin_reset_help": "Setzt ein neues Passwort für den Benutzer.",
+    "admin_reset_done": "Passwort zurückgesetzt",
+    "admin_reset_hint": "Das Passwort wird in die Zwischenablage kopiert.",
+    "regenerate": "Neu generieren",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "copy_failed": "Kopieren fehlgeschlagen"
   }
 }

@@ -599,5 +599,25 @@
     "col_created": "Subscribed",
     "delete_btn": "Delete subscriber",
     "confirm_delete": "Delete subscriber {email}? This cannot be undone."
+  },
+  "password": {
+    "change_title": "Change password",
+    "change_btn": "Change password",
+    "current": "Current password",
+    "new": "New password",
+    "confirm": "Confirm new password",
+    "too_short": "Password must be at least 8 characters",
+    "mismatch": "Passwords don't match",
+    "changed_ok": "Password changed",
+    "change_failed": "Password change failed",
+    "admin_reset_title": "Reset user password",
+    "admin_reset_btn": "Set password",
+    "admin_reset_help": "This sets a new password for the user. Deliver it via a secure channel (text message or in person). The user can change it after login from their profile.",
+    "admin_reset_done": "Password reset",
+    "admin_reset_hint": "On save, the password is copied to your clipboard automatically.",
+    "regenerate": "Regenerate",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copy_failed": "Copy failed"
   }
 }

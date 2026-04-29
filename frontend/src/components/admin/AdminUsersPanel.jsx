@@ -6,7 +6,7 @@
  */
 import React, { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Trash2, UserPlus, Loader2 } from "lucide-react";
+import { Trash2, UserPlus, Loader2, KeyRound } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +24,7 @@ import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import AdminUserCreateDialog from "@/components/admin/AdminUserCreateDialog";
 import AdminUserProfileDialog from "@/components/admin/AdminUserProfileDialog";
+import { AdminResetUserPasswordDialog } from "@/components/PasswordDialogs";
 
 export default function AdminUsersPanel() {
   const { t } = useI18n();
@@ -35,6 +36,7 @@ export default function AdminUsersPanel() {
   const [confirmDelete, setConfirmDelete] = useState(null); // user obj or null
   const [deleting, setDeleting] = useState(false);
   const [profileUserId, setProfileUserId] = useState(null);
+  const [resetPwdUser, setResetPwdUser] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -213,20 +215,31 @@ export default function AdminUsersPanel() {
                     />
                   </td>
                   <td className="py-3 pl-3 text-right" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      onClick={() => deleteUser(u)}
-                      disabled={u.id === currentAdmin?.id}
-                      title={
-                        u.id === currentAdmin?.id
-                          ? t("admin.users.cannot_delete_self")
-                          : t("admin.users.delete_btn")
-                      }
-                      data-testid={`delete-user-${u.id}`}
-                      className="p-1.5 rounded-sm border border-viking-edge text-viking-stone hover:text-red-400 hover:border-red-400/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setResetPwdUser(u)}
+                        title={t("password.admin_reset_title") || "Resetoi salasana"}
+                        data-testid={`reset-password-${u.id}`}
+                        className="p-1.5 rounded-sm border border-viking-edge text-viking-stone hover:text-viking-gold hover:border-viking-gold/60 transition-colors"
+                      >
+                        <KeyRound className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteUser(u)}
+                        disabled={u.id === currentAdmin?.id}
+                        title={
+                          u.id === currentAdmin?.id
+                            ? t("admin.users.cannot_delete_self")
+                            : t("admin.users.delete_btn")
+                        }
+                        data-testid={`delete-user-${u.id}`}
+                        className="p-1.5 rounded-sm border border-viking-edge text-viking-stone hover:text-red-400 hover:border-red-400/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -244,6 +257,13 @@ export default function AdminUsersPanel() {
         open={!!profileUserId}
         onOpenChange={(open) => {
           if (!open) setProfileUserId(null);
+        }}
+      />
+      <AdminResetUserPasswordDialog
+        user={resetPwdUser}
+        open={!!resetPwdUser}
+        onOpenChange={(open) => {
+          if (!open) setResetPwdUser(null);
         }}
       />
       <AlertDialog

@@ -6,11 +6,12 @@ import { useI18n } from "@/lib/i18n";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { LogOut, Check, Shield, Camera, Trash2 } from "lucide-react";
+import { LogOut, Check, Shield, Camera, Trash2, KeyRound } from "lucide-react";
 import { ConsentBlock } from "@/pages/Register";
 import AttendingList from "@/components/AttendingList";
 import SavedSearchEditor from "@/components/SavedSearchEditor";
 import ProfileDocField from "@/components/ProfileDocField";
+import { ChangeOwnPasswordDialog } from "@/components/PasswordDialogs";
 import { api } from "@/lib/api";
 
 const fieldClass =
@@ -37,6 +38,7 @@ export default function Profile() {
   const [consentOrganizer, setConsentOrganizer] = useState(false);
   const [consentMerchant, setConsentMerchant] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -452,6 +454,21 @@ export default function Profile() {
             <LogOut size={14} className="mr-2" />
             {t("account.sign_out")}
           </Button>
+
+          {/* Password change — only shown for users that have a password
+              (Google-only accounts have to use forgot-password). */}
+          {user.has_password !== false ? (
+            <Button
+              type="button"
+              variant="outline"
+              data-testid="profile-change-password"
+              onClick={() => setPasswordDialogOpen(true)}
+              className="w-full border-viking-edge text-viking-stone hover:text-viking-gold hover:border-viking-gold/60 rounded-sm font-rune text-xs h-11"
+            >
+              <KeyRound size={14} className="mr-2" />
+              {t("password.change_btn") || "Vaihda salasana"}
+            </Button>
+          ) : null}
         </aside>
       </div>
 
@@ -460,6 +477,11 @@ export default function Profile() {
         <SavedSearchEditor />
         <AttendingList />
       </div>
+
+      <ChangeOwnPasswordDialog
+        open={passwordDialogOpen}
+        onOpenChange={setPasswordDialogOpen}
+      />
     </div>
   );
 }

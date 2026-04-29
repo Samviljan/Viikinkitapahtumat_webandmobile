@@ -599,5 +599,25 @@
     "col_created": "Abonneret",
     "delete_btn": "Slet abonnent",
     "confirm_delete": "Slet abonnent {email}? Dette kan ikke fortrydes."
+  },
+  "password": {
+    "change_title": "Skift adgangskode",
+    "change_btn": "Skift adgangskode",
+    "current": "Nuværende adgangskode",
+    "new": "Ny adgangskode",
+    "confirm": "Bekræft ny adgangskode",
+    "too_short": "Adgangskoden skal være mindst 8 tegn",
+    "mismatch": "Adgangskoderne matcher ikke",
+    "changed_ok": "Adgangskode ændret",
+    "change_failed": "Ændring fejlede",
+    "admin_reset_title": "Nulstil adgangskode",
+    "admin_reset_btn": "Sæt adgangskode",
+    "admin_reset_help": "Sætter en ny adgangskode for brugeren.",
+    "admin_reset_done": "Adgangskode nulstillet",
+    "admin_reset_hint": "Adgangskoden kopieres til udklipsholderen.",
+    "regenerate": "Generer ny",
+    "copy": "Kopier",
+    "copied": "Kopieret",
+    "copy_failed": "Kopiering fejlede"
   }
 }

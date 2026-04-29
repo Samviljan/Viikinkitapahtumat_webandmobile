@@ -430,5 +430,25 @@
     "targets_help_all": "Tühi = sõnum saadetakse kõigile nõusoleku andnud osalejatele.",
     "targets_help_some": "Sõnum saadetakse ainult valitud kategooriate osalejatele.",
     "no_push_tokens": "Push-saajaid: 0. Ükski osaleja pole veel mobiilirakenduses push-teateid aktiveerinud. E-post toimib endiselt, kui valisid \"E-post\" või \"Push + E-post\"."
+  },
+  "password": {
+    "change_title": "Muuda parooli",
+    "change_btn": "Muuda parooli",
+    "current": "Praegune parool",
+    "new": "Uus parool",
+    "confirm": "Kinnita uus parool",
+    "too_short": "Parool peab olema vähemalt 8 tähemärki",
+    "mismatch": "Paroolid ei ühti",
+    "changed_ok": "Parool muudetud",
+    "change_failed": "Parooli muutmine ebaõnnestus",
+    "admin_reset_title": "Lähtesta kasutaja parool",
+    "admin_reset_btn": "Määra parool",
+    "admin_reset_help": "Määrab kasutajale uue parooli.",
+    "admin_reset_done": "Parool lähtestatud",
+    "admin_reset_hint": "Parool kopeeritakse lõikepuhvrisse.",
+    "regenerate": "Genereeri uus",
+    "copy": "Kopeeri",
+    "copied": "Kopeeritud",
+    "copy_failed": "Kopeerimine ebaõnnestus"
   }
 }

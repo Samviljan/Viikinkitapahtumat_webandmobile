@@ -535,5 +535,25 @@
     "targets_help_all": "Tomt = meddelandet skickas till alla samtyckande deltagare.",
     "targets_help_some": "Meddelandet begränsas till deltagare i de valda kategorierna.",
     "no_push_tokens": "Push-mottagare: 0. Ingen av deltagarna har aktiverat push-notiser i mobilappen ännu. E-post fungerar fortfarande om du valt \"E-post\" eller \"Push + E-post\"."
+  },
+  "password": {
+    "change_title": "Byt lösenord",
+    "change_btn": "Byt lösenord",
+    "current": "Nuvarande lösenord",
+    "new": "Nytt lösenord",
+    "confirm": "Bekräfta nytt lösenord",
+    "too_short": "Lösenordet måste vara minst 8 tecken",
+    "mismatch": "Lösenorden matchar inte",
+    "changed_ok": "Lösenord ändrat",
+    "change_failed": "Lösenordsbytet misslyckades",
+    "admin_reset_title": "Återställ lösenord",
+    "admin_reset_btn": "Sätt lösenord",
+    "admin_reset_help": "Sätter ett nytt lösenord för användaren. Skicka det via säker kanal.",
+    "admin_reset_done": "Lösenord återställt",
+    "admin_reset_hint": "Lösenordet kopieras till urklipp.",
+    "regenerate": "Återskapa",
+    "copy": "Kopiera",
+    "copied": "Kopierat",
+    "copy_failed": "Kopiering misslyckades"
   }
 }

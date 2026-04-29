@@ -430,5 +430,25 @@
     "targets_help_all": "Puste = wiadomość trafi do wszystkich uczestników, którzy wyrazili zgodę.",
     "targets_help_some": "Wiadomość ograniczona do uczestników z wybranych kategorii.",
     "no_push_tokens": "Odbiorcy push: 0. Żaden z uczestników nie aktywował jeszcze powiadomień push w aplikacji mobilnej. E-mail nadal działa, jeśli wybrano kanał „E-mail\" lub „Push + E-mail\"."
+  },
+  "password": {
+    "change_title": "Zmień hasło",
+    "change_btn": "Zmień hasło",
+    "current": "Obecne hasło",
+    "new": "Nowe hasło",
+    "confirm": "Potwierdź nowe hasło",
+    "too_short": "Hasło musi mieć co najmniej 8 znaków",
+    "mismatch": "Hasła nie pasują",
+    "changed_ok": "Hasło zmienione",
+    "change_failed": "Zmiana hasła nie powiodła się",
+    "admin_reset_title": "Zresetuj hasło użytkownika",
+    "admin_reset_btn": "Ustaw hasło",
+    "admin_reset_help": "Ustawia nowe hasło dla użytkownika.",
+    "admin_reset_done": "Hasło zresetowane",
+    "admin_reset_hint": "Hasło jest kopiowane do schowka.",
+    "regenerate": "Wygeneruj nowe",
+    "copy": "Kopiuj",
+    "copied": "Skopiowano",
+    "copy_failed": "Kopiowanie nieudane"
   }
 }
