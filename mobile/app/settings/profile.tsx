@@ -24,6 +24,10 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
+import Constants from "expo-constants";
+import { Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -240,6 +244,103 @@ export default function ProfileScreen() {
         onPress: () => signOut(),
       },
     ]);
+  }
+
+  /**
+   * Step-by-step push registration test. Shows exactly which step fails so
+   * the user can self-diagnose why their device isn't visible in the admin
+   * push panel. Logs each step, then displays a single Alert with the full
+   * report.
+   */
+  async function testPushRegistration() {
+    const lines: string[] = [];
+    const ok = (s: string) => lines.push(`OK · ${s}`);
+    const fail = (s: string) => lines.push(`FAIL · ${s}`);
+    try {
+      lines.push(`Device: ${Device.modelName ?? "?"} · ${Platform.OS}`);
+      lines.push(`API: ${apiBaseUrl}`);
+
+      if (!user) {
+        fail("Not signed in — push needs auth");
+        Alert.alert("Push diagnostics", lines.join("\n"));
+        return;
+      }
+      ok(`Signed in as ${user.email}`);
+
+      if (!Device.isDevice) {
+        fail("Not a physical device (emulator) — Expo push requires a real device");
+        Alert.alert("Push diagnostics", lines.join("\n"));
+        return;
+      }
+      ok("Physical device confirmed");
+
+      if (Platform.OS === "android") {
+        await Notifications.setNotificationChannelAsync("default", {
+          name: "Tapahtumat",
+          importance: Notifications.AndroidImportance.HIGH,
+        });
+        ok("Android notification channel set");
+      }
+
+      const { status: existing } = await Notifications.getPermissionsAsync();
+      let final = existing;
+      lines.push(`Permission (existing): ${existing}`);
+      if (existing !== "granted") {
+        const { status } = await Notifications.requestPermissionsAsync();
+        final = status;
+        lines.push(`Permission (after prompt): ${status}`);
+      }
+      if (final !== "granted") {
+        fail("Permission not granted — open phone settings → Notifications → enable");
+        Alert.alert("Push diagnostics", lines.join("\n"));
+        return;
+      }
+      ok("Notification permission granted");
+
+      const projectId =
+        (Constants?.expoConfig as { extra?: { eas?: { projectId?: string } } })
+          ?.extra?.eas?.projectId ??
+        (Constants as { easConfig?: { projectId?: string } })?.easConfig
+          ?.projectId;
+      if (!projectId) {
+        fail("EAS projectId not found in app config");
+        Alert.alert("Push diagnostics", lines.join("\n"));
+        return;
+      }
+      ok(`Project ID: ${projectId.slice(0, 8)}…`);
+
+      const tokenObj = await Notifications.getExpoPushTokenAsync({ projectId });
+      const tk = tokenObj.data;
+      if (!tk) {
+        fail("getExpoPushTokenAsync returned empty");
+        Alert.alert("Push diagnostics", lines.join("\n"));
+        return;
+      }
+      ok(`Got Expo Push Token (${tk.length} chars)`);
+      lines.push(`Token preview: ${tk.slice(0, 40)}…`);
+
+      try {
+        const res = await api.post("/users/me/push-token", {
+          expo_push_token: tk,
+          platform: Platform.OS,
+        });
+        ok(`Backend POST /users/me/push-token → ${res.status}`);
+      } catch (e: unknown) {
+        const err = e as { response?: { status?: number; data?: unknown }; message?: string };
+        fail(
+          `Backend POST failed: ${err?.response?.status ?? "?"} ${err?.message ?? ""}`,
+        );
+        if (err?.response?.data) {
+          lines.push(`Body: ${JSON.stringify(err.response.data).slice(0, 200)}`);
+        }
+      }
+
+      Alert.alert("Push diagnostics", lines.join("\n"));
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      lines.push(`EXCEPTION · ${err?.message ?? String(e)}`);
+      Alert.alert("Push diagnostics", lines.join("\n"));
+    }
   }
 
   const profileImageHttpUrl = resolveImageUrl(user?.profile_image_url ?? null);
@@ -538,6 +639,23 @@ export default function ProfileScreen() {
                 <Text style={styles.primaryBtnText}>
                   {saving ? "…" : t("auth.profile_save")}
                 </Text>
+              </Pressable>
+
+              <Pressable
+                testID="profile-test-push"
+                onPress={testPushRegistration}
+                style={({ pressed }) => [
+                  styles.outlineBtn,
+                  {
+                    alignSelf: "center",
+                    marginTop: spacing.lg,
+                    paddingHorizontal: 16,
+                  },
+                  pressed && { opacity: 0.7 },
+                ]}
+              >
+                <Ionicons name="notifications-outline" size={14} color={colors.gold} />
+                <Text style={styles.outlineBtnText}>Test push registration</Text>
               </Pressable>
 
               <Pressable
