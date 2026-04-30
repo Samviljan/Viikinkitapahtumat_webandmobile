@@ -1658,11 +1658,13 @@ async def admin_list_users(role: Optional[str] = None):
             "merchant_name": 1,
             "organizer_name": 1,
             "paid_messaging_enabled": 1,
+            "is_moderator": 1,
             "created_at": 1,
         },
     ).sort("created_at", -1).to_list(2000)
     for d in docs:
         d.setdefault("paid_messaging_enabled", False)
+        d.setdefault("is_moderator", False)
         d.setdefault("user_types", [])
     return docs
 
