@@ -674,7 +674,7 @@ See `/app/memory/test_credentials.md`.
 - ✅ **Mobile** (`/app/mobile/`):
   - `app/(tabs)/shops.tsx` updated — Featured section at top with 16:9 image preview, falls back to existing `LinkListRow` for the rest. Reads `image_url`, `featured`, `is_user_card` from `/api/merchants` response.
   - `src/types.ts` — `Merchant` interface extended with new optional fields.
-  - **Mobile favorite-merchant TOGGLE intentionally deferred** to a follow-up iteration (backend API ready and used by web).
+  - **Mobile favorite-merchant TOGGLE** (delivered 2026-04-30 follow-up): new `useFavoriteMerchants` hook (mirrors existing `useFavorites` event-favourites pattern) with AsyncStorage cache + per-user server sync via POST/DELETE `/api/users/me/favorite-merchants/{id}`. Anonymous favourites merge into server list on first login. Heart toggle rendered on every featured card (top-right of title) and every user-card row in the list (legacy entries skipped — no detail page = no favourite, mirrors web). `AuthUser.favorite_merchant_ids` added so `/auth/me` and `/auth/login` payloads hydrate the cache.
 - ✅ **Verified**:
   - Backend pytest suite `/app/backend/tests/test_iteration14_merchant_cards.py` — **22/22 cases pass**, covers all endpoints (UNION, detail, owner GET/PUT, image upload edge cases, favourites flow, admin enable/disable/featured), expiry sweep semantics via DB backdating, login payload shape.
   - Frontend Playwright: anonymous `/shops` shows Featured section "Esillä olevat kauppiaat" + Helkas Forge user-card; `/shops/user_28a958533568` detail renders SEPPÄ category, contact block, back link; unknown id shows 404 fallback. EN language switch surfaces "Featured"/"Shops".

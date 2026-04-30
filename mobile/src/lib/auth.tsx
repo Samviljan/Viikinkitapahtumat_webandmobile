@@ -41,6 +41,7 @@ export interface AuthUser {
   paid_messaging_enabled: boolean;
   language: string | null;
   favorite_event_ids: string[];
+  favorite_merchant_ids: string[];
   association_name: string | null;
   country: string | null;
   profile_image_url: string | null;
@@ -222,6 +223,9 @@ function normalize(raw: Partial<AuthUser>): AuthUser {
     language: raw.language ?? null,
     favorite_event_ids: Array.isArray(raw.favorite_event_ids)
       ? raw.favorite_event_ids.filter((x: unknown): x is string => typeof x === "string")
+      : [],
+    favorite_merchant_ids: Array.isArray(raw.favorite_merchant_ids)
+      ? raw.favorite_merchant_ids.filter((x: unknown): x is string => typeof x === "string")
       : [],
     association_name: raw.association_name ?? null,
     country: raw.country ?? null,
