@@ -1031,6 +1031,55 @@ async def admin_reset_user_password(
     return {"ok": True, "email": target.get("email")}
 
 
+@api_router.post(
+    "/admin/users/{user_id}/send-password-reset",
+    dependencies=[Depends(get_admin_user)],
+)
+async def admin_trigger_password_reset(
+    user_id: str, background: BackgroundTasks
+):
+    """Admin-initiated password-reset email. Unlike the older
+    /admin/users/{user_id}/reset-password endpoint, this NEVER exposes a
+    plaintext password to the admin: the server generates a one-time reset
+    token, emails it to the user's registered address (read from the DB,
+    never from admin input), and lets the user set their own password.
+
+    This is the preferred way for admins to help users who have forgotten
+    their password. The target email is always the user's own — we reuse the
+    same hardening guarantees as /auth/forgot-password.
+    """
+    target = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "email": 1, "password_hash": 1})
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not target.get("password_hash"):
+        # Google-only accounts cannot reset via email-link — they already
+        # don't have a password, so this is a no-op.
+        raise HTTPException(
+            status_code=400,
+            detail="Target account signs in via Google and has no password to reset",
+        )
+    dest = (target.get("email") or "").lower().strip()
+    if not dest:
+        raise HTTPException(status_code=400, detail="Target user has no email on record")
+
+    token = secrets.token_urlsafe(32)
+    expires = datetime.now(timezone.utc) + timedelta(minutes=RESET_TOKEN_TTL_MIN)
+    await db.users.update_one(
+        {"id": user_id},
+        {
+            "$set": {
+                "password_reset_token": token,
+                "password_reset_expires": expires.isoformat(),
+            }
+        },
+    )
+    # Same delivery guarantee as /auth/forgot-password: only to the stored
+    # user email, never to an admin-controlled address.
+    background.add_task(svc_send_password_reset, dest, token)
+    logger.info("Admin triggered password-reset email for user %s (%s)", user_id, dest)
+    return {"ok": True, "email": dest}
+
+
 # -----------------------------------------------------------------------------
 # Event attendance (logged-in users RSVP to events with notification prefs)
 # -----------------------------------------------------------------------------
