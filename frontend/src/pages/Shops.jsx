@@ -43,7 +43,7 @@ function MerchantCard({ s, isFavorite, onToggleFavorite, canFavorite, testid }) 
   const externalHref = !isUserCard ? (s.url || null) : null;
 
   const inner = (
-    <div className="flex flex-col h-full">
+    <>
       {isUserCard && s.image_url && (
         <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-viking-shadow/40 mb-3">
           <img
@@ -54,15 +54,13 @@ function MerchantCard({ s, isFavorite, onToggleFavorite, canFavorite, testid }) 
           />
         </div>
       )}
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3 flex-1">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            {s.featured && (
-              <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-viking-gold">
-                <Star size={10} className="fill-viking-gold" /> {t("shops.featured_title")}
-              </span>
-            )}
-          </div>
+          {s.featured && (
+            <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-viking-gold mb-1">
+              <Star size={10} className="fill-viking-gold" /> {t("shops.featured_title")}
+            </div>
+          )}
           <h3 className="font-serif text-lg text-viking-bone group-hover:text-viking-gold leading-tight">
             {s.name}
           </h3>
@@ -79,14 +77,18 @@ function MerchantCard({ s, isFavorite, onToggleFavorite, canFavorite, testid }) 
           {t("shops.view_details")} →
         </span>
       )}
-    </div>
+    </>
   );
 
+  // `flex` on the anchor itself (not on a child div) so the carved-card box
+  // grows with its content. Wrapping `relative` div is just to host the
+  // absolutely-positioned FavoriteButton (a `<button>` cannot be nested
+  // inside an `<a>` for a11y reasons).
   const className =
-    "relative carved-card rounded-sm p-5 hover:border-viking-gold/40 transition-colors group";
+    "relative carved-card rounded-sm p-5 hover:border-viking-gold/40 transition-colors group flex flex-col h-full";
 
   return (
-    <div className="relative">
+    <div className="relative h-full">
       {canFavorite && isUserCard && (
         <FavoriteButton
           merchantId={s.id}
