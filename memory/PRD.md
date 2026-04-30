@@ -680,7 +680,18 @@ See `/app/memory/test_credentials.md`.
   - Frontend Playwright: anonymous `/shops` shows Featured section "Esillä olevat kauppiaat" + Helkas Forge user-card; `/shops/user_28a958533568` detail renders SEPPÄ category, contact block, back link; unknown id shows 404 fallback. EN language switch surfaces "Featured"/"Shops".
   - Self-test (logged-in member): /profile MerchantCardEditor renders fully — "Tilaus voimassa: 25. huhtikuuta 2027", profiilikuvauploadnappi, Kategoria=Seppä, Verkkosivu/Puhelin/Sähköposti pre-filled, Kuvaus 30/1000 counter, Tallenna and Preview links visible.
 
-## Iteration — Merchant card UX refinements + self-delete (2026-04-30 evening)
+## Iteration — Mobile DA/DE/ET/PL native translations (2026-04-30, late)
+- ✅ Mobile previously shipped only FI/EN/SV native dictionaries; DA/DE/ET/PL fell back to English via i18n.tsx fallback chain.
+- ✅ Added **full native dictionaries** for Danish, German, Estonian, Polish — every key from the existing FI dict is translated, including the new `myevents.merchants_section`, `merchants_no_events`, `merchants_open_website` keys added in the previous session.
+- ✅ Translations live in a separate file `/app/mobile/src/lib/translations.extra.ts` (~660 lines) so the main `translations.ts` stays readable. Main module imports `extraTranslations` and spreads it into the public `translations` object: `{ ...baseTranslations, ...extraTranslations }`.
+- ✅ `Dict.langs` type extended to require all 7 language labels; existing FI/EN/SV dictionaries updated to expose `Dansk`, `Deutsch`, `Eesti`, `Polski` so the language picker displays each language in its own native name regardless of which language the UI is currently in.
+- ✅ Settings → Language picker (`/app/mobile/app/settings/search.tsx`) iterates `SUPPORTED_LANGS` automatically — new languages appear in the chip list with no code changes.
+- ✅ Verified via tsx runtime evaluation: all 7 languages present, sample lookups resolve correctly:
+  - DA tab.home → "Hjem"
+  - DE myevents.merchants_section → "Meine Lieblings-Händler"
+  - ET shops.title → "Kauplejad ja sepad"
+  - PL auth.sign_in → "Zaloguj się"
+- ✅ Lint clean (TypeScript/eslint).
 - ✅ **Backend**: `DELETE /api/users/me` (self-delete). Body `{confirm_email}` must match the authenticated user's email; refuses to let the last remaining admin self-delete (system would lock). Reuses the same GDPR cleanup pipeline as the admin delete: drops RSVPs, email reminders, newsletter subscribers; anonymises sender_id in `message_log` to `"deleted_user"`. The `merchant_card` sub-document goes away with the user document automatically. Clears the auth cookie before returning so the client immediately drops to anonymous state.
 - ✅ **Web Profile** (`/app/frontend/src/pages/Profile.jsx`):
   - Inline `MerchantCardEditor` removed; replaced with a dedicated **Merchant card section** that renders one of three states based on `user.merchant_card`:

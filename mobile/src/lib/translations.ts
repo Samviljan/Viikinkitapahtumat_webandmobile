@@ -9,6 +9,11 @@
 export const SUPPORTED_LANGS = ["fi", "en", "sv", "da", "de", "et", "pl"] as const;
 export type Lang = (typeof SUPPORTED_LANGS)[number];
 
+// DA / DE / ET / PL native translations live in translations.extra.ts to
+// keep this file under ~1000 lines. They're spread into `translations` at
+// the bottom of this module.
+import { extraTranslations } from "./translations.extra";
+
 interface Dict {
   brand: { title: string; tagline: string };
   tab: { home: string; favorites: string; myevents: string; calendar: string; shops: string; settings: string };
@@ -223,11 +228,21 @@ interface Dict {
     share_message: string;
   };
   common: { cancel: string; ok: string; save: string; close: string; back: string };
-  langs: { fi: string; en: string; sv: string };
+  langs: {
+    fi: string;
+    en: string;
+    sv: string;
+    da: string;
+    de: string;
+    et: string;
+    pl: string;
+  };
   units: { km: string };
 }
 
-export const translations: Partial<Record<Lang, Dict>> = {
+// Built-in dictionaries (FI / EN / SV). DA / DE / ET / PL are merged in at
+// the very bottom of the file from `translations.extra.ts`.
+const baseTranslations: Partial<Record<Lang, Dict>> = {
   fi: {
     brand: {
       title: "VIIKINKITAPAHTUMAT",
@@ -477,7 +492,15 @@ export const translations: Partial<Record<Lang, Dict>> = {
         "Pohjoisen viikinki- ja rauta-aikatapahtumat yhdessä paikassa. Selaa kalenteri ja tallenna suosikit:",
     },
     common: { cancel: "Peruuta", ok: "OK", save: "Tallenna", close: "Sulje", back: "Takaisin" },
-    langs: { fi: "Suomi", en: "English", sv: "Svenska" },
+    langs: {
+      fi: "Suomi",
+      en: "English",
+      sv: "Svenska",
+      da: "Dansk",
+      de: "Deutsch",
+      et: "Eesti",
+      pl: "Polski",
+    },
     units: { km: "km" },
   },
 
@@ -723,7 +746,15 @@ export const translations: Partial<Record<Lang, Dict>> = {
         "Nordic viking-age and iron-age events in one place. Browse the calendar and save favorites:",
     },
     common: { cancel: "Cancel", ok: "OK", save: "Save", close: "Close", back: "Back" },
-    langs: { fi: "Suomi", en: "English", sv: "Svenska" },
+    langs: {
+      fi: "Suomi",
+      en: "English",
+      sv: "Svenska",
+      da: "Dansk",
+      de: "Deutsch",
+      et: "Eesti",
+      pl: "Polski",
+    },
     units: { km: "km" },
   },
 
@@ -966,7 +997,30 @@ export const translations: Partial<Record<Lang, Dict>> = {
         "Nordens vikinga- och järnålders-evenemang på ett ställe. Bläddra i kalendern och spara favoriter:",
     },
     common: { cancel: "Avbryt", ok: "OK", save: "Spara", close: "Stäng", back: "Tillbaka" },
-    langs: { fi: "Suomi", en: "English", sv: "Svenska" },
+    langs: {
+      fi: "Suomi",
+      en: "English",
+      sv: "Svenska",
+      da: "Dansk",
+      de: "Deutsch",
+      et: "Eesti",
+      pl: "Polski",
+    },
     units: { km: "km" },
   },
 };
+
+/**
+ * Public translations object — FI / EN / SV (full native, defined above)
+ * + DA / DE / ET / PL (full native, defined in translations.extra.ts).
+ *
+ * The `extraTranslations` cast intentionally lets us spread structurally
+ * compatible dictionaries (the extra file uses `AnyDict` to avoid pulling
+ * the full Dict shape into a second file). If a key drifts, it surfaces at
+ * the call-site as a missing key rather than a compile error.
+ */
+export const translations: Partial<Record<Lang, Dict>> = {
+  ...baseTranslations,
+  ...(extraTranslations as Partial<Record<Lang, Dict>>),
+};
+
