@@ -36,7 +36,11 @@ export default function AdminLayout() {
   const location = useLocation();
 
   if (loading) return <div className="p-10 text-viking-stone">...</div>;
-  if (!user || user.role !== "admin") {
+  // Admin shell is accessible to full admins AND moderators. Individual admin
+  // actions enforce finer-grained rules server-side (e.g. moderators can't
+  // delete admin accounts, can't create new admins, can't toggle paid-messaging).
+  const canAccess = !!user && (user.role === "admin" || user.is_moderator);
+  if (!canAccess) {
     return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />;
   }
 

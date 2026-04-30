@@ -221,6 +221,7 @@
       "col_role": "Role",
       "col_types": "Types",
       "col_paid": "Paid feature",
+      "col_moderator": "Moderator",
       "col_actions": "Actions",
       "filter_all": "All",
       "filter_merchant": "Merchants",
@@ -235,7 +236,10 @@
       "delete_btn": "Delete user",
       "confirm_delete": "Permanently delete user {user}? This will also remove all their RSVPs and subscriptions per GDPR. This cannot be undone.",
       "delete_success": "User deleted (GDPR)",
-      "cannot_delete_self": "You can't delete your own account"
+      "cannot_delete_self": "You can't delete your own account",
+      "moderator_on_toast": "Moderator privileges granted",
+      "moderator_off_toast": "Moderator privileges revoked",
+      "moderator_cannot_delete_admin": "Moderators cannot delete admin accounts"
     },
     "stats": {
       "title": "Statistics",

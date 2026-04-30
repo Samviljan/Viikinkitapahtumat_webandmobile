@@ -113,6 +113,7 @@ async def get_current_user(request: Request) -> dict:
         user.setdefault("consent_merchant_offers", False)
         user.setdefault("saved_search", None)
         user.setdefault("paid_messaging_enabled", False)
+        user.setdefault("is_moderator", False)
         user.setdefault("language", None)
         user.setdefault("favorite_event_ids", [])
         return user
@@ -126,6 +127,16 @@ async def get_admin_user(user: dict = Depends(get_current_user)) -> dict:
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     return user
+
+
+async def get_admin_or_moderator(user: dict = Depends(get_current_user)) -> dict:
+    """Grants access to either full admins OR users flagged as moderators.
+    Moderators can use every admin panel action *except* deleting/creating
+    admin accounts (that logic is enforced at the endpoint level).
+    """
+    if user.get("role") == "admin" or bool(user.get("is_moderator")):
+        return user
+    raise HTTPException(status_code=403, detail="Admin or moderator access required")
 
 
 # -----------------------------------------------------------------------------
@@ -165,6 +176,7 @@ class UserOut(BaseModel):
     consent_merchant_offers: bool = False
     saved_search: Optional[SavedSearch] = None
     paid_messaging_enabled: bool = False
+    is_moderator: bool = False
     language: Optional[str] = None
     favorite_event_ids: List[str] = []
 
@@ -502,6 +514,7 @@ async def login(payload: LoginRequest, response: Response):
         "consent_merchant_offers": bool(user.get("consent_merchant_offers", False)),
         "saved_search": user.get("saved_search"),
         "paid_messaging_enabled": bool(user.get("paid_messaging_enabled", False)),
+        "is_moderator": bool(user.get("is_moderator", False)),
         "language": user.get("language"),
         "favorite_event_ids": list(user.get("favorite_event_ids", []) or []),
         "has_password": True,
@@ -781,6 +794,7 @@ async def update_profile(
     fresh.setdefault("consent_merchant_offers", False)
     fresh.setdefault("saved_search", None)
     fresh.setdefault("paid_messaging_enabled", False)
+    fresh.setdefault("is_moderator", False)
     fresh.setdefault("language", None)
     fresh.setdefault("favorite_event_ids", [])
     return UserOut(**fresh)
@@ -802,9 +816,15 @@ RESET_TOKEN_TTL_MIN = 60  # minutes
 async def forgot_password(payload: ForgotPasswordRequest, background: BackgroundTasks):
     """Request a password-reset link.
 
-    Always returns 200 to avoid leaking which addresses are registered.
-    Sends an email only if the address is on file AND the user has a
-    password (Google-only accounts are skipped).
+    Security contract:
+      - The reset email is ALWAYS sent to the email address stored on the user
+        document, NEVER to an attacker-controlled address. Even though the
+        request body carries an email, that value is used only to LOOK UP the
+        account; the delivery address is read back from the DB (`user["email"]`)
+        so it cannot be overridden or redirected.
+      - We always return HTTP 200 so callers cannot enumerate registered
+        addresses by observing response differences.
+      - Google-only accounts (no password_hash) are silently skipped.
     """
     email = payload.email.lower().strip()
     user = await db.users.find_one({"email": email}, {"_id": 0})
@@ -820,7 +840,12 @@ async def forgot_password(payload: ForgotPasswordRequest, background: Background
                 }
             },
         )
-        background.add_task(svc_send_password_reset, email, token)
+        # Use the email stored on the user record — NOT the request payload —
+        # so a reset link can only ever reach the account's own registered
+        # address, even if the payload were tampered with.
+        dest = (user.get("email") or "").lower().strip()
+        if dest and dest == email:
+            background.add_task(svc_send_password_reset, dest, token)
     return {"ok": True}
 
 
@@ -1335,7 +1360,7 @@ async def send_message_to_attendees(
 # -----------------------------------------------------------------------------
 @api_router.get(
     "/admin/messaging-quota",
-    dependencies=[Depends(get_admin_user)],
+    dependencies=[Depends(get_admin_or_moderator)],
 )
 async def admin_get_messaging_quota():
     cfg = await get_messaging_quota_config()
@@ -1349,7 +1374,7 @@ async def admin_get_messaging_quota():
 
 @api_router.patch(
     "/admin/messaging-quota",
-    dependencies=[Depends(get_admin_user)],
+    dependencies=[Depends(get_admin_or_moderator)],
 )
 async def admin_update_messaging_quota(payload: MessagingQuotaUpdate):
     cfg = await get_messaging_quota_config()
@@ -1430,7 +1455,7 @@ async def list_messageable_events(user: dict = Depends(get_current_user)):
 
 @api_router.get(
     "/admin/push/health",
-    dependencies=[Depends(get_admin_user)],
+    dependencies=[Depends(get_admin_or_moderator)],
 )
 async def admin_push_health():
     """Diagnostic: do we have an Expo access token + how many users have a
@@ -1455,9 +1480,9 @@ async def admin_push_health():
 
 @api_router.post(
     "/admin/push/test",
-    dependencies=[Depends(get_admin_user)],
+    dependencies=[Depends(get_admin_or_moderator)],
 )
-async def admin_push_test(admin: dict = Depends(get_admin_user)):
+async def admin_push_test(admin: dict = Depends(get_admin_or_moderator)):
     """Send a test push to the calling admin's own registered device tokens.
     Returns delivery summary. If 0 recipients → admin has no token registered
     on any device (they need to install the mobile app and sign in)."""
@@ -1474,7 +1499,7 @@ async def admin_push_test(admin: dict = Depends(get_admin_user)):
 # -----------------------------------------------------------------------------
 # Admin: enable/disable the paid messaging feature flag for a user
 # -----------------------------------------------------------------------------
-@api_router.get("/admin/users", dependencies=[Depends(get_admin_user)])
+@api_router.get("/admin/users", dependencies=[Depends(get_admin_or_moderator)])
 async def admin_list_users(role: Optional[str] = None):
     """Lightweight user listing for admin — id/email/nickname/role/types/flag.
     Never returns PII for non-admin contexts.
@@ -1504,7 +1529,7 @@ async def admin_list_users(role: Optional[str] = None):
     return docs
 
 
-@api_router.get("/admin/users/{user_id}", dependencies=[Depends(get_admin_user)])
+@api_router.get("/admin/users/{user_id}", dependencies=[Depends(get_admin_or_moderator)])
 async def admin_get_user(user_id: str):
     """Full user profile for the admin profile-card modal.
 
@@ -1561,7 +1586,7 @@ async def admin_get_user(user_id: str):
 
 @api_router.get(
     "/admin/events/{event_id}/attendees",
-    dependencies=[Depends(get_admin_user)],
+    dependencies=[Depends(get_admin_or_moderator)],
 )
 async def admin_event_attendees(event_id: str):
     """Full attendee list for one event with profile previews — used by the
@@ -1611,7 +1636,7 @@ async def admin_event_attendees(event_id: str):
 
 @api_router.get(
     "/admin/translations/health",
-    dependencies=[Depends(get_admin_user)],
+    dependencies=[Depends(get_admin_or_moderator)],
 )
 async def admin_translations_health():
     """Diagnostic: list every event with at least one missing localized
@@ -1643,7 +1668,7 @@ async def admin_translations_health():
 
 @api_router.post(
     "/admin/translations/sweep",
-    dependencies=[Depends(get_admin_user)],
+    dependencies=[Depends(get_admin_or_moderator)],
 )
 async def admin_translations_sweep(max_events: int = 50):
     """Manual trigger for the translation sweep — same logic the scheduler
@@ -1665,6 +1690,36 @@ async def admin_toggle_paid_messaging(user_id: str, payload: PaidMessagingToggle
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
     return {"id": user_id, "paid_messaging_enabled": bool(payload.enabled)}
+
+
+# -----------------------------------------------------------------------------
+# Moderator promotion — only a full admin can grant / revoke this capability.
+# Once granted, the user passes the `get_admin_or_moderator` dependency and
+# can use most admin panels. They CANNOT delete admin accounts, CANNOT create
+# new admin accounts, and CANNOT grant this flag to others. Role on the user
+# doc stays "user" — the moderator privilege is a separate boolean so it can
+# be toggled without churning role-based filters (e.g. the "all admins" list).
+# -----------------------------------------------------------------------------
+class ModeratorToggle(BaseModel):
+    enabled: bool
+
+
+@api_router.patch(
+    "/admin/users/{user_id}/moderator",
+    dependencies=[Depends(get_admin_user)],
+)
+async def admin_toggle_moderator(user_id: str, payload: ModeratorToggle):
+    target = await db.users.find_one({"id": user_id}, {"_id": 0, "role": 1})
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    # A full admin is already a superset of moderator privileges. Toggling
+    # is_moderator on an admin account is allowed but has no practical effect,
+    # so we still store it (e.g. in case the admin is later demoted).
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"is_moderator": bool(payload.enabled)}},
+    )
+    return {"id": user_id, "is_moderator": bool(payload.enabled)}
 
 
 # -----------------------------------------------------------------------------
@@ -1721,14 +1776,22 @@ async def admin_create_admin_user(payload: AdminUserCreate):
 # -----------------------------------------------------------------------------
 @api_router.delete(
     "/admin/users/{user_id}",
-    dependencies=[Depends(get_admin_user)],
+    dependencies=[Depends(get_admin_or_moderator)],
 )
-async def admin_delete_user(user_id: str, admin: dict = Depends(get_admin_user)):
+async def admin_delete_user(user_id: str, admin: dict = Depends(get_admin_or_moderator)):
     if user_id == admin["id"]:
         raise HTTPException(status_code=400, detail="Admins cannot delete their own account")
     target = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1, "role": 1})
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
+    # Moderators may manage regular users but must NOT be able to remove
+    # full admins — that capability is reserved for admins. This keeps the
+    # moderator role safe to hand out without risking loss of the super-user.
+    if target.get("role") == "admin" and admin.get("role") != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Moderators cannot delete admin accounts",
+        )
     # Refuse to delete the last remaining admin so the system never gets locked out.
     if target.get("role") == "admin":
         admin_count = await db.users.count_documents({"role": "admin"})
@@ -1872,7 +1935,7 @@ async def _run_daily_event_reminders(window_days: int = 3) -> dict:
 
 @api_router.post(
     "/admin/reminders/run-now",
-    dependencies=[Depends(get_admin_user)],
+    dependencies=[Depends(get_admin_or_moderator)],
 )
 async def admin_run_reminders(window_days: int = 3):
     """Manual trigger for daily reminders (also wired on a scheduler)."""
@@ -1884,7 +1947,7 @@ async def admin_run_reminders(window_days: int = 3):
 # -----------------------------------------------------------------------------
 @api_router.get(
     "/admin/stats/overview",
-    dependencies=[Depends(get_admin_user)],
+    dependencies=[Depends(get_admin_or_moderator)],
 )
 async def admin_stats_overview():
     """High-level KPIs visible at the top of the admin stats panel."""
@@ -1949,7 +2012,7 @@ async def admin_stats_overview():
 
 @api_router.get(
     "/admin/stats/messages",
-    dependencies=[Depends(get_admin_user)],
+    dependencies=[Depends(get_admin_or_moderator)],
 )
 async def admin_stats_messages(limit: int = 50):
     """Recent message-log entries — full audit trail of paid messages sent."""
@@ -1981,7 +2044,7 @@ async def admin_stats_messages(limit: int = 50):
 
 @api_router.get(
     "/admin/stats/top-events",
-    dependencies=[Depends(get_admin_user)],
+    dependencies=[Depends(get_admin_or_moderator)],
 )
 async def admin_stats_top_events(limit: int = 10):
     """Top events by attendee count — sorted descending."""
@@ -2370,7 +2433,7 @@ async def serve_event_program(filename: str):
 
 
 @api_router.get("/admin/uploads/events")
-async def list_uploaded_images(_admin: dict = Depends(get_admin_user)):
+async def list_uploaded_images(_admin: dict = Depends(get_admin_or_moderator)):
     """Admin-only image library. Lists every image stored in GridFS so the admin
     can re-attach an existing image to a new event from a picker."""
     files = []
@@ -2612,7 +2675,7 @@ async def unsubscribe_reminder(token: str):
 @api_router.get("/admin/events", response_model=List[EventOut])
 async def admin_list_events(
     status: str = "pending",
-    _admin: dict = Depends(get_admin_user),
+    _admin: dict = Depends(get_admin_or_moderator),
 ):
     q: dict = {} if status == "all" else {"status": status}
     docs = await db.events.find(q, {"_id": 0}).sort("created_at", -1).to_list(1000)
@@ -2620,7 +2683,7 @@ async def admin_list_events(
 
 
 @api_router.get("/admin/events/{event_id}", response_model=EventOut)
-async def admin_get_event(event_id: str, _admin: dict = Depends(get_admin_user)):
+async def admin_get_event(event_id: str, _admin: dict = Depends(get_admin_or_moderator)):
     doc = await db.events.find_one({"id": event_id}, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -2632,7 +2695,7 @@ async def admin_update_status(
     event_id: str,
     payload: EventStatusUpdate,
     background: BackgroundTasks,
-    _admin: dict = Depends(get_admin_user),
+    _admin: dict = Depends(get_admin_or_moderator),
 ):
     res = await db.events.find_one_and_update(
         {"id": event_id},
@@ -2648,7 +2711,7 @@ async def admin_update_status(
 
 
 @api_router.delete("/admin/events/{event_id}")
-async def admin_delete_event(event_id: str, _admin: dict = Depends(get_admin_user)):
+async def admin_delete_event(event_id: str, _admin: dict = Depends(get_admin_or_moderator)):
     res = await db.events.delete_one({"id": event_id})
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -2660,7 +2723,7 @@ async def admin_edit_event(
     event_id: str,
     payload: EventEdit,
     background: BackgroundTasks,
-    _admin: dict = Depends(get_admin_user),
+    _admin: dict = Depends(get_admin_or_moderator),
 ):
     update_doc = payload.model_dump()
     # Normalise empty string-or-null defaults
@@ -2724,7 +2787,7 @@ async def list_guilds():
 
 
 @api_router.post("/admin/merchants", response_model=MerchantOut, status_code=201)
-async def admin_create_merchant(payload: MerchantIn, _admin: dict = Depends(get_admin_user)):
+async def admin_create_merchant(payload: MerchantIn, _admin: dict = Depends(get_admin_or_moderator)):
     doc = payload.model_dump()
     doc["id"] = str(uuid.uuid4())
     doc["created_at"] = datetime.now(timezone.utc).isoformat()
@@ -2733,7 +2796,7 @@ async def admin_create_merchant(payload: MerchantIn, _admin: dict = Depends(get_
 
 
 @api_router.put("/admin/merchants/{mid}", response_model=MerchantOut)
-async def admin_update_merchant(mid: str, payload: MerchantIn, _admin: dict = Depends(get_admin_user)):
+async def admin_update_merchant(mid: str, payload: MerchantIn, _admin: dict = Depends(get_admin_or_moderator)):
     res = await db.merchants.find_one_and_update(
         {"id": mid},
         {"$set": {**payload.model_dump(), "updated_at": datetime.now(timezone.utc).isoformat()}},
@@ -2746,7 +2809,7 @@ async def admin_update_merchant(mid: str, payload: MerchantIn, _admin: dict = De
 
 
 @api_router.delete("/admin/merchants/{mid}")
-async def admin_delete_merchant(mid: str, _admin: dict = Depends(get_admin_user)):
+async def admin_delete_merchant(mid: str, _admin: dict = Depends(get_admin_or_moderator)):
     res = await db.merchants.delete_one({"id": mid})
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Merchant not found")
@@ -2754,7 +2817,7 @@ async def admin_delete_merchant(mid: str, _admin: dict = Depends(get_admin_user)
 
 
 @api_router.post("/admin/guilds", response_model=GuildOut, status_code=201)
-async def admin_create_guild(payload: GuildIn, _admin: dict = Depends(get_admin_user)):
+async def admin_create_guild(payload: GuildIn, _admin: dict = Depends(get_admin_or_moderator)):
     doc = payload.model_dump()
     doc["id"] = str(uuid.uuid4())
     doc["created_at"] = datetime.now(timezone.utc).isoformat()
@@ -2763,7 +2826,7 @@ async def admin_create_guild(payload: GuildIn, _admin: dict = Depends(get_admin_
 
 
 @api_router.put("/admin/guilds/{gid}", response_model=GuildOut)
-async def admin_update_guild(gid: str, payload: GuildIn, _admin: dict = Depends(get_admin_user)):
+async def admin_update_guild(gid: str, payload: GuildIn, _admin: dict = Depends(get_admin_or_moderator)):
     res = await db.guilds.find_one_and_update(
         {"id": gid},
         {"$set": {**payload.model_dump(), "updated_at": datetime.now(timezone.utc).isoformat()}},
@@ -2776,7 +2839,7 @@ async def admin_update_guild(gid: str, payload: GuildIn, _admin: dict = Depends(
 
 
 @api_router.delete("/admin/guilds/{gid}")
-async def admin_delete_guild(gid: str, _admin: dict = Depends(get_admin_user)):
+async def admin_delete_guild(gid: str, _admin: dict = Depends(get_admin_or_moderator)):
     res = await db.guilds.delete_one({"id": gid})
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Guild not found")
@@ -2784,7 +2847,7 @@ async def admin_delete_guild(gid: str, _admin: dict = Depends(get_admin_user)):
 
 
 @api_router.get("/admin/stats")
-async def admin_stats(_admin: dict = Depends(get_admin_user)):
+async def admin_stats(_admin: dict = Depends(get_admin_or_moderator)):
     pending = await db.events.count_documents({"status": "pending"})
     approved = await db.events.count_documents({"status": "approved"})
     rejected = await db.events.count_documents({"status": "rejected"})
@@ -2793,17 +2856,17 @@ async def admin_stats(_admin: dict = Depends(get_admin_user)):
 
 
 @api_router.post("/admin/newsletter/send")
-async def admin_send_newsletter(_admin: dict = Depends(get_admin_user)):
+async def admin_send_newsletter(_admin: dict = Depends(get_admin_or_moderator)):
     return await svc_send_monthly_digest(db, days=60)
 
 
 @api_router.post("/admin/weekly-report/send")
-async def admin_send_weekly_report(_admin: dict = Depends(get_admin_user)):
+async def admin_send_weekly_report(_admin: dict = Depends(get_admin_or_moderator)):
     return await svc_send_weekly_admin_report(db)
 
 
 @api_router.get("/admin/weekly-report/preview")
-async def admin_preview_weekly_report(_admin: dict = Depends(get_admin_user)):
+async def admin_preview_weekly_report(_admin: dict = Depends(get_admin_or_moderator)):
     from email_service import render_weekly_admin_report, select_upcoming_events
     pending_count = await db.events.count_documents({"status": "pending"})
     approved_count = await db.events.count_documents({"status": "approved"})
@@ -2820,7 +2883,7 @@ async def admin_preview_weekly_report(_admin: dict = Depends(get_admin_user)):
 
 
 @api_router.get("/admin/newsletter/preview")
-async def admin_preview_newsletter(_admin: dict = Depends(get_admin_user)):
+async def admin_preview_newsletter(_admin: dict = Depends(get_admin_or_moderator)):
     """Return the digest body so admin can preview before sending."""
     from email_service import render_monthly_digest, select_upcoming_events, unsubscribe_url as _uurl
     events = await db.events.find({"status": "approved"}, {"_id": 0}).to_list(2000)
@@ -2830,7 +2893,7 @@ async def admin_preview_newsletter(_admin: dict = Depends(get_admin_user)):
 
 
 @api_router.get("/admin/subscribers")
-async def admin_list_subscribers(_admin: dict = Depends(get_admin_user)):
+async def admin_list_subscribers(_admin: dict = Depends(get_admin_or_moderator)):
     docs = await db.newsletter_subscribers.find(
         {}, {"_id": 0, "unsubscribe_token": 0}
     ).sort("created_at", -1).to_list(10000)
@@ -2838,7 +2901,7 @@ async def admin_list_subscribers(_admin: dict = Depends(get_admin_user)):
 
 
 @api_router.delete("/admin/subscribers/{email}", status_code=204)
-async def admin_delete_subscriber(email: str, _admin: dict = Depends(get_admin_user)):
+async def admin_delete_subscriber(email: str, _admin: dict = Depends(get_admin_or_moderator)):
     """Hard-delete a newsletter subscriber by email. Returns 404 if not found."""
     res = await db.newsletter_subscribers.delete_one({"email": email.lower().strip()})
     if res.deleted_count == 0:
@@ -2894,7 +2957,7 @@ async def submit_contact(payload: ContactPayload):
 
 
 @api_router.post("/admin/sync-prod-events")
-async def admin_sync_prod_events(_admin: dict = Depends(get_admin_user)):
+async def admin_sync_prod_events(_admin: dict = Depends(get_admin_or_moderator)):
     """Manually trigger the prod → preview events sync. Returns count."""
     try:
         from scripts.sync_prod_events import main as sync_main

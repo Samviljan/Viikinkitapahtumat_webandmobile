@@ -221,6 +221,7 @@
       "col_role": "Roll",
       "col_types": "Typer",
       "col_paid": "Premiumfunktion",
+      "col_moderator": "Moderator",
       "col_actions": "Åtgärder",
       "filter_all": "Alla",
       "filter_merchant": "Handelsmän",
@@ -235,7 +236,10 @@
       "delete_btn": "Radera användare",
       "confirm_delete": "Vill du radera användaren {user} permanent? Alla deltagandebekräftelser och prenumerationer raderas enligt GDPR. Detta kan inte ångras.",
       "delete_success": "Användaren raderad (GDPR)",
-      "cannot_delete_self": "Du kan inte radera ditt eget konto"
+      "cannot_delete_self": "Du kan inte radera ditt eget konto",
+      "moderator_on_toast": "Moderatorbehörighet aktiverad",
+      "moderator_off_toast": "Moderatorbehörighet inaktiverad",
+      "moderator_cannot_delete_admin": "Moderator kan inte radera administratörer"
     },
     "nav": {
       "overview": "Översikt",

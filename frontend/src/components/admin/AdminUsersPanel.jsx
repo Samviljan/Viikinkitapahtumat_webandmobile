@@ -74,6 +74,28 @@ export default function AdminUsersPanel() {
     }
   }
 
+  async function toggleModerator(u) {
+    const next = !u.is_moderator;
+    // Optimistic UI update — revert on failure.
+    setUsers((prev) =>
+      prev.map((x) => (x.id === u.id ? { ...x, is_moderator: next } : x)),
+    );
+    try {
+      await api.patch(`/admin/users/${u.id}/moderator`, { enabled: next });
+      toast.success(
+        next
+          ? t("admin.users.moderator_on_toast")
+          : t("admin.users.moderator_off_toast"),
+      );
+    } catch (err) {
+      setUsers((prev) =>
+        prev.map((x) => (x.id === u.id ? { ...x, is_moderator: !next } : x)),
+      );
+      const detail = err?.response?.data?.detail;
+      toast.error(typeof detail === "string" ? detail : t("account.error_generic"));
+    }
+  }
+
   async function deleteUser(u) {
     setConfirmDelete(u);
   }
@@ -125,16 +147,18 @@ export default function AdminUsersPanel() {
               {t(`admin.users.filter_${f}`)}
             </button>
           ))}
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => setShowCreate(true)}
-            className="bg-viking-ember hover:bg-viking-ember/90 ml-2"
-            data-testid="admin-add-admin-btn"
-          >
-            <UserPlus className="w-3.5 h-3.5 mr-1.5" />
-            {t("admin.users.add_admin_btn")}
-          </Button>
+          {currentAdmin?.role === "admin" ? (
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setShowCreate(true)}
+              className="bg-viking-ember hover:bg-viking-ember/90 ml-2"
+              data-testid="admin-add-admin-btn"
+            >
+              <UserPlus className="w-3.5 h-3.5 mr-1.5" />
+              {t("admin.users.add_admin_btn")}
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -146,6 +170,9 @@ export default function AdminUsersPanel() {
               <th className="text-left py-2 pr-3">{t("admin.users.col_role")}</th>
               <th className="text-left py-2 pr-3">{t("admin.users.col_types")}</th>
               <th className="text-right py-2 px-3">{t("admin.users.col_paid")}</th>
+              {currentAdmin?.role === "admin" ? (
+                <th className="text-right py-2 px-3">{t("admin.users.col_moderator")}</th>
+              ) : null}
               <th className="text-right py-2 pl-3 w-12">{t("admin.users.col_actions")}</th>
             </tr>
           </thead>
@@ -153,7 +180,7 @@ export default function AdminUsersPanel() {
             {visible.length === 0 ? (
               <tr>
                 <td
-                  colSpan={5}
+                colSpan={currentAdmin?.role === "admin" ? 6 : 5}
                   className="py-8 text-center text-viking-stone italic text-xs"
                 >
                   —
@@ -214,6 +241,16 @@ export default function AdminUsersPanel() {
                       onCheckedChange={() => toggle(u)}
                     />
                   </td>
+                  {currentAdmin?.role === "admin" ? (
+                    <td className="py-3 px-3 text-right" onClick={(e) => e.stopPropagation()}>
+                      <Switch
+                        data-testid={`toggle-moderator-${u.id}`}
+                        checked={!!u.is_moderator}
+                        onCheckedChange={() => toggleModerator(u)}
+                        disabled={u.role === "admin"}
+                      />
+                    </td>
+                  ) : null}
                   <td className="py-3 pl-3 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1.5">
                       <button
@@ -228,11 +265,16 @@ export default function AdminUsersPanel() {
                       <button
                         type="button"
                         onClick={() => deleteUser(u)}
-                        disabled={u.id === currentAdmin?.id}
+                        disabled={
+                          u.id === currentAdmin?.id ||
+                          (u.role === "admin" && currentAdmin?.role !== "admin")
+                        }
                         title={
                           u.id === currentAdmin?.id
                             ? t("admin.users.cannot_delete_self")
-                            : t("admin.users.delete_btn")
+                            : u.role === "admin" && currentAdmin?.role !== "admin"
+                              ? t("admin.users.moderator_cannot_delete_admin")
+                              : t("admin.users.delete_btn")
                         }
                         data-testid={`delete-user-${u.id}`}
                         className="p-1.5 rounded-sm border border-viking-edge text-viking-stone hover:text-red-400 hover:border-red-400/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"

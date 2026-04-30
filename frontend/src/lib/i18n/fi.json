@@ -222,6 +222,7 @@
       "col_role": "Rooli",
       "col_types": "Tyypit",
       "col_paid": "Lisämaksullinen",
+      "col_moderator": "Moderaattori",
       "col_actions": "Toiminnot",
       "filter_all": "Kaikki",
       "filter_merchant": "Kauppiaat",
@@ -236,7 +237,10 @@
       "delete_btn": "Poista käyttäjä",
       "confirm_delete": "Poistetaanko käyttäjä {user} pysyvästi? Tämä toiminto poistaa myös kaikki RSVP:t ja tilaukset GDPR:n mukaisesti. Toimintoa ei voi peruuttaa.",
       "delete_success": "Käyttäjä poistettu (GDPR)",
-      "cannot_delete_self": "Et voi poistaa omaa tiliäsi"
+      "cannot_delete_self": "Et voi poistaa omaa tiliäsi",
+      "moderator_on_toast": "Moderaattoripalveluoikeudet aktivoitu",
+      "moderator_off_toast": "Moderaattoripalveluoikeudet deaktivoitu",
+      "moderator_cannot_delete_admin": "Moderaattori ei voi poistaa ylläpitäjätiliä"
     },
     "stats": {
       "title": "Tilastot",

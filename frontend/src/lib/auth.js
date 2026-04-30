@@ -43,6 +43,7 @@ export function AuthProvider({ children }) {
       consent_merchant_offers: !!data.consent_merchant_offers,
       saved_search: data.saved_search ?? null,
       paid_messaging_enabled: !!data.paid_messaging_enabled,
+      is_moderator: !!data.is_moderator,
       language: data.language ?? null,
       favorite_event_ids: Array.isArray(data.favorite_event_ids)
         ? data.favorite_event_ids.filter((x) => typeof x === "string")
