@@ -48,6 +48,10 @@ export function AuthProvider({ children }) {
       favorite_event_ids: Array.isArray(data.favorite_event_ids)
         ? data.favorite_event_ids.filter((x) => typeof x === "string")
         : [],
+      favorite_merchant_ids: Array.isArray(data.favorite_merchant_ids)
+        ? data.favorite_merchant_ids.filter((x) => typeof x === "string")
+        : [],
+      merchant_card: data.merchant_card ?? null,
     };
   }
 

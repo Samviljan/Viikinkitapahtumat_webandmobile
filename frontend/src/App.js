@@ -21,6 +21,7 @@ import Submit from "@/pages/Submit";import Courses from "@/pages/Courses";
 import Favorites from "@/pages/Favorites";
 import Guilds from "@/pages/Guilds";
 import Shops from "@/pages/Shops";
+import MerchantDetail from "@/pages/MerchantDetail";
 import Swordfighting from "@/pages/Swordfighting";
 import Contact from "@/pages/Contact";
 import Privacy from "@/pages/Privacy";
@@ -57,6 +58,7 @@ function App() {
               <Route path="/courses" element={<Courses />} />
               <Route path="/guilds" element={<Guilds />} />
               <Route path="/shops" element={<Shops />} />
+              <Route path="/shops/:id" element={<MerchantDetail />} />
               <Route path="/swordfighting" element={<Swordfighting />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/privacy" element={<Privacy />} />

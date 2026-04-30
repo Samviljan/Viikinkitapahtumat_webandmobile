@@ -6,7 +6,7 @@
  */
 import React, { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Trash2, UserPlus, Loader2, KeyRound } from "lucide-react";
+import { Trash2, UserPlus, Loader2, KeyRound, Store } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import {
@@ -98,6 +98,18 @@ export default function AdminUsersPanel() {
 
   async function deleteUser(u) {
     setConfirmDelete(u);
+  }
+
+  async function activateMerchantCard(u) {
+    if (!window.confirm(`Aktivoi kauppiaskortti käyttäjälle ${u.email}? (12 kk)`)) return;
+    try {
+      await api.post(`/admin/users/${u.id}/merchant-card/enable`);
+      toast.success("Kauppiaskortti aktivoitu (12 kk)");
+      await load();
+    } catch (err) {
+      const detail = err?.response?.data?.detail;
+      toast.error(typeof detail === "string" ? detail : "Aktivointi epäonnistui");
+    }
   }
 
   async function performDelete() {
@@ -261,6 +273,20 @@ export default function AdminUsersPanel() {
                         className="p-1.5 rounded-sm border border-viking-edge text-viking-stone hover:text-viking-gold hover:border-viking-gold/60 transition-colors"
                       >
                         <KeyRound className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => activateMerchantCard(u)}
+                        disabled={u.role === "admin"}
+                        title={
+                          (u.user_types || []).includes("merchant")
+                            ? "Aktivoi/uusi kauppiaskortti (12 kk)"
+                            : "Aktivoi kauppiaskortti — lisää myös merchant-roolin"
+                        }
+                        data-testid={`activate-merchant-card-${u.id}`}
+                        className="p-1.5 rounded-sm border border-viking-edge text-viking-stone hover:text-viking-gold hover:border-viking-gold/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <Store className="w-3.5 h-3.5" />
                       </button>
                       <button
                         type="button"

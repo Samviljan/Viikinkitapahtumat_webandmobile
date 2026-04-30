@@ -1,11 +1,13 @@
 import React, { useMemo } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, StyleSheet, Text, View, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppBackground } from "@/src/components/AppBackground";
 import { LinkListRow, SectionTitle } from "@/src/components/LinkListRow";
 import { useMerchants } from "@/src/hooks/useDirectory";
 import { colors, spacing, text } from "@/src/lib/theme";
 import { useSettings } from "@/src/lib/i18n";
+
+const API = process.env.EXPO_PUBLIC_BACKEND_URL || process.env.REACT_APP_BACKEND_URL || "";
 
 const CATEGORY_LABELS: Record<string, string> = {
   gear: "Varuste- ja työkaluvalikoima",
@@ -14,26 +16,43 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: "Muut",
 };
 
+function imgSrc(u?: string | null): string | undefined {
+  if (!u) return undefined;
+  if (u.startsWith("http")) return u;
+  return `${API}${u}`;
+}
+
 export default function ShopsScreen() {
   const { data, loading, error } = useMerchants();
   const { t } = useSettings();
 
+  const featured = useMemo(() => data.filter((m) => m.featured), [data]);
+  const others = useMemo(() => data.filter((m) => !m.featured), [data]);
+
   const sections = useMemo(() => {
     const map = new Map<string, typeof data>();
-    for (const m of data) {
+    for (const m of others) {
       const key = m.category || "other";
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(m);
     }
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [data]);
+  }, [others]);
 
   type Row =
     | { type: "section"; key: string; label: string }
-    | { type: "merchant"; key: string; merchant: (typeof data)[number] };
+    | { type: "merchant"; key: string; merchant: (typeof data)[number] }
+    | { type: "featured-header"; key: string }
+    | { type: "featured-card"; key: string; merchant: (typeof data)[number] };
 
   const rows: Row[] = useMemo(() => {
     const out: Row[] = [];
+    if (featured.length > 0) {
+      out.push({ type: "featured-header", key: "featured-header" });
+      for (const m of featured) {
+        out.push({ type: "featured-card", key: `f-${m.id}`, merchant: m });
+      }
+    }
     for (const [cat, list] of sections) {
       out.push({
         type: "section",
@@ -45,7 +64,7 @@ export default function ShopsScreen() {
       }
     }
     return out;
-  }, [sections]);
+  }, [sections, featured]);
 
   return (
     <AppBackground>
@@ -68,8 +87,36 @@ export default function ShopsScreen() {
             </View>
           }
           renderItem={({ item }) => {
+            if (item.type === "featured-header") {
+              return <SectionTitle label="Esillä olevat kauppiaat" />;
+            }
             if (item.type === "section") {
               return <SectionTitle label={item.label} />;
+            }
+            if (item.type === "featured-card") {
+              const m = item.merchant;
+              return (
+                <View style={styles.featuredCard} testID={`featured-${m.id}`}>
+                  {m.image_url ? (
+                    <Image source={{ uri: imgSrc(m.image_url) }} style={styles.featuredImage} />
+                  ) : null}
+                  <View style={styles.featuredBody}>
+                    <Text style={styles.featuredTitle}>{m.name}</Text>
+                    {m.description ? (
+                      <Text style={styles.featuredDesc} numberOfLines={3}>
+                        {m.description}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <LinkListRow
+                    testID={`featured-link-${m.id}`}
+                    icon={m.category === "smith" ? "hammer-outline" : "storefront-outline"}
+                    title={m.url ? "Avaa kotisivut" : m.name}
+                    subtitle={m.url || undefined}
+                    url={m.url}
+                  />
+                </View>
+              );
             }
             const m = item.merchant;
             return (
@@ -112,4 +159,31 @@ const styles = StyleSheet.create({
   center: { alignItems: "center", paddingVertical: spacing.xxl },
   empty: { color: colors.stone, padding: spacing.lg, textAlign: "center" },
   error: { color: colors.ember, padding: spacing.lg, textAlign: "center" },
+  featuredCard: {
+    marginBottom: spacing.md,
+    borderRadius: 4,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.edge,
+    backgroundColor: colors.surface,
+  },
+  featuredImage: {
+    width: "100%",
+    aspectRatio: 16 / 9,
+    backgroundColor: colors.shadow,
+  },
+  featuredBody: {
+    padding: spacing.md,
+  },
+  featuredTitle: {
+    color: colors.bone,
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  featuredDesc: {
+    color: colors.stone,
+    fontSize: 13,
+    lineHeight: 18,
+  },
 });

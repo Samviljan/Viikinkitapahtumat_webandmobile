@@ -51,4 +51,11 @@ export interface Merchant {
   url: string;
   category: string;
   order_index: number;
+  // Extended fields populated for user-card merchants
+  image_url?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  featured?: boolean;
+  is_user_card?: boolean;
+  user_id?: string | null;
 }

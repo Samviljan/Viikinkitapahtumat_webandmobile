@@ -116,6 +116,8 @@ async def get_current_user(request: Request) -> dict:
         user.setdefault("is_moderator", False)
         user.setdefault("language", None)
         user.setdefault("favorite_event_ids", [])
+        user.setdefault("favorite_merchant_ids", [])
+        user.setdefault("merchant_card", None)
         return user
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
@@ -157,6 +159,30 @@ class SavedSearch(BaseModel):
     countries: List[str] = []  # empty = all countries
 
 
+class MerchantCard(BaseModel):
+    """Public merchant profile card embedded on the user document.
+
+    Backlog: P1 — `users.merchant_card` sub-document, deprecates the old
+    `merchants` collection. Includes a 12-month subscription window
+    (`merchant_until`) so a future Stripe webhook can auto-renew it. While
+    Stripe is deferred, admins flip `enabled` manually via the admin panel.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+    enabled: bool = False  # admin-toggle (`merchant_card_enabled`)
+    shop_name: str = ""
+    website: str = ""
+    phone: str = ""
+    email: str = ""
+    description: str = ""  # plain text, max 1000 chars
+    image_url: Optional[str] = None
+    category: Literal["gear", "smith"] = "gear"
+    featured: bool = False
+    merchant_until: Optional[str] = None  # ISO timestamp; auto-disable on expiry
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
 class UserOut(BaseModel):
     id: str
     email: EmailStr
@@ -179,6 +205,8 @@ class UserOut(BaseModel):
     is_moderator: bool = False
     language: Optional[str] = None
     favorite_event_ids: List[str] = []
+    favorite_merchant_ids: List[str] = []
+    merchant_card: Optional[MerchantCard] = None
 
 
 USER_TYPES = {"reenactor", "fighter", "merchant", "organizer"}
@@ -445,6 +473,13 @@ class MerchantOut(BaseModel):
     url: str
     category: str
     order_index: int
+    # Extended fields populated for user-card merchants (not legacy entries)
+    image_url: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    featured: bool = False
+    is_user_card: bool = False
+    user_id: Optional[str] = None
 
 
 class GuildIn(BaseModel):
@@ -606,6 +641,8 @@ async def login(payload: LoginRequest, response: Response):
         "is_moderator": bool(user.get("is_moderator", False)),
         "language": user.get("language"),
         "favorite_event_ids": list(user.get("favorite_event_ids", []) or []),
+        "favorite_merchant_ids": list(user.get("favorite_merchant_ids", []) or []),
+        "merchant_card": user.get("merchant_card"),
         "has_password": True,
         "token": token,
     }
@@ -886,6 +923,8 @@ async def update_profile(
     fresh.setdefault("is_moderator", False)
     fresh.setdefault("language", None)
     fresh.setdefault("favorite_event_ids", [])
+    fresh.setdefault("favorite_merchant_ids", [])
+    fresh.setdefault("merchant_card", None)
     return UserOut(**fresh)
 
 
@@ -1236,6 +1275,165 @@ async def replace_favorites(
         {"$set": {"favorite_event_ids": cleaned}},
     )
     return {"event_ids": cleaned}
+
+
+# -----------------------------------------------------------------------------
+# Favorite merchants — list of merchant_card user IDs (or legacy merchant IDs).
+# Same atomic-set semantics as event favorites.
+# -----------------------------------------------------------------------------
+@api_router.get("/users/me/favorite-merchants")
+async def list_my_favorite_merchants(user: dict = Depends(get_current_user)):
+    return {"merchant_ids": list(user.get("favorite_merchant_ids", []) or [])}
+
+
+@api_router.post("/users/me/favorite-merchants/{merchant_id}")
+async def add_favorite_merchant(merchant_id: str, user: dict = Depends(get_current_user)):
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$addToSet": {"favorite_merchant_ids": merchant_id}},
+    )
+    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0, "favorite_merchant_ids": 1})
+    return {"merchant_ids": list((fresh or {}).get("favorite_merchant_ids", []) or [])}
+
+
+@api_router.delete("/users/me/favorite-merchants/{merchant_id}")
+async def remove_favorite_merchant(merchant_id: str, user: dict = Depends(get_current_user)):
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$pull": {"favorite_merchant_ids": merchant_id}},
+    )
+    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0, "favorite_merchant_ids": 1})
+    return {"merchant_ids": list((fresh or {}).get("favorite_merchant_ids", []) or [])}
+
+
+# -----------------------------------------------------------------------------
+# Merchant card — owner endpoints (`users.merchant_card`).
+# Owners can edit only when admin has set `merchant_card.enabled=true`. The
+# subscription window (`merchant_until`) is set when admin enables the card
+# and is auto-disabled by the daily APScheduler sweep when it expires.
+# -----------------------------------------------------------------------------
+class MerchantCardUpdate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    shop_name: Optional[str] = None
+    website: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[Literal["gear", "smith"]] = None
+    image_url: Optional[str] = None  # set by upload endpoint, but allowed to clear
+
+
+def _ensure_card_active(card: Optional[dict]) -> dict:
+    """Block edits when admin hasn't enabled the card or subscription expired."""
+    if not card or not card.get("enabled"):
+        raise HTTPException(
+            status_code=403,
+            detail="Merchant card is not enabled. Contact support to activate.",
+        )
+    until = card.get("merchant_until")
+    if until:
+        try:
+            exp = datetime.fromisoformat(until.replace("Z", "+00:00"))
+            if exp < datetime.now(timezone.utc):
+                raise HTTPException(status_code=403, detail="Merchant card subscription has expired")
+        except ValueError:
+            pass
+    return card
+
+
+@api_router.get("/users/me/merchant-card")
+async def get_my_merchant_card(user: dict = Depends(get_current_user)):
+    return user.get("merchant_card") or {}
+
+
+@api_router.put("/users/me/merchant-card")
+async def update_my_merchant_card(
+    payload: MerchantCardUpdate, user: dict = Depends(get_current_user)
+):
+    current = user.get("merchant_card") or {}
+    _ensure_card_active(current)
+
+    updates: dict = {}
+    body = payload.model_dump(exclude_unset=True)
+    if "shop_name" in body:
+        v = (body["shop_name"] or "").strip()
+        if not v:
+            raise HTTPException(status_code=400, detail="Shop name is required")
+        if len(v) > 120:
+            raise HTTPException(status_code=400, detail="Shop name too long (max 120 chars)")
+        updates["shop_name"] = v
+    if "website" in body:
+        updates["website"] = (body["website"] or "").strip()[:300]
+    if "phone" in body:
+        updates["phone"] = (body["phone"] or "").strip()[:60]
+    if "email" in body:
+        updates["email"] = (body["email"] or "").strip()[:200]
+    if "description" in body:
+        v = (body["description"] or "").strip()
+        if len(v) > 1000:
+            raise HTTPException(status_code=400, detail="Description too long (max 1000 chars)")
+        updates["description"] = v
+    if "category" in body and body["category"]:
+        updates["category"] = body["category"]
+    if "image_url" in body:
+        updates["image_url"] = body["image_url"] or None
+
+    updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+    set_doc = {f"merchant_card.{k}": v for k, v in updates.items()}
+    await db.users.update_one({"id": user["id"]}, {"$set": set_doc})
+
+    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0, "merchant_card": 1})
+    return (fresh or {}).get("merchant_card") or {}
+
+
+@api_router.post("/users/me/merchant-card/image", status_code=201)
+async def upload_my_merchant_card_image(
+    file: UploadFile = File(...), user: dict = Depends(get_current_user)
+):
+    """Profile picture for the merchant card. Reuses the `profile_images`
+    GridFS bucket but writes to `merchant_card.image_url` (separate field
+    from the user's avatar)."""
+    current = user.get("merchant_card") or {}
+    _ensure_card_active(current)
+
+    ctype = (file.content_type or "").lower()
+    ext = (Path(file.filename or "").suffix or "").lower()
+    if ctype not in ALLOWED_IMAGE_MIME and ext not in ALLOWED_IMAGE_EXT:
+        raise HTTPException(status_code=415, detail="Only image files are allowed")
+    if not ext:
+        ext = {
+            "image/jpeg": ".jpg", "image/png": ".png",
+            "image/webp": ".webp", "image/gif": ".gif",
+        }.get(ctype, ".jpg")
+    if not ctype:
+        ctype = MIME_FOR_EXT.get(ext, "application/octet-stream")
+
+    body = await file.read()
+    if len(body) == 0:
+        raise HTTPException(status_code=400, detail="Empty file")
+    if len(body) > MAX_PROFILE_IMAGE_BYTES:
+        raise HTTPException(status_code=413, detail="Image too large (max 3 MB)")
+
+    filename = f"merchant_{user['id']}_{uuid.uuid4().hex[:8]}{ext}"
+    await _profile_image_bucket().upload_from_stream(
+        filename,
+        body,
+        metadata={
+            "content_type": ctype,
+            "owner_id": user["id"],
+            "kind": "merchant_card",
+            "original_name": file.filename or filename,
+        },
+    )
+    url = f"/api/uploads/profile-images/{filename}"
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {
+            "merchant_card.image_url": url,
+            "merchant_card.updated_at": datetime.now(timezone.utc).isoformat(),
+        }},
+    )
+    return {"url": url}
 
 
 # -----------------------------------------------------------------------------
@@ -2894,8 +3092,42 @@ def _strip(doc: dict) -> dict:
 
 @api_router.get("/merchants", response_model=List[MerchantOut])
 async def list_merchants():
-    docs = await db.merchants.find({}, {"_id": 0}).sort([("category", 1), ("order_index", 1), ("name", 1)]).to_list(2000)
-    return [MerchantOut(**_normalize_merchant(d)) for d in docs]
+    """Public merchants listing.
+
+    UNION of two sources:
+      1. Legacy `merchants` collection (static admin-curated entries; no
+         detail page, no images). Kept while we migrate.
+      2. Active user merchant cards: users with `merchant_card.enabled=true`
+         AND `merchant_until` either unset or in the future. These show
+         images + open a public detail page at `/shops/<user_id>`.
+
+    Featured cards are flagged so the frontend can render a prominent
+    section above the main list.
+    """
+    legacy = await db.merchants.find({}, {"_id": 0}).sort(
+        [("category", 1), ("order_index", 1), ("name", 1)]
+    ).to_list(2000)
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    user_cards = await db.users.find(
+        {
+            "merchant_card.enabled": True,
+            "$or": [
+                {"merchant_card.merchant_until": None},
+                {"merchant_card.merchant_until": {"$exists": False}},
+                {"merchant_card.merchant_until": {"$gt": now_iso}},
+            ],
+        },
+        {"_id": 0, "id": 1, "merchant_card": 1},
+    ).to_list(2000)
+
+    out: list[MerchantOut] = [MerchantOut(**_normalize_merchant(d)) for d in legacy]
+    for u in user_cards:
+        m = u.get("merchant_card") or {}
+        if not (m.get("shop_name") or "").strip():
+            continue  # skip empty cards (admin enabled but owner hasn't filled it)
+        out.append(MerchantOut(**_normalize_user_merchant_card(u["id"], m)))
+    return out
 
 
 def _normalize_merchant(d: dict) -> dict:
@@ -2906,6 +3138,87 @@ def _normalize_merchant(d: dict) -> dict:
         "url": d.get("url") or "",
         "category": d.get("category") or "gear",
         "order_index": d.get("order_index") or 0,
+        "image_url": None,
+        "phone": None,
+        "email": None,
+        "featured": False,
+        "is_user_card": False,
+        "user_id": None,
+    }
+
+
+def _normalize_user_merchant_card(user_id: str, m: dict) -> dict:
+    return {
+        "id": user_id,  # user_id doubles as merchant_id for routing
+        "name": (m.get("shop_name") or "").strip(),
+        "description": (m.get("description") or "").strip(),
+        "url": (m.get("website") or "").strip(),
+        "category": m.get("category") or "gear",
+        "order_index": 0,
+        "image_url": m.get("image_url"),
+        "phone": (m.get("phone") or "").strip() or None,
+        "email": (m.get("email") or "").strip() or None,
+        "featured": bool(m.get("featured", False)),
+        "is_user_card": True,
+        "user_id": user_id,
+    }
+
+
+@api_router.get("/merchants/{merchant_id}")
+async def get_merchant_detail(merchant_id: str):
+    """Public detail page payload for a merchant card.
+
+    Only resolves USER merchant cards (legacy entries don't have a detail
+    page — they only ever had an external URL). Returns the card +
+    upcoming events the merchant is RSVPed to (clickable).
+    """
+    user = await db.users.find_one(
+        {"id": merchant_id, "merchant_card.enabled": True}, {"_id": 0, "id": 1, "merchant_card": 1}
+    )
+    if not user:
+        raise HTTPException(status_code=404, detail="Merchant not found")
+    card = user.get("merchant_card") or {}
+    until = card.get("merchant_until")
+    if until:
+        try:
+            exp = datetime.fromisoformat(until.replace("Z", "+00:00"))
+            if exp < datetime.now(timezone.utc):
+                raise HTTPException(status_code=404, detail="Merchant subscription expired")
+        except ValueError:
+            pass
+
+    # Look up upcoming events the merchant is attending
+    today = datetime.now(timezone.utc).date().isoformat()
+    rsvps = await db.event_attendees.find(
+        {"user_id": merchant_id}, {"_id": 0, "event_id": 1}
+    ).to_list(500)
+    event_ids = [r["event_id"] for r in rsvps]
+    events: list[dict] = []
+    if event_ids:
+        evs = await db.events.find(
+            {
+                "id": {"$in": event_ids},
+                "status": "approved",
+                "$or": [{"date": {"$gte": today}}, {"date_end": {"$gte": today}}],
+            },
+            {"_id": 0, "id": 1, "title_fi": 1, "title_en": 1, "title_sv": 1,
+             "date": 1, "date_end": 1, "location": 1, "country": 1},
+        ).sort([("date", 1)]).to_list(200)
+        events = evs
+
+    return {
+        "id": merchant_id,
+        "name": (card.get("shop_name") or "").strip(),
+        "description": (card.get("description") or "").strip(),
+        "url": (card.get("website") or "").strip(),
+        "category": card.get("category") or "gear",
+        "image_url": card.get("image_url"),
+        "phone": (card.get("phone") or "").strip() or None,
+        "email": (card.get("email") or "").strip() or None,
+        "featured": bool(card.get("featured", False)),
+        "is_user_card": True,
+        "user_id": merchant_id,
+        "events": events,
     }
 
 
@@ -2954,6 +3267,144 @@ async def admin_delete_merchant(mid: str, _admin: dict = Depends(get_admin_or_mo
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Merchant not found")
     return {"ok": True}
+
+
+# -----------------------------------------------------------------------------
+# Admin — merchant CARD management (the new user-card system).
+# Distinct from the legacy /admin/merchants CRUD above (which manages the
+# deprecated `merchants` collection). These endpoints flip
+# `users.merchant_card.enabled` and renew the 12-month subscription window.
+# -----------------------------------------------------------------------------
+MERCHANT_CARD_DEFAULT_MONTHS = 12
+
+
+def _merchant_until_iso(months: int = MERCHANT_CARD_DEFAULT_MONTHS) -> str:
+    return (datetime.now(timezone.utc) + timedelta(days=30 * months)).isoformat()
+
+
+@api_router.post("/admin/users/{user_id}/merchant-card/enable")
+async def admin_enable_merchant_card(
+    user_id: str,
+    _admin: dict = Depends(get_admin_or_moderator),
+    months: int = MERCHANT_CARD_DEFAULT_MONTHS,
+):
+    """Enable a user's merchant card and start a fresh subscription window.
+    Idempotent: re-enabling an already-active card extends the expiry."""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "merchant_card": 1, "user_types": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if "merchant" not in (user.get("user_types") or []):
+        # Auto-add merchant role since admin is granting them a merchant card
+        await db.users.update_one(
+            {"id": user_id}, {"$addToSet": {"user_types": "merchant"}}
+        )
+    existing = user.get("merchant_card") or {}
+    now = datetime.now(timezone.utc).isoformat()
+    new_card = {
+        "enabled": True,
+        "shop_name": existing.get("shop_name") or "",
+        "website": existing.get("website") or "",
+        "phone": existing.get("phone") or "",
+        "email": existing.get("email") or "",
+        "description": existing.get("description") or "",
+        "image_url": existing.get("image_url"),
+        "category": existing.get("category") or "gear",
+        "featured": bool(existing.get("featured", False)),
+        "merchant_until": _merchant_until_iso(months),
+        "created_at": existing.get("created_at") or now,
+        "updated_at": now,
+    }
+    await db.users.update_one({"id": user_id}, {"$set": {"merchant_card": new_card}})
+    return new_card
+
+
+@api_router.post("/admin/users/{user_id}/merchant-card/disable")
+async def admin_disable_merchant_card(
+    user_id: str, _admin: dict = Depends(get_admin_or_moderator)
+):
+    res = await db.users.update_one(
+        {"id": user_id},
+        {"$set": {
+            "merchant_card.enabled": False,
+            "merchant_card.featured": False,
+            "merchant_card.updated_at": datetime.now(timezone.utc).isoformat(),
+        }},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"ok": True}
+
+
+class FeaturedToggle(BaseModel):
+    featured: bool
+
+
+@api_router.patch("/admin/users/{user_id}/merchant-card/featured")
+async def admin_toggle_merchant_card_featured(
+    user_id: str,
+    payload: FeaturedToggle,
+    _admin: dict = Depends(get_admin_or_moderator),
+):
+    res = await db.users.find_one_and_update(
+        {"id": user_id, "merchant_card.enabled": True},
+        {"$set": {
+            "merchant_card.featured": bool(payload.featured),
+            "merchant_card.updated_at": datetime.now(timezone.utc).isoformat(),
+        }},
+        return_document=True,
+        projection={"_id": 0, "merchant_card": 1},
+    )
+    if not res:
+        raise HTTPException(status_code=404, detail="Active merchant card not found")
+    return res.get("merchant_card") or {}
+
+
+@api_router.get("/admin/merchant-cards")
+async def admin_list_merchant_cards(_admin: dict = Depends(get_admin_or_moderator)):
+    """Lists every user with a merchant_card sub-document (enabled or not)
+    so the admin panel can manage them."""
+    rows = await db.users.find(
+        {"merchant_card": {"$exists": True, "$ne": None}},
+        {"_id": 0, "id": 1, "email": 1, "nickname": 1, "merchant_name": 1,
+         "user_types": 1, "merchant_card": 1},
+    ).to_list(2000)
+    out = []
+    for u in rows:
+        m = u.get("merchant_card") or {}
+        out.append({
+            "user_id": u["id"],
+            "email": u.get("email"),
+            "nickname": u.get("nickname"),
+            "merchant_name": u.get("merchant_name"),
+            "enabled": bool(m.get("enabled", False)),
+            "featured": bool(m.get("featured", False)),
+            "shop_name": m.get("shop_name") or "",
+            "merchant_until": m.get("merchant_until"),
+            "category": m.get("category") or "gear",
+        })
+    out.sort(key=lambda r: ((not r["enabled"]), r["shop_name"].lower(), r["email"] or ""))
+    return out
+
+
+async def _merchant_card_expiry_sweep() -> dict:
+    """Daily APScheduler sweep — disables cards whose `merchant_until` is in
+    the past. Returns a summary for logs / admin diagnostics."""
+    now_iso = datetime.now(timezone.utc).isoformat()
+    res = await db.users.update_many(
+        {
+            "merchant_card.enabled": True,
+            "merchant_card.merchant_until": {"$lt": now_iso, "$ne": None},
+        },
+        {"$set": {
+            "merchant_card.enabled": False,
+            "merchant_card.featured": False,
+            "merchant_card.updated_at": now_iso,
+        }},
+    )
+    summary = {"expired": int(res.modified_count or 0), "ran_at": now_iso}
+    if summary["expired"]:
+        logger.info("Merchant card expiry sweep: %s", summary)
+    return summary
 
 
 @api_router.post("/admin/guilds", response_model=GuildOut, status_code=201)
@@ -3271,10 +3722,20 @@ async def on_startup():
             id="prod_events_sync",
             replace_existing=True,
         )
+    # Merchant card subscription expiry — daily at 03:30 Europe/Helsinki.
+    # Auto-disables cards whose `merchant_until` is in the past so expired
+    # merchants drop off the public Shops page without manual intervention.
+    scheduler.add_job(
+        _merchant_card_expiry_sweep,
+        CronTrigger(hour=3, minute=30),
+        id="merchant_card_expiry",
+        replace_existing=True,
+    )
     scheduler.start()
     logger.info(
         "APScheduler started — monthly digest 1st@09:00, weekly admin report Mon@09:00, "
-        "event reminders daily@09:00, translation sweep every 6h, prod events sync 06:00+18:00, Europe/Helsinki"
+        "event reminders daily@09:00, translation sweep every 6h, prod events sync 06:00+18:00, "
+        "merchant card expiry daily@03:30, Europe/Helsinki"
     )
 
 

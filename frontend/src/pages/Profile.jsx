@@ -11,6 +11,7 @@ import { ConsentBlock } from "@/pages/Register";
 import AttendingList from "@/components/AttendingList";
 import SavedSearchEditor from "@/components/SavedSearchEditor";
 import ProfileDocField from "@/components/ProfileDocField";
+import MerchantCardEditor from "@/components/MerchantCardEditor";
 import { ChangeOwnPasswordDialog } from "@/components/PasswordDialogs";
 import { api } from "@/lib/api";
 
@@ -477,6 +478,13 @@ export default function Profile() {
         <SavedSearchEditor />
         <AttendingList />
       </div>
+
+      {/* Merchant card editor — only renders when admin has activated it */}
+      {user.merchant_card ? (
+        <div className="mt-10">
+          <MerchantCardEditor />
+        </div>
+      ) : null}
 
       <ChangeOwnPasswordDialog
         open={passwordDialogOpen}
