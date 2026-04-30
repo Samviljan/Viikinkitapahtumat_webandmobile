@@ -22,6 +22,7 @@ import Favorites from "@/pages/Favorites";
 import Guilds from "@/pages/Guilds";
 import Shops from "@/pages/Shops";
 import MerchantDetail from "@/pages/MerchantDetail";
+import MerchantCardPage from "@/pages/MerchantCardPage";
 import Swordfighting from "@/pages/Swordfighting";
 import Contact from "@/pages/Contact";
 import Privacy from "@/pages/Privacy";
@@ -76,6 +77,7 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/merchant-card" element={<MerchantCardPage />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/messages" element={<SendMessage />} />

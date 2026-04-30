@@ -543,7 +543,29 @@
     "save": "Tallenna",
     "saved": "Tallennettu",
     "save_failed": "Tallennus epäonnistui",
-    "preview": "Esikatsele julkinen sivu"
+    "preview": "Esikatsele julkinen sivu",
+    "section_title": "Maksullinen kauppiaskortti",
+    "cta_inactive_title": "Aktivoi maksullinen kauppiaskortti",
+    "cta_inactive_body": "Kauppiaskortti on lisämaksullinen ominaisuus, jolla saat oman julkisen profiilisivun, kuvan ja yhteystiedot näkyviin Kaupat-sivulle. Stripe-maksulinkki on tulossa pian — toistaiseksi ylläpito voi aktivoida kortin manuaalisesti.",
+    "cta_inactive_btn": "Aktivoi maksulinkki tulossa",
+    "cta_disabled_title": "Tilaus ei ole aktiivinen",
+    "cta_disabled_body": "Kauppiaskorttisi ei ole tällä hetkellä aktiivinen — joko tilaus on päättynyt tai ylläpito on deaktivoinut sen. Ota yhteyttä ylläpitoon uusiaksesi.",
+    "cta_active_title": "Kauppiaskortti aktiivinen",
+    "cta_active_body": "Sinulla on aktiivinen kauppiaskortti. Voit muokata sitä alta.",
+    "edit_btn": "Muokkaa kauppiaskorttia",
+    "back_to_profile": "Takaisin profiiliin"
+  },
+  "account_delete": {
+    "btn": "Poista tili",
+    "title": "Poista tili pysyvästi",
+    "intro": "Tämä poistaa tilisi, kaikki ilmoittautumisesi tapahtumiin, sähköpostimuistutukset, uutiskirjeen tilaukset ja kauppiaskorttisi (jos sellainen on). Lähetetyt viestit säilyvät anonymisoituina audit-lokissa. Toiminto on peruuttamaton.",
+    "confirm_label": "Vahvista kirjoittamalla sähköpostiosoitteesi",
+    "confirm_placeholder": "etunimi@esimerkki.fi",
+    "cancel": "Peruuta",
+    "confirm_btn": "Poista tili pysyvästi",
+    "deleting": "Poistetaan…",
+    "success": "Tili poistettu. Hyvästi.",
+    "mismatch": "Sähköposti ei täsmää."
   },
   "sword": {
     "title": "Viikinkimiekkailu ja historianelävöittäminen",

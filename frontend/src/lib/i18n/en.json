@@ -542,7 +542,29 @@
     "save": "Save",
     "saved": "Saved",
     "save_failed": "Save failed",
-    "preview": "Preview public page"
+    "preview": "Preview public page",
+    "section_title": "Paid merchant card",
+    "cta_inactive_title": "Activate the paid merchant card",
+    "cta_inactive_body": "The merchant card is a paid add-on that gives you a public profile page with image and contact info shown on the Shops page. Stripe checkout is coming soon — meanwhile support can activate it manually.",
+    "cta_inactive_btn": "Payment link coming soon",
+    "cta_disabled_title": "Subscription inactive",
+    "cta_disabled_body": "Your merchant card is not active right now — either the subscription expired or support disabled it. Contact support to renew.",
+    "cta_active_title": "Merchant card active",
+    "cta_active_body": "Your merchant card is active. You can edit it below.",
+    "edit_btn": "Edit merchant card",
+    "back_to_profile": "Back to profile"
+  },
+  "account_delete": {
+    "btn": "Delete account",
+    "title": "Permanently delete account",
+    "intro": "This deletes your account, all your event RSVPs, email reminders, newsletter subscriptions and your merchant card (if any). Sent messages stay anonymised in the audit log. This action cannot be undone.",
+    "confirm_label": "Type your email address to confirm",
+    "confirm_placeholder": "you@example.com",
+    "cancel": "Cancel",
+    "confirm_btn": "Permanently delete",
+    "deleting": "Deleting…",
+    "success": "Account deleted. Farewell.",
+    "mismatch": "Email does not match."
   },
   "sword": {
     "title": "Viking sword fighting & reenactment",

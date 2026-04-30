@@ -472,7 +472,29 @@
     "save": "Spara",
     "saved": "Sparad",
     "save_failed": "Sparandet misslyckades",
-    "preview": "Förhandsgranska publik sida"
+    "preview": "Förhandsgranska publik sida",
+    "section_title": "Betalt handlarkort",
+    "cta_inactive_title": "Aktivera det betalda handlarkortet",
+    "cta_inactive_body": "Handlarkortet är ett tilläggsbetalt tillägg som ger dig en publik profilsida med bild och kontaktinfo på Butiker-sidan. Stripe-kassan kommer snart — under tiden kan supporten aktivera det manuellt.",
+    "cta_inactive_btn": "Betalningslänk kommer snart",
+    "cta_disabled_title": "Prenumeration inaktiv",
+    "cta_disabled_body": "Ditt handlarkort är inte aktivt — antingen har prenumerationen gått ut eller supporten har inaktiverat det. Kontakta supporten för att förnya.",
+    "cta_active_title": "Handlarkort aktivt",
+    "cta_active_body": "Ditt handlarkort är aktivt. Du kan redigera det nedan.",
+    "edit_btn": "Redigera handlarkort",
+    "back_to_profile": "Tillbaka till profilen"
+  },
+  "account_delete": {
+    "btn": "Radera konto",
+    "title": "Radera kontot permanent",
+    "intro": "Detta raderar ditt konto, alla dina anmälningar, e-postpåminnelser, nyhetsbrevsprenumerationer och ditt handlarkort (om något). Skickade meddelanden behålls anonymiserade i revisionsloggen. Åtgärden kan inte ångras.",
+    "confirm_label": "Skriv din e-postadress för att bekräfta",
+    "confirm_placeholder": "du@exempel.se",
+    "cancel": "Avbryt",
+    "confirm_btn": "Radera permanent",
+    "deleting": "Raderar…",
+    "success": "Kontot raderat. Farväl.",
+    "mismatch": "E-post matchar inte."
   },
   "sword": {
     "title": "Vikingasvärdsfäktning & historisk re-enactment",

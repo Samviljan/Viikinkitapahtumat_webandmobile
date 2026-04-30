@@ -1,17 +1,26 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Navigate, Link } from "react-router-dom";
+import { Navigate, Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { LogOut, Check, Shield, Camera, Trash2, KeyRound } from "lucide-react";
+import { LogOut, Check, Shield, Camera, Trash2, KeyRound, Store, ChevronRight, Lock } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ConsentBlock } from "@/pages/Register";
 import AttendingList from "@/components/AttendingList";
 import SavedSearchEditor from "@/components/SavedSearchEditor";
 import ProfileDocField from "@/components/ProfileDocField";
-import MerchantCardEditor from "@/components/MerchantCardEditor";
 import { ChangeOwnPasswordDialog } from "@/components/PasswordDialogs";
 import { api } from "@/lib/api";
 
@@ -27,6 +36,7 @@ const COUNTRIES = ["FI", "SE", "EE", "NO", "DK", "PL", "DE", "IS", "LV", "LT", "
 export default function Profile() {
   const { user, loading, updateProfile, logout, refresh } = useAuth();
   const { t } = useI18n();
+  const navigate = useNavigate();
   const [nickname, setNickname] = useState("");
   const [types, setTypes] = useState([]);
   const [merchantName, setMerchantName] = useState("");
@@ -41,6 +51,9 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteEmail, setDeleteEmail] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -479,17 +492,185 @@ export default function Profile() {
         <AttendingList />
       </div>
 
-      {/* Merchant card editor — only renders when admin has activated it */}
-      {user.merchant_card ? (
-        <div className="mt-10">
-          <MerchantCardEditor />
-        </div>
+      {/* Merchant card section — only visible to users with merchant role.
+          Three states:
+          1. No merchant_card sub-doc yet → "Activate" CTA (Stripe coming, manual for now)
+          2. Sub-doc exists but enabled=false → "Subscription inactive" notice
+          3. Sub-doc exists + enabled=true → link to /profile/merchant-card editor */}
+      {(types || []).includes("merchant") ? (
+        <section
+          data-testid="profile-merchant-card-section"
+          className="carved-card rounded-sm p-6 mt-10"
+        >
+          <div className="flex items-start gap-3 mb-4">
+            <Store size={20} className="text-viking-gold mt-0.5" />
+            <div className="min-w-0">
+              <h2 className="font-serif text-xl text-viking-bone">
+                {t("merchant_card.section_title")}
+              </h2>
+            </div>
+          </div>
+
+          {!user.merchant_card ? (
+            // State 1: no card at all → activation CTA
+            <div data-testid="merchant-card-cta-inactive">
+              <h3 className="font-serif text-lg text-viking-bone mb-2">
+                {t("merchant_card.cta_inactive_title")}
+              </h3>
+              <p className="text-sm text-viking-stone leading-relaxed mb-4">
+                {t("merchant_card.cta_inactive_body")}
+              </p>
+              <Button
+                type="button"
+                disabled
+                data-testid="merchant-card-activate-btn"
+                className="bg-viking-shadow text-viking-stone cursor-not-allowed font-rune text-xs h-11 px-5 rounded-sm border border-viking-edge"
+              >
+                <Lock size={14} className="mr-2" />
+                {t("merchant_card.cta_inactive_btn")}
+              </Button>
+            </div>
+          ) : !user.merchant_card.enabled ? (
+            // State 2: card disabled (expired or admin off)
+            <div
+              data-testid="merchant-card-cta-disabled"
+              className="border border-viking-edge rounded-sm p-4 bg-viking-shadow/40"
+            >
+              <h3 className="font-serif text-lg text-viking-bone mb-2">
+                {t("merchant_card.cta_disabled_title")}
+              </h3>
+              <p className="text-sm text-viking-stone leading-relaxed">
+                {t("merchant_card.cta_disabled_body")}
+              </p>
+            </div>
+          ) : (
+            // State 3: card active → link to editor page
+            <div data-testid="merchant-card-cta-active">
+              <h3 className="font-serif text-lg text-viking-bone mb-2">
+                {t("merchant_card.cta_active_title")}
+              </h3>
+              <p className="text-sm text-viking-stone leading-relaxed mb-4">
+                {t("merchant_card.cta_active_body")}
+              </p>
+              <Link
+                to="/profile/merchant-card"
+                data-testid="merchant-card-edit-link"
+                className="inline-flex items-center gap-2 bg-viking-gold text-viking-shadow hover:bg-viking-gold/90 font-rune text-xs h-11 px-5 rounded-sm tracking-wider uppercase"
+              >
+                {t("merchant_card.edit_btn")}
+                <ChevronRight size={14} />
+              </Link>
+            </div>
+          )}
+        </section>
       ) : null}
+
+      {/* Danger zone — self delete account */}
+      <section
+        data-testid="profile-danger-zone"
+        className="mt-10 border border-red-900/40 rounded-sm p-5 bg-red-900/5"
+      >
+        <h2 className="font-serif text-base text-red-400 uppercase tracking-wider mb-2">
+          {t("account_delete.title")}
+        </h2>
+        <p className="text-xs text-viking-stone leading-relaxed mb-4 max-w-2xl">
+          {t("account_delete.intro")}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            setDeleteEmail("");
+            setDeleteOpen(true);
+          }}
+          data-testid="account-delete-open"
+          className="border-red-700/60 text-red-400 hover:text-red-300 hover:border-red-500 hover:bg-red-900/10 rounded-sm font-rune text-xs h-10"
+        >
+          <Trash2 size={14} className="mr-2" />
+          {t("account_delete.btn")}
+        </Button>
+      </section>
 
       <ChangeOwnPasswordDialog
         open={passwordDialogOpen}
         onOpenChange={setPasswordDialogOpen}
       />
+
+      {/* Self-delete confirmation: user must type their own email */}
+      <AlertDialog
+        open={deleteOpen}
+        onOpenChange={(open) => {
+          if (!deleting) setDeleteOpen(open);
+        }}
+      >
+        <AlertDialogContent
+          className="bg-viking-bg border-viking-edge"
+          data-testid="account-delete-dialog"
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-serif text-viking-bone">
+              {t("account_delete.title")}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-viking-stone text-sm whitespace-pre-line">
+              {t("account_delete.intro")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2 pt-1">
+            <Label htmlFor="account-delete-confirm" className="text-xs text-viking-stone uppercase tracking-wider">
+              {t("account_delete.confirm_label")}
+            </Label>
+            <Input
+              id="account-delete-confirm"
+              data-testid="account-delete-confirm-input"
+              autoComplete="off"
+              autoFocus
+              placeholder={user.email}
+              value={deleteEmail}
+              onChange={(e) => setDeleteEmail(e.target.value)}
+              className={fieldClass}
+            />
+            {deleteEmail && deleteEmail.trim().toLowerCase() !== (user.email || "").toLowerCase() ? (
+              <p className="text-xs text-red-400">{t("account_delete.mismatch")}</p>
+            ) : null}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={deleting}
+              data-testid="account-delete-cancel"
+              className="border-viking-edge text-viking-stone"
+            >
+              {t("account_delete.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={
+                deleting ||
+                deleteEmail.trim().toLowerCase() !== (user.email || "").toLowerCase()
+              }
+              onClick={async (e) => {
+                e.preventDefault();
+                setDeleting(true);
+                try {
+                  await api.delete("/users/me", {
+                    data: { confirm_email: deleteEmail.trim() },
+                  });
+                  toast.success(t("account_delete.success"));
+                  // Tear down auth state then redirect to home.
+                  await logout();
+                  navigate("/", { replace: true });
+                } catch (err) {
+                  const detail = err?.response?.data?.detail;
+                  toast.error(typeof detail === "string" ? detail : t("merchant_card.save_failed"));
+                  setDeleting(false);
+                }
+              }}
+              data-testid="account-delete-confirm"
+              className="bg-red-700 hover:bg-red-700/90 text-white"
+            >
+              {deleting ? t("account_delete.deleting") : t("account_delete.confirm_btn")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

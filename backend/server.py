@@ -2168,6 +2168,57 @@ async def admin_delete_user(user_id: str, admin: dict = Depends(get_admin_or_mod
 
 
 # -----------------------------------------------------------------------------
+# Self-delete: users delete their own account (GDPR right-to-erasure).
+# Same cleanup as admin delete; client must echo back the user's email as
+# confirmation to prevent accidental clicks. The merchant_card sub-document
+# (if any) goes away with the user document automatically.
+# -----------------------------------------------------------------------------
+class SelfDeleteRequest(BaseModel):
+    confirm_email: str
+
+
+@api_router.delete("/users/me")
+async def delete_my_account(
+    payload: SelfDeleteRequest,
+    response: Response,
+    user: dict = Depends(get_current_user),
+):
+    typed = (payload.confirm_email or "").strip().lower()
+    if typed != (user.get("email") or "").lower():
+        raise HTTPException(
+            status_code=400,
+            detail="Email confirmation does not match the account email",
+        )
+    # Refuse to let the last remaining admin self-delete (system would lock).
+    if user.get("role") == "admin":
+        admin_count = await db.users.count_documents({"role": "admin"})
+        if admin_count <= 1:
+            raise HTTPException(status_code=400, detail="Cannot delete the last admin user")
+
+    user_id = user["id"]
+    summary = {
+        "user_id": user_id,
+        "email_reminders_deleted": 0,
+        "rsvps_deleted": 0,
+        "messages_anonymised": 0,
+    }
+    res_a = await db.event_attendees.delete_many({"user_id": user_id})
+    summary["rsvps_deleted"] = int(res_a.deleted_count or 0)
+    if user.get("email"):
+        res_r = await db.event_reminders.delete_many({"email": user["email"]})
+        summary["email_reminders_deleted"] = int(res_r.deleted_count or 0)
+        await db.newsletter_subscribers.delete_many({"email": user["email"]})
+    res_m = await db.message_log.update_many(
+        {"sender_id": user_id},
+        {"$set": {"sender_id": "deleted_user"}},
+    )
+    summary["messages_anonymised"] = int(res_m.modified_count or 0)
+    await db.users.delete_one({"id": user_id})
+    response.delete_cookie("access_token", path="/")
+    return summary
+
+
+# -----------------------------------------------------------------------------
 # Daily reminders — push + email reminders for events in the next 3 days
 # -----------------------------------------------------------------------------
 async def _run_daily_event_reminders(window_days: int = 3) -> dict:

@@ -680,6 +680,21 @@ See `/app/memory/test_credentials.md`.
   - Frontend Playwright: anonymous `/shops` shows Featured section "Esillä olevat kauppiaat" + Helkas Forge user-card; `/shops/user_28a958533568` detail renders SEPPÄ category, contact block, back link; unknown id shows 404 fallback. EN language switch surfaces "Featured"/"Shops".
   - Self-test (logged-in member): /profile MerchantCardEditor renders fully — "Tilaus voimassa: 25. huhtikuuta 2027", profiilikuvauploadnappi, Kategoria=Seppä, Verkkosivu/Puhelin/Sähköposti pre-filled, Kuvaus 30/1000 counter, Tallenna and Preview links visible.
 
+## Iteration — Merchant card UX refinements + self-delete (2026-04-30 evening)
+- ✅ **Backend**: `DELETE /api/users/me` (self-delete). Body `{confirm_email}` must match the authenticated user's email; refuses to let the last remaining admin self-delete (system would lock). Reuses the same GDPR cleanup pipeline as the admin delete: drops RSVPs, email reminders, newsletter subscribers; anonymises sender_id in `message_log` to `"deleted_user"`. The `merchant_card` sub-document goes away with the user document automatically. Clears the auth cookie before returning so the client immediately drops to anonymous state.
+- ✅ **Web Profile** (`/app/frontend/src/pages/Profile.jsx`):
+  - Inline `MerchantCardEditor` removed; replaced with a dedicated **Merchant card section** that renders one of three states based on `user.merchant_card`:
+    1. `merchant_card === null` → **Activation CTA** (visible only when `user_types` includes `merchant`). Disabled placeholder button "Aktivoi maksulinkki tulossa" + explainer about Stripe coming.
+    2. `merchant_card.enabled === false` → **"Subscription inactive" notice** (admin disabled OR `merchant_until` expired).
+    3. `merchant_card.enabled === true` → **Edit link** to `/profile/merchant-card`.
+  - **Danger zone**: new "Poista tili" section with red border + AlertDialog confirmation. The Confirm button stays disabled until the user types their own email exactly (case-insensitive). Successful delete logs out + redirects home.
+- ✅ **New page** `/profile/merchant-card` (`MerchantCardPage.jsx`) — wraps the existing `MerchantCardEditor` with a back-link, reuses all editor logic. Redirects to `/login` for anonymous users and to `/profile` if no `merchant_card` sub-doc exists.
+- ✅ **i18n** keys added: `merchant_card.section_title|cta_inactive_*|cta_disabled_*|cta_active_*|edit_btn|back_to_profile`, `account_delete.*`. FI/EN/SV.
+- ✅ **Admin user delete** dialog already had a Kyllä/Ei (Peruuta / Poista käyttäjä) confirmation — kept as-is.
+- ✅ **Verified**:
+  - Curl: login → `DELETE /api/users/me` with wrong email → 400 mismatch; correct email → 200 with cleanup summary; subsequent `/api/auth/me` → 401 (cookie cleared).
+  - Playwright: logged-in member sees `[merchant-card-cta-active]` + edit link; clicking it navigates to `/profile/merchant-card` showing the editor + back link; danger-zone "Poista tili" button visible.
+
 ## Backlog (priorities)
 - **P1** Stripe integration for paid messaging (currently admin manually toggles `paid_messaging_enabled`).
 - **P1** **📧 Email-template-editori** admin-paneeliin — *user expressed interest 2026-04-29, suggest again when next touching messaging features*. Kauppiaat/järjestäjät tallentavat valmiita pohjia toistuviin viesteihin ("Muistutus tapahtumaan", "Kiitos osallistumisesta", "Aikataulumuutos"). Muuttujat kuten `{{event_title}}`, `{{date}}`, `{{nickname}}`. Säästää aikaa, parantaa viestien laatua. Admin voi luoda yhteisiä pohjia kaikille kauppiaille.
