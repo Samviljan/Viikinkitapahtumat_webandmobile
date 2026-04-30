@@ -473,7 +473,21 @@ See `/app/memory/test_credentials.md`.
   - User downloads `.aab` from above URL when Expo finishes (~10-15 min) and uploads to Play Console manually.
 
 
-## Iteration — Cross-device favorite sync + Tapahtumani filter (2026-04-30)
+## Iteration — Moderator role + password-reset hardening (2026-04-30)
+- ✅ **Moderator-rooli toteutettu** (web-sovellus):
+  - Backend: `users.is_moderator: bool`-kenttä lisätty, uusi `get_admin_or_moderator` dependency, 33 endpointtia vaihdettu accepting moderator, 5 jätetty admin-only (password reset, paid-messaging toggle, moderator toggle, POST /admin/users, moderator promotion).
+  - `DELETE /admin/users/{id}` tarkistaa: jos target.role == "admin" ja viewer.role != "admin" → 403 "Moderators cannot delete admin accounts". Admin creation pysyy admin-only.
+  - Uusi `PATCH /api/admin/users/{id}/moderator` toggle (vain admin). Palauttaa `{id, is_moderator}`.
+  - `is_moderator` mukana `/me`-vastauksessa ja login-payloadissa.
+  - Web: `AdminLayout` sallii pääsyn kun `user.role === "admin" || user.is_moderator`. `AdminUsersPanel` näyttää uuden "Moderaattori"-sarakkeen VAIN admineille (moderaattorit eivät voi nähdä/toggleta). "Lisää admin" -painike + delete-painike admin-tileillä piilossa moderaattoreilta.
+  - Käännökset FI/EN/SV: `col_moderator`, `moderator_on_toast`, `moderator_off_toast`, `moderator_cannot_delete_admin`.
+- ✅ **Password-reset kovennus**:
+  - `/auth/forgot-password` muutos: delivery-osoite luetaan `user["email"]`:stä tietokannasta, ei request-payloadista. Lisäksi eksplisiittinen equality-tarkistus `dest == email` ennen lähetystä. Dokumentoitu `"Security contract"` -kommentissa kooditasolla.
+  - Käytännössä toiminta oli jo turvallinen, mutta nyt koodin intent on selvä ja tamper-resistant — attack-controlled-payload ei pysty ohjaamaan email-linkkiä toiseen osoitteeseen.
+- ✅ **E2E-testattu curl-sekvenssillä** (7 skenaariota, kaikki vihreitä):
+  - Admin → moderator grant (200) · Mod reads /admin/users (200) · Mod→delete admin (403) · Mod→create admin (403) · Mod→toggle paid-messaging (403) · Mod→promote user (403) · Mod→delete regular user (200) · Forgot-password with non-existent email (200, ei leakia)
+
+
 - ✅ **Bug fix: suosikit synkronoituvat web ↔ mobiili**:
   - Aiemmin: web käytti localStoragea, mobiili AsyncStoragea — ei keskustelivat keskenään.
   - Nyt: backend on totuuslähde (`users.favorite_event_ids`-kenttä). 4 uutta endpointtia:
