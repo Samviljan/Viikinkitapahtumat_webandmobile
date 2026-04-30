@@ -473,7 +473,19 @@ See `/app/memory/test_credentials.md`.
   - User downloads `.aab` from above URL when Expo finishes (~10-15 min) and uploads to Play Console manually.
 
 
-## Iteration — Moderator role + password-reset hardening (2026-04-30)
+## Build-status (viimeksi yritetty 2026-04-30 klo 13:00)
+
+### Mobile (Android)
+- ✅ **Koodi valmis**: versio 0.4.8, versionCode olisi auto-bumpattu 19→20
+- ❌ **Build EI käynnistetty**: Expo Free Plan -kvootta loppu kalenterikuukaudelle
+- ⏰ **Kvootta resetoituu**: pe 1.5.2026 noin klo 04 Suomen aikaa (~8h käyttäjän tämän hetken pyynnöstä)
+- 🔁 **Toimi seuraavalla kerralla**: kun käyttäjä pyytää uudelleen tai 1.5.2026 jälkeen, käytä komentoa: `cd /app/mobile && EXPO_TOKEN="C74hVMBKYjsRIH0y0vSDK9kprcCdQ_fPxGb1EP-j" npx eas-cli build --profile production --platform android --non-interactive --no-wait`
+
+### Web
+- ✅ Live preview-URL toimii kaikilla viimeisimmillä ominaisuuksilla
+- ✅ Tuotanto (viikinkitapahtumat.fi) ajetaan saman repo-pohjalta — ei tarvitse erillistä pushia preview-puolelle
+
+
 - ✅ **Moderator-rooli toteutettu** (web-sovellus):
   - Backend: `users.is_moderator: bool`-kenttä lisätty, uusi `get_admin_or_moderator` dependency, 33 endpointtia vaihdettu accepting moderator, 5 jätetty admin-only (password reset, paid-messaging toggle, moderator toggle, POST /admin/users, moderator promotion).
   - `DELETE /admin/users/{id}` tarkistaa: jos target.role == "admin" ja viewer.role != "admin" → 403 "Moderators cannot delete admin accounts". Admin creation pysyy admin-only.
