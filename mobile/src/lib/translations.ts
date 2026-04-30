@@ -55,6 +55,9 @@ interface Dict {
     title: string;
     attending_section: string;
     favourites_section: string;
+    merchants_section: string;
+    merchants_no_events: string;
+    merchants_open_website: string;
     empty: string;
     filter_favorites: string;
     filter_attending: string;
@@ -291,6 +294,9 @@ export const translations: Partial<Record<Lang, Dict>> = {
       title: "Tapahtumani",
       attending_section: "Olen ilmoittautunut",
       favourites_section: "Suosikit",
+      merchants_section: "Suosikkikauppiaani",
+      merchants_no_events: "Ei tulevia tapahtumia",
+      merchants_open_website: "Avaa kotisivut",
       empty:
         "Et ole vielä ilmoittautunut tai lisännyt suosikkeihin yhtään tapahtumaa.",
       filter_favorites: "Suosikit",
@@ -535,6 +541,9 @@ export const translations: Partial<Record<Lang, Dict>> = {
       title: "My events",
       attending_section: "I'm attending",
       favourites_section: "Favourites",
+      merchants_section: "My favourite merchants",
+      merchants_no_events: "No upcoming events",
+      merchants_open_website: "Open website",
       empty:
         "You haven't attended or favourited any events yet.",
       filter_favorites: "Favorites",
@@ -778,6 +787,9 @@ export const translations: Partial<Record<Lang, Dict>> = {
       title: "Mina evenemang",
       attending_section: "Jag deltar",
       favourites_section: "Favoriter",
+      merchants_section: "Mina favorithandlare",
+      merchants_no_events: "Inga kommande evenemang",
+      merchants_open_website: "Öppna webbplats",
       empty:
         "Du har inte anmält dig eller favoriserat några evenemang än.",
       filter_favorites: "Favoriter",

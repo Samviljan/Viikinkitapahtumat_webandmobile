@@ -3199,12 +3199,24 @@ async def get_merchant_detail(merchant_id: str):
             {
                 "id": {"$in": event_ids},
                 "status": "approved",
-                "$or": [{"date": {"$gte": today}}, {"date_end": {"$gte": today}}],
+                "$or": [{"start_date": {"$gte": today}}, {"end_date": {"$gte": today}}],
             },
             {"_id": 0, "id": 1, "title_fi": 1, "title_en": 1, "title_sv": 1,
-             "date": 1, "date_end": 1, "location": 1, "country": 1},
-        ).sort([("date", 1)]).to_list(200)
-        events = evs
+             "start_date": 1, "end_date": 1, "location": 1, "country": 1},
+        ).sort([("start_date", 1)]).to_list(200)
+        # Surface as date / date_end so frontends don't need to know the
+        # internal field names (web + mobile both expect `date`).
+        for e in evs:
+            events.append({
+                "id": e["id"],
+                "title_fi": e.get("title_fi"),
+                "title_en": e.get("title_en"),
+                "title_sv": e.get("title_sv"),
+                "date": e.get("start_date"),
+                "date_end": e.get("end_date"),
+                "location": e.get("location"),
+                "country": e.get("country"),
+            })
 
     return {
         "id": merchant_id,
