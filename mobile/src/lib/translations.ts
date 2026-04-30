@@ -56,6 +56,10 @@ interface Dict {
     attending_section: string;
     favourites_section: string;
     empty: string;
+    filter_favorites: string;
+    filter_attending: string;
+    filter_both: string;
+    filter_empty: string;
   };
   calendar: { title: string };
   shops: { title: string; empty: string };
@@ -289,6 +293,10 @@ export const translations: Partial<Record<Lang, Dict>> = {
       favourites_section: "Suosikit",
       empty:
         "Et ole vielä ilmoittautunut tai lisännyt suosikkeihin yhtään tapahtumaa.",
+      filter_favorites: "Suosikit",
+      filter_attending: "Osallistun",
+      filter_both: "Molemmat",
+      filter_empty: "Ei tapahtumia tällä suodattimella.",
     },
     calendar: { title: "Kalenteri" },
     shops: { title: "Kauppiaat ja sepät", empty: "Ei kauppiaita listattuna." },
@@ -529,6 +537,10 @@ export const translations: Partial<Record<Lang, Dict>> = {
       favourites_section: "Favourites",
       empty:
         "You haven't attended or favourited any events yet.",
+      filter_favorites: "Favorites",
+      filter_attending: "Attending",
+      filter_both: "Both",
+      filter_empty: "No events under this filter.",
     },
     calendar: { title: "Calendar" },
     shops: { title: "Merchants & smiths", empty: "No merchants listed." },
@@ -768,6 +780,10 @@ export const translations: Partial<Record<Lang, Dict>> = {
       favourites_section: "Favoriter",
       empty:
         "Du har inte anmält dig eller favoriserat några evenemang än.",
+      filter_favorites: "Favoriter",
+      filter_attending: "Jag deltar",
+      filter_both: "Båda",
+      filter_empty: "Inga evenemang under detta filter.",
     },
     calendar: { title: "Kalender" },
     shops: { title: "Handlare & smeder", empty: "Inga handlare listade." },

@@ -39,6 +39,8 @@ type Row =
   | { kind: "header"; key: string; label: string; count: number }
   | { kind: "event"; key: string; event: VikingEvent; canMessage: boolean };
 
+type FilterMode = "both" | "favorites" | "attending";
+
 export default function MyEventsScreen() {
   const { events } = useEvents();
   const { ids: favIds } = useFavorites();
@@ -47,6 +49,8 @@ export default function MyEventsScreen() {
   const router = useRouter();
   const [attendingIds, setAttendingIds] = useState<string[]>([]);
   const [loadingAtt, setLoadingAtt] = useState(false);
+  // Default to "both" so users see everything until they explicitly narrow.
+  const [filter, setFilter] = useState<FilterMode>("both");
 
   // The "Viesti" button must only appear for paid messaging users in the
   // merchant/organizer/admin roles. Reading these flags from the auth context
@@ -99,7 +103,10 @@ export default function MyEventsScreen() {
       .filter((e): e is VikingEvent => !!e && !attendingSet.has(e.id));
 
     const out: Row[] = [];
-    if (user && attending.length) {
+    const showAttending = filter !== "favorites";
+    const showFavourites = filter !== "attending";
+
+    if (user && attending.length && showAttending) {
       out.push({
         kind: "header",
         key: "h-att",
@@ -110,7 +117,7 @@ export default function MyEventsScreen() {
         out.push({ kind: "event", key: `att-${e.id}`, event: e, canMessage: canSendMessages });
       }
     }
-    if (favourites.length) {
+    if (favourites.length && showFavourites) {
       out.push({
         kind: "header",
         key: "h-fav",
@@ -122,10 +129,13 @@ export default function MyEventsScreen() {
       }
     }
     return out;
-  }, [events, favIds, attendingIds, user, t, canSendMessages]);
+  }, [events, favIds, attendingIds, user, t, canSendMessages, filter]);
 
-  // Empty state — both lists empty
-  if (rows.length === 0 && !loadingAtt) {
+  // Empty state — only shown when there are NO favorites AND NO attending
+  // events at all. If the user just picked a filter that hides everything, we
+  // keep the filter chips visible so they can switch back.
+  const hasAnyContent = favIds.length > 0 || attendingIds.length > 0;
+  if (!hasAnyContent && !loadingAtt) {
     return (
       <AppBackground>
         <SafeAreaView edges={["top"]} style={styles.empty}>
@@ -193,6 +203,28 @@ export default function MyEventsScreen() {
               <Text style={[text.h1, { marginTop: 4 }]}>
                 {t("myevents.title")}
               </Text>
+              <View style={styles.filterRow} testID="myevents-filter">
+                {(["favorites", "attending", "both"] as FilterMode[]).map((m) => {
+                  const active = filter === m;
+                  return (
+                    <Pressable
+                      key={m}
+                      testID={`myevents-filter-${m}`}
+                      onPress={() => setFilter(m)}
+                      style={[styles.filterChip, active && styles.filterChipActive]}
+                    >
+                      <Text
+                        style={[
+                          styles.filterChipText,
+                          active && styles.filterChipTextActive,
+                        ]}
+                      >
+                        {t(`myevents.filter_${m}`)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
           }
           ListFooterComponent={
@@ -204,6 +236,15 @@ export default function MyEventsScreen() {
             ) : null
           }
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            !loadingAtt ? (
+              <View style={styles.filterEmpty} testID="myevents-filter-empty">
+                <Text style={styles.filterEmptyText}>
+                  {t("myevents.filter_empty")}
+                </Text>
+              </View>
+            ) : null
+          }
         />
       </SafeAreaView>
     </AppBackground>
@@ -273,5 +314,41 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 1,
     textTransform: "uppercase",
+  },
+  filterRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: spacing.md,
+  },
+  filterChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.edge,
+    backgroundColor: "transparent",
+  },
+  filterChipActive: {
+    borderColor: colors.gold,
+    backgroundColor: "rgba(201,161,74,0.10)",
+  },
+  filterChipText: {
+    color: colors.stone,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  filterChipTextActive: {
+    color: colors.gold,
+  },
+  filterEmpty: {
+    paddingVertical: spacing.xl,
+    alignItems: "center",
+  },
+  filterEmptyText: {
+    color: colors.stone,
+    fontSize: 13,
+    fontStyle: "italic",
   },
 });

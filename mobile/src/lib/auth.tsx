@@ -40,6 +40,7 @@ export interface AuthUser {
   saved_search: SavedSearch | null;
   paid_messaging_enabled: boolean;
   language: string | null;
+  favorite_event_ids: string[];
   association_name: string | null;
   country: string | null;
   profile_image_url: string | null;
@@ -219,6 +220,9 @@ function normalize(raw: Partial<AuthUser>): AuthUser {
     saved_search: raw.saved_search ?? null,
     paid_messaging_enabled: !!raw.paid_messaging_enabled,
     language: raw.language ?? null,
+    favorite_event_ids: Array.isArray(raw.favorite_event_ids)
+      ? raw.favorite_event_ids.filter((x: unknown): x is string => typeof x === "string")
+      : [],
     association_name: raw.association_name ?? null,
     country: raw.country ?? null,
     profile_image_url: raw.profile_image_url ?? null,

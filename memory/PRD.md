@@ -473,7 +473,32 @@ See `/app/memory/test_credentials.md`.
   - User downloads `.aab` from above URL when Expo finishes (~10-15 min) and uploads to Play Console manually.
 
 
-## Iteration — Per-user web language + Mobile messaging restored + Quota config (2026-04-29)
+## Iteration — Cross-device favorite sync + Tapahtumani filter (2026-04-30)
+- ✅ **Bug fix: suosikit synkronoituvat web ↔ mobiili**:
+  - Aiemmin: web käytti localStoragea, mobiili AsyncStoragea — ei keskustelivat keskenään.
+  - Nyt: backend on totuuslähde (`users.favorite_event_ids`-kenttä). 4 uutta endpointtia:
+    - `GET /api/users/me/favorites` → `{event_ids: [...]}`
+    - `POST /api/users/me/favorites/{event_id}` (idempotent `$addToSet`)
+    - `DELETE /api/users/me/favorites/{event_id}` (`$pull`)
+    - `PUT /api/users/me/favorites` (bulk replace, max 500, käytetään anon→logged-in -migraatioon)
+  - `/auth/me` palauttaa `favorite_event_ids` → ei tarvita erillistä GET-kutsua kirjautumisen jälkeen.
+  - Web `useFavorites` (`/app/frontend/src/lib/favorites.js`): server = totuus kun kirjautunut, localStorage fallback anonyymeille. Login-mergaus ajaa anonyymit suosikit serveriin kerran.
+  - Mobile `useFavorites` (`/app/mobile/src/hooks/useFavorites.ts`): sama strategia AsyncStoragella.
+  - Optimistinen UI-päivitys → palautuu jos API epäonnistuu.
+- ✅ **Tapahtumani-välilehden filter (mobile)**:
+  - Uusi state `filter: "favorites" | "attending" | "both"` (oletus: `both`).
+  - 3 chipiä `data-testid` `myevents-filter-favorites/attending/both` näkyy aina kun käyttäjällä on jotakin sisältöä.
+  - Kun filtteri ei tuota rivejä, näytetään `myevents-filter-empty` -viesti ("Ei tapahtumia tällä suodattimella.").
+  - Käännökset: FI/EN/SV (DA/DE/ET/PL fallback EN).
+- ✅ **Verifioitu päästä päähän** (kahdella eri tokenilla samalla käyttäjällä simuloiden web/mobiili):
+  - mobile add → web read ✓
+  - web add → mobile read ✓
+  - web delete → mobile read (poistettu näkyy) ✓
+  - `/me` palauttaa favorite_event_ids ✓
+  - filter chipit + filter-empty Playwright-testattu ✓
+- ✅ **Versio**: mobile `0.4.7 → 0.4.8`. Web export 2.85 MB.
+
+
 - ✅ **Web — käyttäjäkohtainen kielivalinta** (`/app/frontend/src/lib/i18n.js` + `auth.js`):
   - Backend: `User`-malliin `language`-kenttä, `PATCH /api/auth/profile` hyväksyy sen, login + `/me` palauttaa.
   - Web: I18nProvider lukee `useAuth()`:n kautta käyttäjän kielen kirjautumisen yhteydessä; käyttäjien välinen kytkös (UserId-tracking) varmistaa että A→B→A-vaihto seuraa kunkin käyttäjän omaa valintaa, ei vuoda. localStorage `vk_lang` säilyy fall-backina anonyymeille käyttäjille.

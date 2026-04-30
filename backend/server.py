@@ -114,6 +114,7 @@ async def get_current_user(request: Request) -> dict:
         user.setdefault("saved_search", None)
         user.setdefault("paid_messaging_enabled", False)
         user.setdefault("language", None)
+        user.setdefault("favorite_event_ids", [])
         return user
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
@@ -165,6 +166,7 @@ class UserOut(BaseModel):
     saved_search: Optional[SavedSearch] = None
     paid_messaging_enabled: bool = False
     language: Optional[str] = None
+    favorite_event_ids: List[str] = []
 
 
 USER_TYPES = {"reenactor", "fighter", "merchant", "organizer"}
@@ -501,6 +503,7 @@ async def login(payload: LoginRequest, response: Response):
         "saved_search": user.get("saved_search"),
         "paid_messaging_enabled": bool(user.get("paid_messaging_enabled", False)),
         "language": user.get("language"),
+        "favorite_event_ids": list(user.get("favorite_event_ids", []) or []),
         "has_password": True,
         "token": token,
     }
@@ -779,6 +782,7 @@ async def update_profile(
     fresh.setdefault("saved_search", None)
     fresh.setdefault("paid_messaging_enabled", False)
     fresh.setdefault("language", None)
+    fresh.setdefault("favorite_event_ids", [])
     return UserOut(**fresh)
 
 
@@ -1000,6 +1004,75 @@ async def my_attending_events(user: dict = Depends(get_current_user)):
             }
         )
     return out
+
+
+# -----------------------------------------------------------------------------
+# Favorites — server-side storage of bookmarked events. Stored as a simple
+# list on the user document (`users.favorite_event_ids`) so it ships with the
+# /auth/me payload at login. Web + mobile both call these endpoints; local
+# storage is only a fallback for anonymous browsing.
+#
+# Why a list (and not a separate collection):
+#   - Average user favorites < 50 events; list is small enough to embed.
+#   - Atomic operators ($addToSet / $pull) give us O(1) toggles.
+#   - One round-trip when fetching /auth/me means the UI gets favorites
+#     without a second request.
+# -----------------------------------------------------------------------------
+@api_router.get("/users/me/favorites")
+async def list_my_favorites(user: dict = Depends(get_current_user)):
+    """Return only the IDs (not the full event docs). UIs already have the
+    full event list loaded; they just need to know which IDs to highlight."""
+    return {"event_ids": list(user.get("favorite_event_ids", []) or [])}
+
+
+@api_router.post("/users/me/favorites/{event_id}")
+async def add_favorite(event_id: str, user: dict = Depends(get_current_user)):
+    """Idempotent: $addToSet means re-adding an existing favorite is a no-op.
+    We do NOT validate event existence here — events can be deleted (admin
+    cleanup) but a stale ID in the list is harmless and self-corrects when
+    the client filters against its current event list."""
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$addToSet": {"favorite_event_ids": event_id}},
+    )
+    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0, "favorite_event_ids": 1})
+    return {"event_ids": list((fresh or {}).get("favorite_event_ids", []) or [])}
+
+
+@api_router.delete("/users/me/favorites/{event_id}")
+async def remove_favorite(event_id: str, user: dict = Depends(get_current_user)):
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$pull": {"favorite_event_ids": event_id}},
+    )
+    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0, "favorite_event_ids": 1})
+    return {"event_ids": list((fresh or {}).get("favorite_event_ids", []) or [])}
+
+
+@api_router.put("/users/me/favorites")
+async def replace_favorites(
+    payload: dict, user: dict = Depends(get_current_user)
+):
+    """Bulk-replace favorites — used during the first-login migration when
+    the client has accumulated favorites in localStorage / AsyncStorage and
+    needs to push them to the server. Body shape: {"event_ids": [...]}.
+    De-duplicates and limits to 500 to prevent abuse."""
+    raw = payload.get("event_ids") if isinstance(payload, dict) else None
+    if not isinstance(raw, list):
+        raise HTTPException(status_code=400, detail="event_ids must be a list")
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for v in raw:
+        if isinstance(v, str) and v and v not in seen:
+            seen.add(v)
+            cleaned.append(v)
+            if len(cleaned) >= 500:
+                break
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"favorite_event_ids": cleaned}},
+    )
+    return {"event_ids": cleaned}
 
 
 # -----------------------------------------------------------------------------

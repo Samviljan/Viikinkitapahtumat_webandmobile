@@ -44,6 +44,9 @@ export function AuthProvider({ children }) {
       saved_search: data.saved_search ?? null,
       paid_messaging_enabled: !!data.paid_messaging_enabled,
       language: data.language ?? null,
+      favorite_event_ids: Array.isArray(data.favorite_event_ids)
+        ? data.favorite_event_ids.filter((x) => typeof x === "string")
+        : [],
     };
   }
 
