@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { formatApiErrorDetail } from "@/lib/api";
@@ -30,7 +30,24 @@ export default function AdminLogin() {
       await login(email, password);
       nav("/admin");
     } catch (err) {
-      setError(formatApiErrorDetail(err.response?.data?.detail) || t("admin.bad_login"));
+      const status = err.response?.status;
+      const detail = err.response?.data?.detail;
+      if (status === 429 && detail?.code === "account_locked") {
+        setError(
+          t("account.error_locked", { minutes: detail.minutes_left || 60 }),
+        );
+      } else if (status === 401 && detail?.code === "invalid_credentials") {
+        const remaining = detail.attempts_remaining ?? null;
+        if (remaining !== null && remaining <= 2) {
+          setError(
+            t("account.error_invalid_remaining", { remaining }),
+          );
+        } else {
+          setError(t("admin.bad_login"));
+        }
+      } else {
+        setError(formatApiErrorDetail(detail) || t("admin.bad_login"));
+      }
     } finally {
       setLoading(false);
     }
@@ -87,6 +104,16 @@ export default function AdminLogin() {
           >
             {loading ? "..." : t("admin.sign_in")}
           </Button>
+
+          <div className="text-center pt-1">
+            <Link
+              to="/forgot-password"
+              data-testid="goto-forgot"
+              className="text-[11px] font-rune text-viking-stone hover:text-viking-gold transition-colors"
+            >
+              {t("account.forgot")}
+            </Link>
+          </div>
         </form>
       </div>
     </div>

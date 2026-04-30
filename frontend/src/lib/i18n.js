@@ -104,7 +104,7 @@ export function I18nProvider({ children }) {
   }, [lang]);
 
   const t = useCallback(
-    (path) => {
+    (path, params) => {
       const keys = path.split(".");
       const fallbacks = [lang, "en", "fi"];
       for (const candidate of fallbacks) {
@@ -117,7 +117,16 @@ export function I18nProvider({ children }) {
             break;
           }
         }
-        if (ok && cur !== null && cur !== undefined) return cur;
+        if (ok && cur !== null && cur !== undefined) {
+          if (typeof cur === "string" && params && typeof params === "object") {
+            // Simple {name} placeholder interpolation — matches the syntax
+            // already used across mobile translations for consistency.
+            return cur.replace(/\{(\w+)\}/g, (m, k) =>
+              k in params ? String(params[k]) : m,
+            );
+          }
+          return cur;
+        }
       }
       return path;
     },

@@ -38,8 +38,27 @@ export default function Login() {
       nav(dest);
     } catch (err) {
       const status = err.response?.status;
-      if (status === 401) setError(t("account.error_invalid"));
-      else setError(formatApiErrorDetail(err.response?.data?.detail) || t("account.error_generic"));
+      const detail = err.response?.data?.detail;
+      if (status === 429 && detail?.code === "account_locked") {
+        setError(
+          t("account.error_locked", { minutes: detail.minutes_left || 60 }),
+        );
+      } else if (status === 401 && detail?.code === "invalid_credentials") {
+        const remaining = detail.attempts_remaining ?? null;
+        if (remaining !== null && remaining <= 2) {
+          setError(
+            t("account.error_invalid_remaining", { remaining }),
+          );
+        } else {
+          setError(t("account.error_invalid"));
+        }
+      } else if (status === 401) {
+        setError(t("account.error_invalid"));
+      } else {
+        setError(
+          formatApiErrorDetail(detail) || t("account.error_generic"),
+        );
+      }
     } finally {
       setLoading(false);
     }

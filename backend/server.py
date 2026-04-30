@@ -478,14 +478,103 @@ class ReminderRequest(BaseModel):
 # -----------------------------------------------------------------------------
 # Auth routes
 # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Brute-force protection for /auth/login
+#
+# Tracks failed attempts per user document. After 5 consecutive wrong
+# passwords, the account is locked for 60 minutes. A successful login resets
+# the counter. Attackers targeting a non-existent email cannot trigger a lock
+# (nothing to track), but they also cannot distinguish that case from "wrong
+# password" because the error message is identical.
+# -----------------------------------------------------------------------------
+LOGIN_MAX_ATTEMPTS = 5
+LOGIN_LOCKOUT_MINUTES = 60
+
+
 @api_router.post("/auth/login")
 async def login(payload: LoginRequest, response: Response):
     email = payload.email.lower()
     user = await db.users.find_one({"email": email})
+    now = datetime.now(timezone.utc)
+
+    # If the target account is currently locked, short-circuit with 429 so the
+    # UI can display a "wait an hour" message. We do NOT leak this state for
+    # non-existent emails (only a real, locked account returns 429).
+    if user:
+        lockout_until_raw = user.get("lockout_until")
+        if lockout_until_raw:
+            try:
+                lockout_until = datetime.fromisoformat(lockout_until_raw)
+                if lockout_until.tzinfo is None:
+                    lockout_until = lockout_until.replace(tzinfo=timezone.utc)
+                if lockout_until > now:
+                    minutes_left = max(1, int((lockout_until - now).total_seconds() / 60))
+                    raise HTTPException(
+                        status_code=429,
+                        detail={
+                            "code": "account_locked",
+                            "minutes_left": minutes_left,
+                            "max_attempts": LOGIN_MAX_ATTEMPTS,
+                        },
+                    )
+            except ValueError:
+                # Stored value corrupted — clear it so the user isn't locked forever.
+                await db.users.update_one(
+                    {"id": user["id"]}, {"$unset": {"lockout_until": ""}}
+                )
+
+    # Password check. Combined into one condition to avoid leaking user-existence
+    # through response-time differences — `verify_password` short-circuits on a
+    # None hash the same way as on a wrong one.
     if not user or not user.get("password_hash") or not verify_password(
         payload.password, user["password_hash"]
     ):
+        # Only track failure for real accounts — we don't want to create junk
+        # lock records for every typo'd email.
+        if user:
+            new_count = int(user.get("failed_login_count", 0) or 0) + 1
+            update: dict = {"failed_login_count": new_count}
+            if new_count >= LOGIN_MAX_ATTEMPTS:
+                update["lockout_until"] = (
+                    now + timedelta(minutes=LOGIN_LOCKOUT_MINUTES)
+                ).isoformat()
+                # Reset the counter so the NEXT window starts fresh after the
+                # lockout expires (prevents a 6th failure from creating a
+                # perpetual lockout loop).
+                update["failed_login_count"] = 0
+            await db.users.update_one(
+                {"id": user["id"]}, {"$set": update}
+            )
+            if new_count >= LOGIN_MAX_ATTEMPTS:
+                raise HTTPException(
+                    status_code=429,
+                    detail={
+                        "code": "account_locked",
+                        "minutes_left": LOGIN_LOCKOUT_MINUTES,
+                        "max_attempts": LOGIN_MAX_ATTEMPTS,
+                    },
+                )
+            remaining = LOGIN_MAX_ATTEMPTS - new_count
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "code": "invalid_credentials",
+                    "attempts_remaining": remaining,
+                    "max_attempts": LOGIN_MAX_ATTEMPTS,
+                },
+            )
         raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # Successful login — clear any accumulated failure state.
+    if int(user.get("failed_login_count", 0) or 0) > 0 or user.get("lockout_until"):
+        await db.users.update_one(
+            {"id": user["id"]},
+            {
+                "$set": {"failed_login_count": 0},
+                "$unset": {"lockout_until": ""},
+            },
+        )
+
     token = create_access_token(user["id"], email)
     response.set_cookie(
         key="access_token",

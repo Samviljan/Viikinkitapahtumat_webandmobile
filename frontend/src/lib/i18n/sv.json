@@ -321,6 +321,8 @@
     "submit_signin": "Logga in",
     "submit_signup": "Skapa konto",
     "error_invalid": "Felaktig e-post eller lösenord.",
+    "error_invalid_remaining": "Felaktig e-post eller lösenord. Försök kvar: {remaining}.",
+    "error_locked": "För många misslyckade inloggningsförsök. Kontot är låst i {minutes} minuter av säkerhetsskäl. Använd lösenordsåterställning eller vänta tills låsningen upphör.",
     "error_duplicate": "E-postadressen finns redan.",
     "error_generic": "Något gick fel. Försök igen.",
     "profile_title": "Min profil",

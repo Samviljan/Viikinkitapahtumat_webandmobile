@@ -343,6 +343,8 @@
     "submit_signin": "Sign in",
     "submit_signup": "Create account",
     "error_invalid": "Invalid email or password.",
+    "error_invalid_remaining": "Invalid email or password. Attempts remaining: {remaining}.",
+    "error_locked": "Too many failed login attempts. Your account is locked for {minutes} minutes for security. Use password reset or wait for the lock to expire.",
     "error_duplicate": "Email is already registered.",
     "error_generic": "Something went wrong. Please try again.",
     "profile_title": "My profile",

@@ -344,6 +344,8 @@
     "submit_signin": "Kirjaudu",
     "submit_signup": "Luo tili",
     "error_invalid": "Virheellinen sähköposti tai salasana.",
+    "error_invalid_remaining": "Virheellinen sähköposti tai salasana. Yrityksiä jäljellä: {remaining}.",
+    "error_locked": "Liian monta virheellistä kirjautumisyritystä. Tili on lukittu {minutes} minuutiksi turvallisuussyistä. Kokeile salasanan palautusta tai odota lukituksen päättymistä.",
     "error_duplicate": "Sähköposti on jo käytössä.",
     "error_generic": "Toiminto epäonnistui. Yritä uudelleen.",
     "profile_title": "Oma profiili",
