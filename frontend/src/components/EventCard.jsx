@@ -58,6 +58,16 @@ export default function EventCard({ event, compact = false }) {
             <span>{categoryLabel}</span>
           </div>
         )}
+        {/* Action icons (favorite + remind) — when there's no header image we
+            need to render them inside the body card so the user can still
+            favourite an event whose owner hasn't uploaded a picture. With
+            an image, these render on the image overlay above. */}
+        {!compact && !event.image_url ? (
+          <div className="flex items-center gap-2 absolute top-2 right-3 z-10">
+            <RemindMeButton eventId={event.id} variant="compact" />
+            <FavoriteButton eventId={event.id} />
+          </div>
+        ) : null}
         <h3 className="font-serif text-2xl text-viking-bone leading-tight group-hover:text-viking-gold transition-colors">
           {title}
         </h3>
