@@ -722,7 +722,7 @@ See `/app/memory/test_credentials.md`.
 ## Backlog (priorities)
 
 ### 🔴 P0 — Välittömät
-- **Mobile EAS-build valmistunut, Play Console -julkaisu** — nykyisestä AAB:sta (`versionCode 21`) poistettava `versionCode 17` Play Consolesta, hyväksytty julkaisuun → testaajat voivat ladata Internal testing -kanavasta.
+- ✅ **Mobile EAS-buildin Play Console -julkaisu** (versionCode 21 aktiivinen, 17 poistettu 2026-05-01) — odottaa vain admin-painalluksen "Start rollout" Internal testing -kanavalle.
 - **Generoi oletuskuva-pooli** — aja admin-paneelista "Generoi puuttuvat" (12 kuvaa, ~3 min, ~3–6 krediittiä), jotta uudet tapahtumat saavat automaattisesti kuvan.
 
 ### 🟠 P1 — Tärkeät, lähiaikoina
