@@ -5,6 +5,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 import os
+import base64
 import logging
 import secrets
 import uuid
@@ -16,7 +17,7 @@ import bcrypt
 import httpx
 import jwt
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, Query, BackgroundTasks, UploadFile, File, Form
-from fastapi.responses import PlainTextResponse, RedirectResponse, FileResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -2839,10 +2840,309 @@ async def list_uploaded_images(_admin: dict = Depends(get_admin_or_moderator)):
     return files
 
 
+# -----------------------------------------------------------------------------
+# Default category images — AI-generated placeholder images shown on event
+# cards when the organizer didn't upload their own picture. Stored in a
+# dedicated GridFS bucket (`default_event_images`) so they don't leak into
+# admin's image library and don't risk getting cleaned up by user-image
+# maintenance scripts.
+#
+# A pool of 10 per category is generated ONCE via a one-time admin endpoint;
+# each new event without an image gets one randomly assigned (sticky — saved
+# to `image_url` so the same event always renders the same default).
+# -----------------------------------------------------------------------------
+EVENT_CATEGORIES = ("market", "training_camp", "course", "festival", "meetup", "other")
+DEFAULT_IMAGES_PER_CATEGORY = 10
+
+# Hand-crafted prompts per category — the prompt is the most important thing
+# for image quality. Each base prompt is suffixed with a small variant to get
+# 10 distinct images without the LLM regressing toward the same composition.
+_CATEGORY_PROMPTS: dict[str, str] = {
+    "market": (
+        "A medieval Viking marketplace at dusk, wooden stalls draped with furs and "
+        "linen, bronze cauldrons, leather satchels, hand-forged knives on display, "
+        "atmospheric torchlight, soft mist between tents, Norse rune carvings on "
+        "banners, dramatic cinematic lighting, painterly digital art, no text, no people, "
+        "wide aspect ratio 16:9"
+    ),
+    "training_camp": (
+        "A Viking warrior training camp at dawn, wooden practice swords and round "
+        "shields lined against an oak fence, leather armor draped on stands, fire pit "
+        "smoldering, autumn forest backdrop with pine and birch, dramatic morning fog, "
+        "painterly cinematic Norse aesthetic, no text, no people, wide aspect ratio 16:9"
+    ),
+    "course": (
+        "A Viking-age craft workshop interior, wooden workbench with leather working "
+        "tools, bone needles, antler carvings, woolen yarn baskets, warm hearth firelight, "
+        "rough-hewn timber walls, hand-forged hooks hanging on the wall, intricate Norse "
+        "knotwork details, painterly atmospheric lighting, no text, no people, 16:9"
+    ),
+    "festival": (
+        "A Viking-age festival at twilight, bonfires roaring on a stone-circled mead hall, "
+        "long wooden banquet tables under an open sky, banners with Norse runes flapping in "
+        "the wind, distant aurora borealis, snow-dusted pines, dramatic atmospheric haze, "
+        "painterly cinematic dark fantasy aesthetic, no text, no people, 16:9"
+    ),
+    "meetup": (
+        "A small Viking gathering around a fire pit in a clearing, log benches, hanging "
+        "lanterns made of bronze and horn, woolen blankets folded on the bench, evergreens "
+        "in the background, warm ember light against blue dusk, painterly Nordic aesthetic, "
+        "intimate cozy atmosphere, no text, no people, wide 16:9"
+    ),
+    "other": (
+        "A misty Viking-era Nordic landscape at dawn, runestone half-buried in frosted moss, "
+        "longhouse silhouette in the distance, fjord water reflecting the pale sky, ravens "
+        "circling overhead, atmospheric haze, painterly dark fantasy aesthetic, mysterious "
+        "and timeless, no text, no people, wide aspect ratio 16:9"
+    ),
+}
+
+_VARIANT_HINTS = (
+    "twilight blue palette",
+    "amber firelight",
+    "snowy winter",
+    "deep autumn rust tones",
+    "stormy grey mood",
+    "golden-hour glow",
+    "moonlit night",
+    "early-spring green undertones",
+    "overcast dramatic clouds",
+    "embers glowing in foreground",
+)
+
+
+def _default_images_bucket() -> AsyncIOMotorGridFSBucket:
+    """Separate GridFS bucket for default category images so they live
+    independently of user-uploaded images and the admin image picker."""
+    if not hasattr(_default_images_bucket, "_b"):
+        _default_images_bucket._b = AsyncIOMotorGridFSBucket(  # type: ignore[attr-defined]
+            db, bucket_name="default_event_images"
+        )
+    return _default_images_bucket._b  # type: ignore[attr-defined]
+
+
+def _public_default_image_url(filename: str) -> str:
+    return f"/api/uploads/default-event-images/{filename}"
+
+
+@api_router.get("/uploads/default-event-images/{filename}")
+async def serve_default_image(filename: str):
+    """Public stream — these images are referenced by event_card image_url
+    and need to be reachable without auth (same as regular /uploads/events)."""
+    try:
+        stream = await _default_images_bucket().open_download_stream_by_name(filename)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Image not found")
+    metadata = stream.metadata or {}
+    media_type = metadata.get("content_type") or "image/png"
+
+    async def gen():
+        while True:
+            chunk = await stream.readchunk()
+            if not chunk:
+                break
+            yield chunk
+
+    return StreamingResponse(gen(), media_type=media_type)
+
+
+async def _pick_default_image_for_category(category: str) -> Optional[str]:
+    """Pick one default image url for the given category. Returns None if no
+    pool exists yet for this category — caller should leave image_url empty
+    in that case (frontend's no-image fallback still works)."""
+    cat = category if category in EVENT_CATEGORIES else "other"
+    rows = await db.default_event_images.aggregate(
+        [{"$match": {"category": cat}}, {"$sample": {"size": 1}}]
+    ).to_list(1)
+    if not rows:
+        # Last-resort: try the "other" category if the requested one is empty.
+        if cat != "other":
+            return await _pick_default_image_for_category("other")
+        return None
+    return rows[0].get("image_url")
+
+
+async def _generate_one_default_image(category: str, variant_idx: int) -> Optional[dict]:
+    """Generate one image for the given category via Gemini Nano Banana, save
+    to GridFS + db.default_event_images. Returns the new doc, or None on
+    failure (LLM error, no image returned, network)."""
+    base_prompt = _CATEGORY_PROMPTS.get(category) or _CATEGORY_PROMPTS["other"]
+    variant = _VARIANT_HINTS[variant_idx % len(_VARIANT_HINTS)]
+    prompt = f"{base_prompt}, {variant}"
+
+    api_key = os.environ.get("EMERGENT_LLM_KEY")
+    if not api_key:
+        logger.error("EMERGENT_LLM_KEY missing — cannot generate default images")
+        return None
+
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage  # noqa: WPS433
+    except Exception as exc:  # pragma: no cover
+        logger.error("emergentintegrations not installed: %s", exc)
+        return None
+
+    chat = LlmChat(
+        api_key=api_key,
+        session_id=f"default-imgs-{category}-{uuid.uuid4().hex[:8]}",
+        system_message="Generate atmospheric Viking-themed event card images.",
+    )
+    chat.with_model("gemini", "gemini-3.1-flash-image-preview").with_params(
+        modalities=["image", "text"]
+    )
+    msg = UserMessage(text=prompt)
+    try:
+        _, images = await chat.send_message_multimodal_response(msg)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Gemini image generation failed for %s: %s", category, exc)
+        return None
+    if not images:
+        return None
+
+    img = images[0]
+    mime = img.get("mime_type") or "image/png"
+    ext = ".png" if "png" in mime else (".jpg" if "jpeg" in mime else ".png")
+    try:
+        image_bytes = base64.b64decode(img["data"])
+    except Exception:  # noqa: BLE001
+        return None
+
+    filename = f"default_{category}_{uuid.uuid4().hex[:10]}{ext}"
+    await _default_images_bucket().upload_from_stream(
+        filename,
+        image_bytes,
+        metadata={
+            "content_type": mime,
+            "category": category,
+            "kind": "default_event_image",
+            "variant": variant,
+        },
+    )
+    url = _public_default_image_url(filename)
+    doc = {
+        "id": str(uuid.uuid4()),
+        "category": category,
+        "image_url": url,
+        "prompt": prompt,
+        "variant": variant,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.default_event_images.insert_one(doc.copy())
+    return doc
+
+
+@api_router.get("/admin/default-event-images")
+async def admin_list_default_images(_admin: dict = Depends(get_admin_or_moderator)):
+    """Admin overview — counts per category + thumbnails for each pool."""
+    rows = await db.default_event_images.find(
+        {}, {"_id": 0, "id": 1, "category": 1, "image_url": 1, "created_at": 1, "variant": 1}
+    ).sort("created_at", -1).to_list(2000)
+    out: dict = {c: {"count": 0, "items": []} for c in EVENT_CATEGORIES}
+    for r in rows:
+        cat = r.get("category") or "other"
+        if cat not in out:
+            out[cat] = {"count": 0, "items": []}
+        out[cat]["count"] += 1
+        out[cat]["items"].append(r)
+    return out
+
+
+@api_router.post("/admin/default-event-images/generate")
+async def admin_generate_default_images(
+    background: BackgroundTasks,
+    category: Optional[str] = None,
+    count: int = DEFAULT_IMAGES_PER_CATEGORY,
+    _admin: dict = Depends(get_admin_or_moderator),
+):
+    """Trigger an asynchronous generation batch.
+
+    - `category` omitted → generate `count` images for every category that
+      currently has fewer than `count` images.
+    - `category="market"` → generate `count` images for that one category.
+
+    Generation runs in the background (a single batch can take several
+    minutes). Caller gets back the planned job summary instantly.
+    """
+    if count < 1 or count > 30:
+        raise HTTPException(status_code=400, detail="count must be between 1 and 30")
+    if category and category not in EVENT_CATEGORIES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"category must be one of {list(EVENT_CATEGORIES)}",
+        )
+    targets = [category] if category else list(EVENT_CATEGORIES)
+
+    plan: list[dict] = []
+    for cat in targets:
+        existing = await db.default_event_images.count_documents({"category": cat})
+        needed = max(0, count - existing) if not category else count
+        plan.append({"category": cat, "existing": existing, "to_generate": needed})
+
+    background.add_task(_run_default_image_batch, plan)
+    return {"queued": True, "plan": plan}
+
+
+async def _run_default_image_batch(plan: list[dict]) -> None:
+    """Background worker — generates each (category, count) pair sequentially.
+    Logs progress so the admin can follow `tail -f` for status."""
+    total = sum(p["to_generate"] for p in plan)
+    if total == 0:
+        logger.info("Default image batch: nothing to generate, all pools full")
+        return
+    logger.info("Default image batch starting: %s images planned", total)
+    done = 0
+    for entry in plan:
+        cat = entry["category"]
+        for i in range(entry["to_generate"]):
+            doc = await _generate_one_default_image(cat, i)
+            done += 1
+            if doc:
+                logger.info(
+                    "Default image %d/%d generated: %s (%s)",
+                    done, total, cat, doc["image_url"],
+                )
+            else:
+                logger.warning(
+                    "Default image %d/%d FAILED for category %s — skipping",
+                    done, total, cat,
+                )
+    logger.info("Default image batch finished: %d images attempted", done)
+
+
+@api_router.delete("/admin/default-event-images/{img_id}")
+async def admin_delete_default_image(img_id: str, _admin: dict = Depends(get_admin_or_moderator)):
+    """Drop a single default image (file + db row). Used to prune bad outputs."""
+    doc = await db.default_event_images.find_one({"id": img_id}, {"_id": 0, "image_url": 1})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Not found")
+    await db.default_event_images.delete_one({"id": img_id})
+    # Best-effort GridFS cleanup — keyed off the filename in the URL
+    try:
+        filename = (doc.get("image_url") or "").rsplit("/", 1)[-1]
+        if filename:
+            files = db["default_event_images.files"]
+            f = await files.find_one({"filename": filename}, {"_id": 1})
+            if f:
+                await _default_images_bucket().delete(f["_id"])
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Failed to delete GridFS file for %s: %s", img_id, exc)
+    return {"ok": True}
+
+
 @api_router.post("/events", response_model=EventOut, status_code=201)
 async def submit_event(payload: EventCreate, background: BackgroundTasks):
     now = datetime.now(timezone.utc).isoformat()
     doc = payload.model_dump()
+    # Auto-assign a default category image when the organizer didn't upload
+    # one. Sticky: saved to image_url so the same event always renders the
+    # same picture, no random churn on every page load.
+    image_url = doc.get("image_url") or ""
+    if not image_url:
+        try:
+            chosen = await _pick_default_image_for_category(doc.get("category", "other"))
+            if chosen:
+                image_url = chosen
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Default image picker failed: %s", exc)
     doc.update({
         "id": str(uuid.uuid4()),
         "status": "pending",
@@ -2852,7 +3152,7 @@ async def submit_event(payload: EventCreate, background: BackgroundTasks):
         "description_en": doc.get("description_en") or "",
         "description_sv": doc.get("description_sv") or "",
         "link": doc.get("link") or "",
-        "image_url": doc.get("image_url") or "",
+        "image_url": image_url,
         "gallery": doc.get("gallery") or [],
         "country": doc.get("country") or "FI",
         "audience": doc.get("audience") or "",

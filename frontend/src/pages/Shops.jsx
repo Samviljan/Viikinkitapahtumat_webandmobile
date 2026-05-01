@@ -149,9 +149,23 @@ export default function Shops() {
     }
   };
 
+  // Sorting rules for the public Shops page:
+  //  1. Featured (admin-promoted) merchants render in their own hero section.
+  //  2. Within each category section, PAID merchant cards (`is_user_card`)
+  //     always sort before legacy admin-curated entries — paying merchants
+  //     get visibility above the free directory.
+  //  3. Inside each tier we keep the original API order (alphabetical).
   const featured = useMemo(() => items.filter((m) => m.featured), [items]);
-  const gear = useMemo(() => items.filter((m) => m.category === "gear" && !m.featured), [items]);
-  const smiths = useMemo(() => items.filter((m) => m.category === "smith" && !m.featured), [items]);
+  const sortPaidFirst = (list) =>
+    list.slice().sort((a, b) => Number(!!b.is_user_card) - Number(!!a.is_user_card));
+  const gear = useMemo(
+    () => sortPaidFirst(items.filter((m) => m.category === "gear" && !m.featured)),
+    [items],
+  );
+  const smiths = useMemo(
+    () => sortPaidFirst(items.filter((m) => m.category === "smith" && !m.featured)),
+    [items],
+  );
 
   const canFavorite = !!(user && user.id);
   const favSet = useMemo(() => new Set(favorites), [favorites]);
