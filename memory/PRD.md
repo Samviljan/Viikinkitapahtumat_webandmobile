@@ -706,13 +706,51 @@ See `/app/memory/test_credentials.md`.
   - Curl: login → `DELETE /api/users/me` with wrong email → 400 mismatch; correct email → 200 with cleanup summary; subsequent `/api/auth/me` → 401 (cookie cleared).
   - Playwright: logged-in member sees `[merchant-card-cta-active]` + edit link; clicking it navigates to `/profile/merchant-card` showing the editor + back link; danger-zone "Poista tili" button visible.
 
+## Iteration — AI default event-card images + shops sort + favorite-button fix (2026-05-01)
+- ✅ **Bug fix**: `EventCard.jsx` — suosikki- ja remind-painikkeet eivät renderöityneet jos `event.image_url` oli tyhjä (ne oli sidottu kuva-overlayhin). Korjattu lisäämällä erillinen absoluuttinen painikerivi kun kuvaa ei ole.
+- ✅ **Bug fix**: `Shops.jsx` — maksulliset `is_user_card=true` -kauppiaskortit sekoittuivat aakkosjärjestyksessä legacy-kauppiaiden kanssa. Lisätty `sortPaidFirst`-helper joka asettaa maksulliset aina edelle jokaisessa kategoriassa. Featured-osio (admin-nosto) pysyy omana hero-osionaan.
+- ✅ **AI-generoidut oletuskuvat tapahtumille**:
+  - Uusi GridFS-bucket `default_event_images`, uusi kokoelma `db.default_event_images` (id, category, image_url, prompt, variant, created_at).
+  - 6 EVENT_CATEGORIES × 2 kuvaa = 12 oletuskuvan pooli (käyttäjän pyynnöstä alennettu 10:stä 2:een, vakio `DEFAULT_IMAGES_PER_CATEGORY = 2`).
+  - Hand-crafted promptit per kategoria (`market`, `training_camp`, `course`, `festival`, `meetup`, `other`) + 10 varianttihinttiä (`twilight`, `amber`, `snow`, …) → kaikki generoidut kuvat tyylillisesti erilaisia.
+  - Gemini Nano Banana (`gemini-3.1-flash-image-preview`) EMERGENT_LLM_KEY:llä, BackgroundTasks-jono (admin saa välittömän vastauksen, generointi etenee taustalla ~15 s/kuva).
+  - **Sticky-assignointi**: `POST /api/events`-endpoint valitsee satunnaisesti yhden kuvan kategorian poolista ja tallentaa pysyvästi `image_url`-kenttään → sama tapahtuma renderöityy aina samalla kuvalla, ei satunnaisuutta.
+  - Endpointit: `GET/POST /api/admin/default-event-images`, `POST .../generate?category=X&count=N`, `DELETE .../{id}`, `GET /api/uploads/default-event-images/{filename}` (julkinen stream).
+  - Uusi admin-paneeli `/admin/content` → `AdminDefaultImagesPanel`: kategoriakohtaiset counts + thumbnails + per-kategoria generointinappi + "Generoi puuttuvat" -nappi koko poolille + yksittäisten kuvien poisto (trash-ikoni hoveroituna).
+  - Testattu: 1 testikuva generoitui onnistuneesti 16 sekunnissa, 913 kt JPEG, HTTP 200.
+
 ## Backlog (priorities)
-- **P1** Stripe integration for paid messaging (currently admin manually toggles `paid_messaging_enabled`).
-- **P1** **📧 Email-template-editori** admin-paneeliin — *user expressed interest 2026-04-29, suggest again when next touching messaging features*. Kauppiaat/järjestäjät tallentavat valmiita pohjia toistuviin viesteihin ("Muistutus tapahtumaan", "Kiitos osallistumisesta", "Aikataulumuutos"). Muuttujat kuten `{{event_title}}`, `{{date}}`, `{{nickname}}`. Säästää aikaa, parantaa viestien laatua. Admin voi luoda yhteisiä pohjia kaikille kauppiaille.
-- **P1** **🧪 Backend pytest-regressiosuite** — *deferred 2026-04-29 by user, REMIND ON 2026-05-29 (1mo) and 2026-06-29 (2mo)*. Estimated 40–80 credits for 15–20 test cases covering auth, RSVP, message-send + per-event quota (rules 4-6), language persistence, admin endpoints. Configures pytest-asyncio + fixtures for ephemeral test data. Provides regression safety net before bigger refactors (server.py routers split). User chose option C (defer) — surface this proactively at the start of any session on/after 2026-05-29.
-- **P1** Mobile DA/DE/ET/PL native dictionaries (currently fall back to EN; covers ~80 string keys vs 250 on web).
-- **P1 (mobile vaihe 2)** Push-notifikaatiot suosikkitapahtumista, käyttäjätilit, premium-versio (lipunmyynti, ennakkotarjoukset), offline-välimuisti.
-- **P2** Shadcn Calendar+Popover date-pickeriksi, PWA push, brute-force-rate-limit, OG-tagit, custom favicon, lisämuistutus 1 vrk ennen, admin "Valitse galleriasta" -kuvavalitsin, ET/PL auto-käännös tapahtumasisällölle, lat/lon-kentät tapahtumiin (Android-geocode-luotettavuus).
-- **P2** Per-event Open Graph -kuva (jokaisen tapahtumasivun jakopreview tapahtuman omalla kuvalla).
-- **P2** Telegram-bot tilausvaihtoehto push-notifikaatioille (rinnakkainen FCM:lle, vähemmän riippuvuutta Firebase-credentialeista).
-- **P3** Preview→prod data sync utility.
+
+### 🔴 P0 — Välittömät
+- **Mobile EAS-build valmistunut, Play Console -julkaisu** — nykyisestä AAB:sta (`versionCode 21`) poistettava `versionCode 17` Play Consolesta, hyväksytty julkaisuun → testaajat voivat ladata Internal testing -kanavasta.
+- **Generoi oletuskuva-pooli** — aja admin-paneelista "Generoi puuttuvat" (12 kuvaa, ~3 min, ~3–6 krediittiä), jotta uudet tapahtumat saavat automaattisesti kuvan.
+
+### 🟠 P1 — Tärkeät, lähiaikoina
+- **💳 Stripe-integraatio** — maksulliset viestit (`paid_messaging_enabled`) JA kauppiaskorttien automaattinen 12 kk:n aktivointi (`merchant_until`). Stripe Checkout + webhook → korvaa nykyinen manuaalinen admin-kytkin. `merchant_card.merchant_until` + hook-logiikka on jo backendissä valmiina.
+- **📧 Email-template-editori** — admin-paneeliin. Kauppiaat/järjestäjät tallentavat valmiita pohjia (Muistutus, Kiitos, Aikataulumuutos). Muuttujat `{{event_title}}`, `{{date}}`, `{{nickname}}`. Admin voi jakaa yhteisiä pohjia.
+- **📱 Mobiilin tilin poisto -UI** — `(tabs)/settings.tsx` Danger zone + `account_delete.*`-käännösavaimet kaikkiin 7 kieleen → vastaa weben omapoistoa (backend-endpoint `DELETE /api/users/me` on jo valmis).
+- **🧪 Backend pytest-regressiosuite** — *muistutus 2026-05-29 ja 2026-06-29*. 15–20 testitapausta (auth, RSVP, message-quota, kauppiaskortit, omapoisto). 40–80 krediittiä. Pytest-asyncio + fixtures. Pakollinen ennen server.py-refaktorointia.
+
+### 🟡 P1 (mobiili vaihe 2)
+- **Push-notifikaatiot suosikkitapahtumista** — kun suosikkitapahtuman yksityiskohdat muuttuvat (päivä, sijainti, peruutus), käyttäjä saa pushin. Käyttää jo olemassa olevaa FCM V1 -infraa.
+- **Push-notifikaatiot suosikkikauppiaista** *(uusi idea 2026-04-30)* — kun suosikkikauppias RSVP:n uuteen tapahtumaan, suosikki-merkitsijät saavat pushin. Orgaaninen markkinointi kauppiaalle ilman maksullista viestiä, konversio-vaikutus.
+- **Offline-välimuisti** — tapahtumalista ja suosikit luettavissa myös ilman yhteyttä.
+
+### 🟢 P2 — Mukavat lisäykset
+- **Per-event Open Graph -kuva** — 1200 × 630 jakopreview joka tapahtumasivulta sosiaaliseen mediaan (FB, X, WhatsApp). AI-generoitu tai käytetty event.image_url.
+- **"Jaa-painike" kauppiaskortille** *(2026-04-30 idea)* — `MerchantDetail`-sivulle FB/X/WhatsApp/Kopioi linkki-painikkeet + pieni rune-tyylinen QR-koodi tulostettavaksi pajan seinälle.
+- **Telegram-bot** — rinnakkainen push-vaihtoehto FCM:lle, vähentää riippuvuutta Firebase-credentialeista.
+- **Shadcn Calendar + Popover date-pickeriksi** — korvaa natiivi `<input type="date">` visuaalisen yhtenäisyyden vuoksi.
+- **Custom favicon + Apple touch icons** — brändin viimeistely.
+- **Lisämuistutus 1 vrk ennen tapahtumaa** — nykyisen 7-vrk-muistutuksen rinnalle.
+- **Admin "Valitse galleriasta" -kuvavalitsin** — kun tapahtuman luonti/muokkaus, voi valita jo ladatun kuvan sijasta uuden.
+- **ET/PL auto-käännös tapahtumasisällölle** — APScheduler translation sweep käsittelee tällä hetkellä vain FI/EN/SV; laajennetaan kattamaan ET/PL.
+- **Lat/lon-kentät tapahtumiin** — parantaisi Android-geocoding-luotettavuutta Near-me-filtterille.
+- **"Mitä seuraavaksi" -osio kotisivulle** — seuraavat 3 tapahtumaa heti kotisivulla ilman tarvetta kelata listaa. Parantaisi "mobile first"-kokemusta.
+- **Sentry / crash-lokaali** — Play Console mapping.txt -varoituksien ratkaisu. Saataisiin myös tuotannon JS-kaatumiset tarkasti luettavina.
+- **Kauppiaskortin ammattimaisempi käännösten läpikäynti** *(2026-04-30 idea)* — DA/DE/ET/PL käännökset ovat kohtuulliset mutta natiivi puhuja hioisi idiomeja paremmiksi (esim. DE "Reenactor" → "Living-History-Darsteller"). ~20 min per kieli.
+
+### 🔵 P3 — Refaktoroinnit, tekninen velka
+- **`server.py`-refaktorointi reittitiedostoiksi** — nyt ~4000 riviä. Jaetaan `routes/auth.py`, `routes/events.py`, `routes/admin.py`, `routes/merchants.py`, `routes/messaging.py`. **Edellyttää** pytest-suiten olemassaoloa regressioturvana.
+- **Preview → prod data sync utility** — kaksisuuntainen data-sync admin-UI:sta.
+- **iOS-build konfiguraatio** — `app.json` iOS-osio, TestFlight-putki. Vaatii Apple Developer -tilin ($99/v).
