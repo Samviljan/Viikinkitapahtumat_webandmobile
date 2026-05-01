@@ -34,13 +34,21 @@ export default function EventDetail() {
   // SEO: per-event title/description/canonical/og:image. Helps Google index
   // each event with a localized title and an image card preview when shared.
   // MUST be called every render (not conditionally) — react-hooks/rules-of-hooks.
+  // og:image — always point at the server-rendered OG card endpoint (even
+  // when the event has no uploaded image; the endpoint composes a fallback).
+  // This produces a branded 1200×630 preview on social shares (Facebook, X,
+  // WhatsApp, LinkedIn, Slack, Telegram) — much better engagement than the
+  // raw uploaded image which may be any dimensions.
+  const ogBase = process.env.REACT_APP_BACKEND_URL || "";
+  const ogImage = event?.id ? `${ogBase}/api/og/events/${event.id}.jpg` : undefined;
+
   useDocumentSeo({
     title: title ? `${title} — Viikinkitapahtumat` : undefined,
     description: desc
       ? desc.slice(0, 200).replace(/\s+/g, " ").trim()
       : undefined,
     canonicalPath: event ? `/events/${event.id}` : undefined,
-    image: event?.image_url ? resolveImageUrl(event.image_url) : undefined,
+    image: ogImage,
     keywords: [
       "viikinkitapahtumat",
       "viikingit",

@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { useDocumentSeo } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import EventCard from "@/components/EventCard";
+import NextUpStrip from "@/components/NextUpStrip";
 import PageHero from "@/components/PageHero";
 import NewsletterSignup from "@/components/NewsletterSignup";
 import { Compass, Send, ShieldCheck } from "lucide-react";
@@ -49,7 +50,19 @@ export default function Home() {
       .finally(() => setLoaded(true));
   }, []);
 
-  const upcoming = events.slice(0, 3);
+  // Only include events that haven't already ended. Backend sorts by
+  // `start_date ASC`, so filtering by `end_date >= today` gives us the
+  // chronologically next events (an event still on today is kept in the
+  // list — useful for late-day same-day discovery).
+  const upcoming = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    return (events || [])
+      .filter((e) => {
+        const end = e.end_date || e.start_date;
+        return typeof end === "string" && end >= today;
+      })
+      .slice(0, 3);
+  }, [events]);
 
   return (
     <>
@@ -68,6 +81,14 @@ export default function Home() {
         secondaryCtaTo="/submit"
         secondaryCtaLabel={t("home.cta_submit")}
       />
+
+      {/* "Mitä seuraavaksi" strip — compact, scannable, mobile-first.
+          Renders BEFORE the richer Featured grid so a phone user sees
+          the next three actionable events without any scroll-to-discover.
+          Desktop users also get this summary bar above the main grid. */}
+      {loaded ? (
+        <NextUpStrip events={upcoming} />
+      ) : null}
 
       {/* Featured */}
       <section className="mx-auto max-w-7xl px-4 sm:px-8 py-20" data-testid="featured-section">

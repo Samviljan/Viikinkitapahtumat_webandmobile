@@ -6,6 +6,9 @@ load_dotenv(ROOT_DIR / '.env')
 
 import os
 import base64
+import io
+import asyncio
+import hashlib
 import logging
 import secrets
 import uuid
@@ -3126,6 +3129,298 @@ async def admin_delete_default_image(img_id: str, _admin: dict = Depends(get_adm
     except Exception as exc:  # noqa: BLE001
         logger.warning("Failed to delete GridFS file for %s: %s", img_id, exc)
     return {"ok": True}
+
+
+# -----------------------------------------------------------------------------
+# Per-event Open Graph card — 1200 × 630 JPEG served at a public URL so social
+# media scrapers (Facebook, X, WhatsApp, LinkedIn, Slack, Telegram) can embed
+# a branded preview when someone shares an event link.
+#
+# Strategy:
+#   - Composite: event hero image (cover-fitted) + dark gradient overlay at
+#     the bottom + title/date/location text layered on top + small brand mark
+#     top-right.
+#   - Cached in GridFS bucket `og_event_cards` keyed by event_id + a cache
+#     key (image_url + title + date). If the event changes its image or
+#     title, we regenerate; otherwise we stream the cached bytes.
+#   - Frontend sets <meta property="og:image"> to this absolute URL.
+# -----------------------------------------------------------------------------
+def _og_cards_bucket() -> AsyncIOMotorGridFSBucket:
+    if not hasattr(_og_cards_bucket, "_b"):
+        _og_cards_bucket._b = AsyncIOMotorGridFSBucket(  # type: ignore[attr-defined]
+            db, bucket_name="og_event_cards"
+        )
+    return _og_cards_bucket._b  # type: ignore[attr-defined]
+
+
+_SERIF_FONT_PATH = "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf"
+_SANS_FONT_PATH = "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"
+_SANS_BOLD_PATH = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
+
+
+def _og_cache_key(event: dict) -> str:
+    """Cache key — regenerates when the inputs that affect the rendered
+    image change. Title updates refresh the text overlay; image_url changes
+    refresh the hero."""
+    parts = [
+        event.get("id", ""),
+        event.get("title_fi") or "",
+        event.get("start_date") or "",
+        event.get("end_date") or "",
+        event.get("location") or "",
+        event.get("image_url") or "",
+    ]
+    raw = "|".join(parts).encode("utf-8")
+    return hashlib.sha1(raw, usedforsecurity=False).hexdigest()[:16]
+
+
+def _og_filename(event_id: str, cache_key: str) -> str:
+    return f"og_{event_id}_{cache_key}.jpg"
+
+
+async def _read_event_image_bytes(image_url: str) -> Optional[bytes]:
+    """Load the raw bytes of whatever image URL the event points at.
+    Supports both server-local paths (`/api/uploads/...`) and absolute http
+    URLs. Returns None on any failure — caller falls back to gradient."""
+    if not image_url:
+        return None
+    if image_url.startswith("http://") or image_url.startswith("https://"):
+        try:
+            async with httpx.AsyncClient(timeout=6.0) as client:
+                r = await client.get(image_url)
+                if r.status_code == 200:
+                    return r.content
+        except Exception:  # noqa: BLE001
+            return None
+        return None
+    # Local GridFS-backed URL — pull directly rather than round-tripping
+    # through the HTTP layer.
+    try:
+        filename = image_url.rsplit("/", 1)[-1]
+        if "/default-event-images/" in image_url:
+            bucket = _default_images_bucket()
+        else:
+            bucket = _gridfs_bucket()
+        stream = await bucket.open_download_stream_by_name(filename)
+        chunks = []
+        while True:
+            chunk = await stream.readchunk()
+            if not chunk:
+                break
+            chunks.append(chunk)
+        return b"".join(chunks)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _render_og_card(event: dict, image_bytes: Optional[bytes]) -> bytes:
+    """Composite the 1200x630 OG card synchronously (Pillow is CPU-bound;
+    called inside run_in_executor to keep the event loop unblocked)."""
+    from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps  # noqa: WPS433
+
+    W, H = 1200, 630
+    card = Image.new("RGB", (W, H), (20, 16, 12))  # viking-bg base
+
+    # --- Hero image fill ---
+    if image_bytes:
+        try:
+            hero = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+            # Cover-fit (crop excess, preserve aspect)
+            hero = ImageOps.fit(hero, (W, H), method=Image.Resampling.LANCZOS)
+            # Slight desaturation + darkening so text always reads on top
+            dark = Image.new("RGB", (W, H), (20, 16, 12))
+            hero = Image.blend(hero, dark, 0.28)
+            card.paste(hero, (0, 0))
+        except Exception:  # noqa: BLE001
+            pass  # fall back to solid
+
+    # --- Bottom-to-top gradient overlay for text contrast ---
+    gradient = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    gdraw = ImageDraw.Draw(gradient)
+    for y in range(H):
+        # Stronger toward the bottom (where text sits), none at top 45%
+        t = max(0.0, (y - H * 0.45) / (H * 0.55))
+        alpha = int(max(0, min(255, 210 * t * t)))
+        gdraw.line([(0, y), (W, y)], fill=(12, 8, 4, alpha))
+    card = Image.alpha_composite(card.convert("RGBA"), gradient).convert("RGB")
+
+    # --- Text layer ---
+    draw = ImageDraw.Draw(card)
+
+    def _font(path: str, size: int) -> ImageFont.FreeTypeFont:
+        try:
+            return ImageFont.truetype(path, size)
+        except Exception:  # noqa: BLE001
+            return ImageFont.load_default()
+
+    title_font = _font(_SERIF_FONT_PATH, 68)
+    meta_font = _font(_SANS_FONT_PATH, 32)
+    eyebrow_font = _font(_SANS_BOLD_PATH, 22)
+    brand_font = _font(_SANS_BOLD_PATH, 24)
+
+    title = (event.get("title_fi") or "").strip() or "Viikinkitapahtuma"
+    # Wrap long titles manually — Pillow has no automatic wrap
+    title_lines = _wrap_text(draw, title, title_font, W - 120)[:3]
+    title_line_h = 78
+    title_block_h = len(title_lines) * title_line_h
+
+    # Meta line (date · location · country flag is text-only in OG card —
+    # emoji glyph not guaranteed to render; keep it simple)
+    date_str = _format_og_date(event.get("start_date"), event.get("end_date"))
+    loc_str = (event.get("location") or "").strip()
+    meta_parts = [x for x in (date_str, loc_str) if x]
+    meta_text = "  ·  ".join(meta_parts)
+
+    # Layout: bottom-anchored stack
+    margin_x = 60
+    margin_b = 60
+    y = H - margin_b - 36  # meta sits above bottom margin
+    if meta_text:
+        draw.text((margin_x, y), meta_text, font=meta_font, fill=(220, 210, 185))
+    y -= title_block_h + 12
+    for line in title_lines:
+        draw.text((margin_x, y), line, font=title_font, fill=(245, 235, 215))
+        y += title_line_h
+
+    # Eyebrow (event category label up top of the text block)
+    cat_label = _og_category_label(event.get("category"))
+    if cat_label:
+        eyebrow_y = y - title_block_h - 50
+        draw.text(
+            (margin_x, eyebrow_y),
+            cat_label.upper(),
+            font=eyebrow_font,
+            fill=(201, 161, 74),
+        )
+
+    # Brand mark top-right
+    brand = "VIIKINKITAPAHTUMAT"
+    bbox = draw.textbbox((0, 0), brand, font=brand_font)
+    bw = bbox[2] - bbox[0]
+    draw.text(
+        (W - margin_x - bw, 40),
+        brand,
+        font=brand_font,
+        fill=(201, 161, 74),
+    )
+    # Thin gold rule under brand
+    rule_w = min(bw, 160)
+    draw.line(
+        [(W - margin_x - rule_w, 78), (W - margin_x, 78)],
+        fill=(201, 161, 74),
+        width=2,
+    )
+
+    buf = io.BytesIO()
+    card.save(buf, format="JPEG", quality=85, optimize=True)
+    return buf.getvalue()
+
+
+def _wrap_text(draw, text: str, font, max_width: int) -> list[str]:
+    words = text.split()
+    if not words:
+        return [""]
+    lines: list[str] = []
+    current = words[0]
+    for word in words[1:]:
+        candidate = f"{current} {word}"
+        w = draw.textbbox((0, 0), candidate, font=font)[2]
+        if w <= max_width:
+            current = candidate
+        else:
+            lines.append(current)
+            current = word
+    lines.append(current)
+    return lines
+
+
+def _format_og_date(start: Optional[str], end: Optional[str]) -> str:
+    if not start:
+        return ""
+    try:
+        s = datetime.fromisoformat(start)
+    except Exception:
+        return ""
+    if end and end != start:
+        try:
+            e = datetime.fromisoformat(end)
+            if s.month == e.month and s.year == e.year:
+                return f"{s.day}.–{e.day}.{e.month}.{e.year}"
+            return f"{s.day}.{s.month}.{s.year} – {e.day}.{e.month}.{e.year}"
+        except Exception:
+            pass
+    return f"{s.day}.{s.month}.{s.year}"
+
+
+def _og_category_label(category: Optional[str]) -> str:
+    return {
+        "market": "Markkinat",
+        "training_camp": "Harjoitusleiri",
+        "course": "Kurssi",
+        "festival": "Festivaali",
+        "meetup": "Kokoontuminen",
+        "other": "Tapahtuma",
+    }.get((category or "other"), "Tapahtuma")
+
+
+@api_router.get("/og/events/{event_id}.jpg")
+async def og_event_card(event_id: str):
+    """Public — 1200×630 JPEG preview. Cached in GridFS by content key so
+    most requests stream directly without re-rendering."""
+    event = await db.events.find_one(
+        {"id": event_id, "status": "approved"},
+        {
+            "_id": 0, "id": 1, "title_fi": 1, "start_date": 1, "end_date": 1,
+            "location": 1, "image_url": 1, "category": 1,
+        },
+    )
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    key = _og_cache_key(event)
+    filename = _og_filename(event_id, key)
+
+    # Cache hit?
+    files = db["og_event_cards.files"]
+    cached = await files.find_one({"filename": filename}, {"_id": 1})
+    if cached:
+        stream = await _og_cards_bucket().open_download_stream_by_name(filename)
+
+        async def gen_cached():
+            while True:
+                chunk = await stream.readchunk()
+                if not chunk:
+                    break
+                yield chunk
+
+        return StreamingResponse(
+            gen_cached(),
+            media_type="image/jpeg",
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
+
+    # Regenerate and cache
+    image_bytes = await _read_event_image_bytes(event.get("image_url") or "")
+    loop = asyncio.get_running_loop()
+    rendered = await loop.run_in_executor(None, _render_og_card, event, image_bytes)
+    try:
+        await _og_cards_bucket().upload_from_stream(
+            filename,
+            rendered,
+            metadata={
+                "content_type": "image/jpeg",
+                "event_id": event_id,
+                "cache_key": key,
+            },
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Failed to cache OG card for %s: %s", event_id, exc)
+
+    return StreamingResponse(
+        io.BytesIO(rendered),
+        media_type="image/jpeg",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 @api_router.post("/events", response_model=EventOut, status_code=201)
