@@ -2852,7 +2852,7 @@ async def list_uploaded_images(_admin: dict = Depends(get_admin_or_moderator)):
 # to `image_url` so the same event always renders the same default).
 # -----------------------------------------------------------------------------
 EVENT_CATEGORIES = ("market", "training_camp", "course", "festival", "meetup", "other")
-DEFAULT_IMAGES_PER_CATEGORY = 10
+DEFAULT_IMAGES_PER_CATEGORY = 2
 
 # Hand-crafted prompts per category — the prompt is the most important thing
 # for image quality. Each base prompt is suffixed with a small variant to get

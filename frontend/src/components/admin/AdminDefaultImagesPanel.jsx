@@ -59,7 +59,7 @@ export default function AdminDefaultImagesPanel() {
   const generateAll = async () => {
     if (
       !window.confirm(
-        "Generoidaanko puuttuvat oletuskuvat? (Maks. 10 per kategoria, taustalla, n. 1–3 min/kategoria)",
+        "Generoidaanko puuttuvat oletuskuvat? (Maks. 2 per kategoria, taustalla, n. 15–30 s/kuva)",
       )
     ) {
       return;
@@ -67,11 +67,10 @@ export default function AdminDefaultImagesPanel() {
     setBusy("all");
     try {
       const { data: r } = await api.post(
-        "/admin/default-event-images/generate?count=10",
+        "/admin/default-event-images/generate?count=2",
       );
       const planned = (r.plan || []).reduce((s, p) => s + (p.to_generate || 0), 0);
       toast.success(`${planned} kuvaa jonossa — generointi käynnissä taustalla.`);
-      // Give the worker a head start before refresh
       setTimeout(reload, 8000);
     } catch (err) {
       toast.error("Generointi epäonnistui");
@@ -80,7 +79,7 @@ export default function AdminDefaultImagesPanel() {
     }
   };
 
-  const generateCategory = async (cat, n = 10) => {
+  const generateCategory = async (cat, n = 2) => {
     setBusy(cat);
     try {
       await api.post(
@@ -117,7 +116,7 @@ export default function AdminDefaultImagesPanel() {
             Tapahtumien oletuskuvat
           </h2>
           <p className="text-xs text-viking-stone mt-1 leading-relaxed">
-            10 AI-generoitua oletuskuvaa per kategoria. Käyttäjän luodessa
+            2 AI-generoitua oletuskuvaa per kategoria. Käyttäjän luodessa
             tapahtuman ilman omaa kuvaa, järjestelmä valitsee satunnaisesti
             yhden ja tallentaa sen pysyvästi tapahtumaan.
           </p>
@@ -150,7 +149,7 @@ export default function AdminDefaultImagesPanel() {
       <div className="space-y-6">
         {CATEGORIES.map((cat) => {
           const entry = data[cat] || { count: 0, items: [] };
-          const target = 10;
+          const target = 2;
           const missing = Math.max(0, target - entry.count);
           return (
             <div
