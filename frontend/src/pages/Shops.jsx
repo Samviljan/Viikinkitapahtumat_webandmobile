@@ -150,20 +150,30 @@ export default function Shops() {
   };
 
   // Sorting rules for the public Shops page:
-  //  1. Featured (admin-promoted) merchants render in their own hero section.
-  //  2. Within each category section, PAID merchant cards (`is_user_card`)
-  //     always sort before legacy admin-curated entries — paying merchants
-  //     get visibility above the free directory.
-  //  3. Inside each tier we keep the original API order (alphabetical).
-  const featured = useMemo(() => items.filter((m) => m.featured), [items]);
-  const sortPaidFirst = (list) =>
-    list.slice().sort((a, b) => Number(!!b.is_user_card) - Number(!!a.is_user_card));
+  //   - PAID user merchant cards sort BEFORE legacy admin-curated entries
+  //     within their category (paying merchants get visibility above the
+  //     free directory).
+  //   - Within the paid tier, FEATURED cards sort first, then by name.
+  //   - Within the legacy tier, original API order (alphabetical) is kept.
+  // No separate "Featured" hero strip — featured user cards stand out via
+  // a Star badge inside the card itself, not by being yanked out of their
+  // category.
+  const sortMerchants = (list) =>
+    list.slice().sort((a, b) => {
+      const aPaid = a.is_user_card ? 1 : 0;
+      const bPaid = b.is_user_card ? 1 : 0;
+      if (aPaid !== bPaid) return bPaid - aPaid;            // paid first
+      const aFeat = a.featured ? 1 : 0;
+      const bFeat = b.featured ? 1 : 0;
+      if (aFeat !== bFeat) return bFeat - aFeat;            // featured paid first
+      return (a.name || "").localeCompare(b.name || "");
+    });
   const gear = useMemo(
-    () => sortPaidFirst(items.filter((m) => m.category === "gear" && !m.featured)),
+    () => sortMerchants(items.filter((m) => m.category === "gear")),
     [items],
   );
   const smiths = useMemo(
-    () => sortPaidFirst(items.filter((m) => m.category === "smith" && !m.featured)),
+    () => sortMerchants(items.filter((m) => m.category === "smith")),
     [items],
   );
 
@@ -175,27 +185,6 @@ export default function Shops() {
       <PageHero eyebrow="ᚲᚨᚢᛈᛈᚨ" title={t("shops.title")} sub={t("shops.sub")} />
 
       <section className="mx-auto max-w-6xl px-4 sm:px-8 py-12 space-y-14">
-        {featured.length > 0 && (
-          <div data-testid="merchants-featured-section">
-            <div className="flex items-center gap-2 mb-5">
-              <Star size={18} className="text-viking-gold fill-viking-gold" />
-              <h3 className="font-serif text-2xl text-viking-bone">{t("shops.featured_title")}</h3>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {featured.map((s) => (
-                <MerchantCard
-                  key={s.id}
-                  s={s}
-                  isFavorite={favSet.has(s.id)}
-                  onToggleFavorite={toggleFavorite}
-                  canFavorite={canFavorite}
-                  testid={`featured-${s.id}`}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
         <div>
           <h3 className="font-serif text-2xl text-viking-bone mb-5">{t("shops.gear_title")}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

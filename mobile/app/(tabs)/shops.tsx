@@ -57,33 +57,45 @@ export default function ShopsScreen() {
   const { t } = useSettings();
   const { isFavorite, toggle } = useFavoriteMerchants();
 
-  const featured = useMemo(() => data.filter((m) => m.featured), [data]);
-  const others = useMemo(() => data.filter((m) => !m.featured), [data]);
+  // Sorting rules — match the web Shops page exactly:
+  //   - PAID user merchant cards (`is_user_card`) sort BEFORE legacy
+  //     admin-curated entries within their category.
+  //   - Within the paid tier, FEATURED cards come first.
+  //   - Within the legacy tier, alphabetical order.
+  // No separate "Featured" hero strip — featured paid cards stand out via
+  // a star badge + image rendering inside their category list.
+  const sortMerchants = (list: typeof data) =>
+    list.slice().sort((a, b) => {
+      const aPaid = a.is_user_card ? 1 : 0;
+      const bPaid = b.is_user_card ? 1 : 0;
+      if (aPaid !== bPaid) return bPaid - aPaid;
+      const aFeat = a.featured ? 1 : 0;
+      const bFeat = b.featured ? 1 : 0;
+      if (aFeat !== bFeat) return bFeat - aFeat;
+      return (a.name || "").localeCompare(b.name || "");
+    });
 
   const sections = useMemo(() => {
     const map = new Map<string, typeof data>();
-    for (const m of others) {
+    for (const m of data) {
       const key = m.category || "other";
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(m);
     }
-    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [others]);
+    // sort each list internally (paid first), then sort categories alphabetically
+    const out = Array.from(map.entries()).map(
+      ([cat, list]) => [cat, sortMerchants(list)] as [string, typeof data],
+    );
+    out.sort(([a], [b]) => a.localeCompare(b));
+    return out;
+  }, [data]);
 
   type Row =
     | { type: "section"; key: string; label: string }
-    | { type: "merchant"; key: string; merchant: (typeof data)[number] }
-    | { type: "featured-header"; key: string }
-    | { type: "featured-card"; key: string; merchant: (typeof data)[number] };
+    | { type: "merchant"; key: string; merchant: (typeof data)[number] };
 
   const rows: Row[] = useMemo(() => {
     const out: Row[] = [];
-    if (featured.length > 0) {
-      out.push({ type: "featured-header", key: "featured-header" });
-      for (const m of featured) {
-        out.push({ type: "featured-card", key: `f-${m.id}`, merchant: m });
-      }
-    }
     for (const [cat, list] of sections) {
       out.push({
         type: "section",
@@ -95,7 +107,7 @@ export default function ShopsScreen() {
       }
     }
     return out;
-  }, [sections, featured]);
+  }, [sections]);
 
   return (
     <AppBackground>
