@@ -7,7 +7,7 @@
  * (max 3 per event, server enforces). Reject includes an optional note.
  */
 import React, { useEffect, useState } from "react";
-import { CheckCircle2, XCircle, Inbox, Loader2, ShieldCheck, Mail, Phone } from "lucide-react";
+import { CheckCircle2, XCircle, Inbox, Loader2, ShieldCheck, Mail, Phone, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -76,6 +76,31 @@ export default function AdminEventOrganizerRequests() {
     }
   };
 
+  const sync = async () => {
+    if (
+      !window.confirm(
+        "Synkronoi kaikki hyväksytyt järjestäjät tapahtumiin? Idempotentti — turvallista ajaa milloin vain.",
+      )
+    )
+      return;
+    setBusy((b) => ({ ...b, __sync__: true }));
+    try {
+      const { data } = await api.post("/admin/event-organizer-requests/sync");
+      const added = data?.added_count || 0;
+      const ok = data?.already_ok || 0;
+      const missing = (data?.missing_events || []).length;
+      toast.success(
+        `Synkronoitu: ${added} lisätty, ${ok} oli jo synkissä` +
+          (missing ? `, ${missing} tapahtumaa puuttuu` : ""),
+      );
+      reload(tab);
+    } catch {
+      toast.error("Synkronointi epäonnistui");
+    } finally {
+      setBusy((b) => ({ ...b, __sync__: false }));
+    }
+  };
+
   return (
     <div className="space-y-6" data-testid="admin-event-organizer-requests">
       <header className="flex items-center gap-3 flex-wrap justify-between">
@@ -85,7 +110,24 @@ export default function AdminEventOrganizerRequests() {
             Tapahtumajärjestäjien pyynnöt
           </h1>
         </div>
-        <ManualAddOrganizerDialog onAdded={() => reload(tab)} />
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={sync}
+            disabled={!!busy.__sync__}
+            data-testid="sync-organizers-btn"
+            className="flex items-center gap-1 px-3 py-2 text-xs uppercase tracking-wider border border-viking-edge rounded-sm text-viking-stone hover:text-viking-gold hover:border-viking-gold/60 disabled:opacity-50"
+            title="Tarkista että jokaisen hyväksytyn järjestäjän user_id on tapahtuman organizer_user_ids -listalla"
+          >
+            {busy.__sync__ ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : (
+              <RefreshCw size={12} />
+            )}
+            Synkronoi
+          </button>
+          <ManualAddOrganizerDialog onAdded={() => reload(tab)} />
+        </div>
       </header>
 
       <div className="flex gap-2 border-b border-viking-edge">

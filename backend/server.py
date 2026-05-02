@@ -5061,6 +5061,59 @@ async def admin_remove_event_organizer(
     return {"removed": True}
 
 
+@api_router.post("/admin/event-organizer-requests/sync")
+async def admin_sync_approved_organizers(_admin: dict = Depends(get_admin_or_moderator)):
+    """Heal tool: finds every `status=approved` row in event_organizer_requests
+    and makes sure the corresponding `events.organizer_user_ids` list
+    contains the user_id. Idempotent — safe to run any time. Returns a
+    small diff summary for the admin UI."""
+    rows = await db.event_organizer_requests.find(
+        {"status": "approved"},
+        {"_id": 0, "event_id": 1, "user_id": 1, "full_name": 1},
+    ).to_list(5000)
+
+    by_event: dict[str, list[dict]] = {}
+    for r in rows:
+        by_event.setdefault(r["event_id"], []).append(r)
+
+    added: list[dict] = []
+    missing_events: list[str] = []
+    already_ok = 0
+    for eid, reqs in by_event.items():
+        ev = await db.events.find_one(
+            {"id": eid}, {"_id": 0, "id": 1, "organizer_user_ids": 1}
+        )
+        if not ev:
+            missing_events.append(eid)
+            continue
+        current = set(ev.get("organizer_user_ids") or [])
+        to_add = [r["user_id"] for r in reqs if r["user_id"] not in current]
+        if not to_add:
+            already_ok += len(reqs)
+            continue
+        remaining_slots = max(0, MAX_ORGANIZERS_PER_EVENT - len(current))
+        to_add_capped = to_add[:remaining_slots]
+        if to_add_capped:
+            await db.events.update_one(
+                {"id": eid},
+                {"$addToSet": {"organizer_user_ids": {"$each": to_add_capped}}},
+            )
+            for uid in to_add_capped:
+                matching = next((r for r in reqs if r["user_id"] == uid), {})
+                added.append({
+                    "event_id": eid,
+                    "user_id": uid,
+                    "full_name": matching.get("full_name") or "",
+                })
+    return {
+        "added": added,
+        "added_count": len(added),
+        "already_ok": already_ok,
+        "missing_events": missing_events,
+    }
+
+
+
 class AdminAddOrganizerPayload(BaseModel):
     user_id: str = Field(..., min_length=1)
     event_id: str = Field(..., min_length=1)

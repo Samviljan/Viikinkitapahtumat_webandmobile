@@ -508,6 +508,13 @@ See `/app/memory/test_credentials.md`.
 - Päivittäinen RSVP-muistutus ✅
 - `/admin/push/test` (debug, ei kirjoita — tarkoituksenmukaista)
 
+## Iteration — Healer: synkronoi orpo-organizer-pyynnöt tapahtumiin (2026-05-02 ilta-9)
+- 🐛 **Bug-raportti tuotannosta**: Käyttäjä lisäsi manuaalisesti Toni Lähteenmäen kahteen tapahtumaan, mutta Toni ei näkynyt julkisesti tapahtumakortilla. Diagnoosi: `event_organizer_requests` rivi tallentui ja näkyi "Hyväksytyt"-listassa, mutta `events.organizer_user_ids` -kenttä ei päivittynyt → tapahtumakortti pysyi ilman järjestäjää. Ei ole reproduisoitavissa preview-DB:ssä — todennäköisesti race condition, network error tai vanha frontend-versio.
+- ✅ **Korjaus**: Uusi heal-endpoint `POST /api/admin/event-organizer-requests/sync` joka käy läpi kaikki `status=approved`-rivit ja `$addToSet`-päivittää tapahtumiin puuttuvat `organizer_user_ids`. Idempotentti, säilyttää MAX_ORGANIZERS_PER_EVENT=3 -capin, palauttaa diff-yhteenvedon (`added`, `added_count`, `already_ok`, `missing_events`).
+- ✅ **Web admin UI**: Header-rivin vasen "🔄 Synkronoi" -nappi `AdminEventOrganizerRequests`-sivulla (data-testid `sync-organizers-btn`). Dialogi-vahvistus, toast-tulos `"Synkronoitu: 2 lisätty, 0 oli jo synkissä"`.
+- ✅ **E2E-testattu**: simuloitu orpo approved-pyyntö → before public organizers `[]` → POST sync → after `[{Toni}]`. 5 orpoa rivin korjattiin yhdellä klikkaakseksi preview-DB:ssä.
+- ✅ Lint clean.
+
 ## Iteration — Organizer-rivi pelkäksi nimeksi + Kysy järjestäjältä -lomake (2026-05-02 ilta-8)
 - ✅ **Backend uusi public endpoint** `POST /api/events/{event_id}/organizers/{user_id}/contact`: ottaa vastaan `from_name, from_email, subject, body` kaikilta (ei vaadi kirjautumista), hakee organizerin oikean sähköpostin server-side `event_organizer_requests`-kokoelmasta, lähettää Resendin kautta HTML-sähköpostin järjestäjälle. Email-osoite EI KOSKAAN palaudu julkiselle API:lle. Reply-To yritetään asettaa lähettäjän osoitteeksi (fallback TypeError-branch jos email_service ei tue). Audit-loki `organizer_contact_log`-kokoelmaan (event_id, org_user_id, org_name, from_name, from_email, subject, created_at).
 - ✅ **Error-casescet**: 404 olematon event, 404 olematon/väärä organizer, 404 jos organizerilla ei ole email on file, 502 jos sähköpostin lähetys epäonnistuu.
