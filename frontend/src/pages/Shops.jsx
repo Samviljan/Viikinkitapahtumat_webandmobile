@@ -176,10 +176,6 @@ export default function Shops() {
 
   const gear = useMemo(() => splitByTier("gear"), [items]);
   const smiths = useMemo(() => splitByTier("smith"), [items]);
-  const featuredAll = useMemo(
-    () => sortPaid(items.filter((m) => m.is_user_card)),
-    [items],
-  );
 
   const canFavorite = !!(user && user.id);
   const favSet = useMemo(() => new Set(favorites), [favorites]);
@@ -249,33 +245,6 @@ export default function Shops() {
       <PageHero eyebrow="ᚲᚨᚢᛈᛈᚨ" title={t("shops.title")} sub={t("shops.sub")} />
 
       <section className="mx-auto max-w-6xl px-4 sm:px-8 py-12 space-y-14">
-        {/* Top hero: featured/premium merchants across all categories */}
-        {featuredAll.length > 0 ? (
-          <div data-testid="featured-strip" className="carved-card rounded-sm p-6 sm:p-8 border-viking-gold/40">
-            <div className="flex items-center gap-2 mb-2">
-              <Star size={14} className="fill-viking-gold text-viking-gold" />
-              <span className="text-overline text-viking-gold">
-                {t("shops.featured_title")}
-              </span>
-            </div>
-            <p className="text-sm text-viking-stone mb-5 leading-relaxed">
-              {t("shops.featured_sub")}
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {featuredAll.map((s) => (
-                <MerchantCard
-                  key={`featured-${s.id}`}
-                  s={s}
-                  isFavorite={favSet.has(s.id)}
-                  onToggleFavorite={toggleFavorite}
-                  canFavorite={canFavorite}
-                  testid={`featured-${s.id}`}
-                />
-              ))}
-            </div>
-          </div>
-        ) : null}
-
         {renderCategorySection("shops.gear_title", gear, "shop", null)}
         {renderCategorySection(
           "shops.smiths_title",

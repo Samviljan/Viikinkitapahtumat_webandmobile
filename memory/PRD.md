@@ -473,6 +473,11 @@ See `/app/memory/test_credentials.md`.
   - User downloads `.aab` from above URL when Expo finishes (~10-15 min) and uploads to Play Console manually.
 
 
+## Iteration — Top-hero poisto duplikaattien estämiseksi (2026-05-02)
+- ✅ **Web `Shops.jsx`**: Top-hero `featured-strip`-osio poistettu kokonaan (sekä JSX, `featuredAll`-useMemo että käyttöliittymäteksti). Premium-kortit näkyvät enää vain oman kategoriansa kärjessä `Premium-kauppiaat` -alaotsikon alla, divider, ja sitten `Muut kauppiaat`. Ei duplikaatteja.
+- ✅ **Mobiili `(tabs)/shops.tsx`**: Sama puhdistus — `featured-header` ja `featured-card` -row-tyypit poistettu, `featuredAll`-useMemo poistettu, `featuredHero/featuredEyebrow/featuredSubtitle`-tyylit poistettu. Sama per-kategoria Premium/Muut-rakenne säilyy ennallaan.
+- ✅ TS clean (`tsc --noEmit` 0 virhettä), ESLint clean. Verifioitu Playwrightilla — `featured-strip`-elementti = 0 kappaletta, kategorian sisäinen Premium-kauppiaat → divider → Muut kauppiaat -rakenne ennallaan.
+
 ## Iteration — In-app Merchant Card Requests + Admin inbox (2026-05-02)
 - ✅ **Backend**: Uusi `merchant_card_requests`-kokoelma + 6 endpointtia (POST submit, GET /mine, admin GET list + pending-count, POST approve, POST reject). **Approve auto-aktivoi käyttäjän `merchant_card`-sub-docin** kentillä shop_name/category/description pyynnöstä, asettaa `merchant_until` = +12 kk, lisää `merchant`-user_typen jos puuttuu. Yhden pyynnön rajoite — duplicate POST päivittää olemassa olevaa pyyntöä. Indeksit lisätty.
 - ✅ **Web**: Korvasin `MerchantCardCTA.jsx`:n mailto-flowin in-app `<Dialog>`-lomakkeella (kaupan nimi, kategoriavalinta, verkkosivu, esittely). Uusi admin-sivu `/admin/merchant-requests` (`AdminMerchantRequests.jsx`) 3 välilehdellä (Odottaa / Hyväksytty / Hylätty). Sidebar-navissa uusi "Kauppiaspyynnöt"-linkki ember-pillillä joka näyttää pending-määrän.
