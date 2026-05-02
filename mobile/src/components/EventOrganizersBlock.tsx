@@ -42,17 +42,6 @@ export default function EventOrganizersBlock({ eventId }: { eventId: string }) {
             <Text style={styles.name} numberOfLines={1}>
               {o.full_name}
             </Text>
-            {o.email ? (
-              <Pressable
-                onPress={() => Linking.openURL(`mailto:${o.email}`)}
-                style={({ pressed }) => [styles.contact, pressed && { opacity: 0.7 }]}
-              >
-                <Ionicons name="mail-outline" size={11} color={colors.stone} />
-                <Text style={styles.contactText} numberOfLines={1}>
-                  {o.email}
-                </Text>
-              </Pressable>
-            ) : null}
             {o.phone ? (
               <Pressable
                 onPress={() => Linking.openURL(`tel:${o.phone}`)}

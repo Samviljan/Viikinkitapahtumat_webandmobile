@@ -1,10 +1,12 @@
 /**
  * Public list of approved organizers for this event. Hides itself if
- * none. Each row shows full name + obfuscated email + phone (so users
- * can reach the organizer with a question).
+ * none. Each row shows full name + phone so users can reach the
+ * organizer with a question. Email is intentionally hidden from the
+ * public view (admin panel still surfaces it) to reduce scraping and
+ * spam risk for organizers.
  */
 import React, { useEffect, useState } from "react";
-import { ShieldCheck, Mail, Phone } from "lucide-react";
+import { ShieldCheck, Phone } from "lucide-react";
 import { api } from "@/lib/api";
 
 export default function EventOrganizers({ eventId }) {
@@ -37,15 +39,6 @@ export default function EventOrganizers({ eventId }) {
           >
             <ShieldCheck size={14} className="text-viking-gold flex-shrink-0" />
             <span className="font-serif text-viking-bone">{o.full_name}</span>
-            {o.email ? (
-              <a
-                href={`mailto:${o.email}`}
-                className="flex items-center gap-1 text-xs text-viking-stone hover:text-viking-gold transition-colors"
-              >
-                <Mail size={11} />
-                {o.email}
-              </a>
-            ) : null}
             {o.phone ? (
               <a
                 href={`tel:${o.phone}`}

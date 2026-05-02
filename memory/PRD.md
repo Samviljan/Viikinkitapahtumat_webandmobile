@@ -508,6 +508,12 @@ See `/app/memory/test_credentials.md`.
 - Päivittäinen RSVP-muistutus ✅
 - `/admin/push/test` (debug, ei kirjoita — tarkoituksenmukaista)
 
+## Iteration — Piilota sähköposti julkisesta organizers-listasta (2026-05-02 ilta-7)
+- ✅ **Web `EventOrganizers.jsx`**: poistettu `<a mailto:...>` -rivi. Vain nimi + puhelin näkyvät. Admin-paneli (`AdminEventOrganizerRequests.jsx`) näyttää edelleen sähköpostin yhteystietona sisäiseen käyttöön.
+- ✅ **Mobile `EventOrganizersBlock.tsx`**: sama muutos — sähköposti-Pressable poistettu, nimi + puhelin jäävät.
+- ✅ Tekstiverify: section sisältö nyt `"Tapahtuman järjestäjätRagnar Lothbrok+358501234567"` — ei enää sähköpostia.
+- ✅ **Mobile build v0.4.14 (versionCode 28) käynnistetty**: ID `8e2ca8b9-1391-4da7-b728-af4cd8a960db`. Sisältää kaikki päivän muutokset.
+
 ## Iteration — Adminin manuaalinen järjestäjän lisäys (2026-05-02 ilta-6)
 - ✅ **Backend uusi endpoint** `POST /api/admin/event-organizers`: admin lisää olemassa olevan käyttäjän (`user_id`) hyväksytyksi järjestäjäksi tapahtumaan (`event_id`) antamillaan yhteystiedoilla (`full_name`, `email`, `phone`). Luo synteettisen approved-pyynnön `event_organizer_requests`-kokoelmaan (admin_note="Manuaalisesti lisätty"), lisää `user_id` tapahtuman `organizer_user_ids`-listaan ja lisää käyttäjälle `user_types:organizer` jos puuttuu. Säilyttää max 3 organizers/event cap (409) + dedupe (409).
 - ✅ **Web uusi komponentti** `ManualAddOrganizerDialog.jsx` admin-paneliin. Dialog-lomake sisältää:
