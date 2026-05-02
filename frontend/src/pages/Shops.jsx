@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PageHero from "@/components/PageHero";
+import MerchantCardCTA from "@/components/MerchantCardCTA";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -282,6 +283,9 @@ export default function Shops() {
           "smith",
           <Hammer size={18} className="text-viking-ember" />,
         )}
+
+        {/* Conversion CTA — hidden for users who already have an active card. */}
+        <MerchantCardCTA />
       </section>
     </>
   );

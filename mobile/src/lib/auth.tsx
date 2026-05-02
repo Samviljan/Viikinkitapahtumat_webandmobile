@@ -47,6 +47,12 @@ export interface AuthUser {
   profile_image_url: string | null;
   fighter_card_url: string | null;
   equipment_passport_url: string | null;
+  merchant_card?: {
+    enabled: boolean;
+    shop_name?: string | null;
+    category?: string | null;
+    merchant_until?: string | null;
+  } | null;
 }
 
 interface AuthCtx {

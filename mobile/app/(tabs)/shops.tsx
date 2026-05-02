@@ -1,15 +1,18 @@
 import React, { useMemo } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View, Image } from "react-native";
+import { ActivityIndicator, FlatList, Linking, Pressable, StyleSheet, Text, View, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppBackground } from "@/src/components/AppBackground";
 import { LinkListRow, SectionTitle } from "@/src/components/LinkListRow";
 import { useMerchants } from "@/src/hooks/useDirectory";
 import { useFavoriteMerchants } from "@/src/hooks/useFavoriteMerchants";
+import { useAuth } from "@/src/lib/auth";
 import { colors, radius, spacing, text } from "@/src/lib/theme";
 import { useSettings } from "@/src/lib/i18n";
 
 const API = process.env.EXPO_PUBLIC_BACKEND_URL || process.env.REACT_APP_BACKEND_URL || "";
+const ADMIN_EMAIL = "admin@viikinkitapahtumat.fi";
 
 const CATEGORY_LABELS: Record<string, string> = {
   gear: "Varuste- ja työkaluvalikoima",
@@ -49,6 +52,81 @@ function FavoriteHeartButton({ isFav, onPress, testID }: FavBtnProps) {
         color={isFav ? colors.ember : colors.bone}
       />
     </Pressable>
+  );
+}
+
+// "Hanki kauppiaskortti" CTA — visible to anonymous + non-paid users only.
+// Anonymous → routes to /settings/auth (sign-in/register flow).
+// Logged in without active card → opens mailto: admin requesting activation.
+function MerchantCardCTA() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const hasActiveCard = !!user?.merchant_card?.enabled;
+  if (hasActiveCard) return null;
+  const isAnonymous = !user;
+
+  const onPress = () => {
+    if (isAnonymous) {
+      router.push("/settings/auth" as never);
+      return;
+    }
+    const subject = encodeURIComponent("Kauppiaskortti-pyyntö");
+    const body = encodeURIComponent(
+      "Hei,\n\nHaluaisin aktivoida kauppiaskortin tililleni viikinkitapahtumat.fi-sivustolla.\n\nKaupan/pajani nimi:\nVerkkosivu:\nKategoria (varuste/seppä/muu):\nLyhyt esittely:\n\nTerveisin,",
+    );
+    Linking.openURL(`mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`).catch(
+      () => {
+        // Silently no-op; the user can still email the admin directly via the
+        // address shown in the fine print.
+      },
+    );
+  };
+
+  return (
+    <View style={styles.ctaCard} testID="merchant-cta">
+      <View style={styles.ctaHeader}>
+        <View style={styles.ctaIcon}>
+          <Ionicons name="storefront-outline" size={20} color={colors.gold} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.ctaEyebrow}>Premium-näkyvyys</Text>
+          <Text style={styles.ctaTitle}>
+            Hanki kauppiaskortti — pohjoisen viikinkiyhteisön huomio
+          </Text>
+        </View>
+      </View>
+      <Text style={styles.ctaLead}>
+        Kauppiaskortti nostaa kauppasi tai pajasi näkyväksi koko sivuston yläosaan ja avaa sinulle oman profiilisivun.
+      </Text>
+      {[
+        "Top-näkyvyys jokaisen sivun \"Esillä olevat kauppiaat\" -strippi:ssä SEKÄ kategoriasi kärjessä",
+        "Oma profiilisivu kuvalla, kuvauksella, yhteystiedoilla ja tulevilla tapahtumillasi",
+        "Käyttäjät voivat lisätä sinut suosikeihinsa ja saada ilmoitukset uusista tapahtumistasi",
+        "12 kuukauden aktivointi — yhdellä maksulla koko vuosi",
+      ].map((line, i) => (
+        <View key={i} style={styles.ctaBenefit}>
+          <Ionicons name="checkmark" size={14} color={colors.gold} />
+          <Text style={styles.ctaBenefitText}>{line}</Text>
+        </View>
+      ))}
+      <Pressable
+        testID={isAnonymous ? "merchant-cta-register" : "merchant-cta-request"}
+        onPress={onPress}
+        style={({ pressed }) => [styles.ctaBtn, pressed && { opacity: 0.7 }]}
+      >
+        <Ionicons
+          name={isAnonymous ? "person-add-outline" : "mail-outline"}
+          size={14}
+          color={colors.bone}
+        />
+        <Text style={styles.ctaBtnText}>
+          {isAnonymous ? "Rekisteröidy kauppiaaksi" : "Pyydä aktivointia"}
+        </Text>
+      </Pressable>
+      <Text style={styles.ctaFinePrint}>
+        Maksullinen ominaisuus. Aktivointi tehdään tällä hetkellä manuaalisesti — Stripe-maksuintegraatio tulossa pian.
+      </Text>
+    </View>
   );
 }
 
@@ -296,6 +374,7 @@ export default function ShopsScreen() {
               <Text style={styles.empty}>Ei vielä kauppiaita.</Text>
             )
           }
+          ListFooterComponent={<MerchantCardCTA />}
           showsVerticalScrollIndicator={false}
         />
       </SafeAreaView>
@@ -395,5 +474,86 @@ const styles = StyleSheet.create({
   heart: {
     padding: spacing.sm,
     alignSelf: "center",
+  },
+  // Merchant CTA card
+  ctaCard: {
+    marginTop: spacing.xl,
+    padding: spacing.lg,
+    borderRadius: radius?.sm ?? 4,
+    borderWidth: 1,
+    borderColor: colors.ember,
+    backgroundColor: "rgba(180,70,52,0.08)",
+  },
+  ctaHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  ctaIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius?.sm ?? 4,
+    borderWidth: 1,
+    borderColor: colors.gold,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ctaEyebrow: {
+    color: colors.gold,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+  },
+  ctaTitle: {
+    color: colors.bone,
+    fontSize: 17,
+    fontWeight: "700",
+    marginTop: 4,
+    lineHeight: 22,
+  },
+  ctaLead: {
+    color: colors.stone,
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: spacing.md,
+  },
+  ctaBenefit: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginBottom: 8,
+  },
+  ctaBenefitText: {
+    color: colors.bone,
+    fontSize: 13,
+    lineHeight: 19,
+    flex: 1,
+  },
+  ctaBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: colors.ember,
+    paddingVertical: 14,
+    paddingHorizontal: spacing.xl,
+    borderRadius: radius?.sm ?? 4,
+    marginTop: spacing.md,
+  },
+  ctaBtnText: {
+    color: colors.bone,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+  },
+  ctaFinePrint: {
+    color: colors.stone,
+    fontSize: 11,
+    fontStyle: "italic",
+    lineHeight: 16,
+    marginTop: spacing.md,
   },
 });

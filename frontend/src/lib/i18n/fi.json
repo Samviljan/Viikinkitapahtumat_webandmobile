@@ -551,6 +551,20 @@
     "events_title": "Tapaa meidät tapahtumissa",
     "no_upcoming": "Ei tulevia tapahtumia tällä hetkellä."
   },
+  "merchant_cta": {
+    "eyebrow": "Premium-näkyvyys",
+    "title": "Hanki kauppiaskortti — pohjoisen viikinkiyhteisön huomio",
+    "lead": "Kauppiaskortti nostaa kauppasi tai pajasi näkyväksi koko sivuston yläosaan ja avaa sinulle oman profiilisivun, jonne käyttäjät voivat tutustua tarkemmin.",
+    "benefit_visibility": "Top-näkyvyys jokaisen sivun \"Esillä olevat kauppiaat\" -strippi:ssä SEKÄ kategoriasi kärjessä.",
+    "benefit_profile": "Oma profiilisivu kuvalla, kuvauksella, yhteystiedoilla ja tulevilla tapahtumillasi.",
+    "benefit_favorites": "Käyttäjät voivat lisätä sinut suosikeihinsa ja saada ilmoitukset uusista tapahtumistasi.",
+    "benefit_duration": "12 kuukauden aktivointi — yhdellä maksulla koko vuosi.",
+    "cta_register": "Rekisteröidy kauppiaaksi",
+    "cta_request": "Pyydä aktivointia",
+    "email_subject": "Kauppiaskortti-pyyntö",
+    "email_body": "Hei,\n\nHaluaisin aktivoida kauppiaskortin tililleni viikinkitapahtumat.fi-sivustolla.\n\nKaupan/pajani nimi:\nVerkkosivu:\nKategoria (varuste/seppä/muu):\nLyhyt esittely:\n\nTerveisin,",
+    "fine_print": "Maksullinen ominaisuus. Aktivointi tehdään tällä hetkellä manuaalisesti — Stripe-maksuintegraatio tulossa pian."
+  },
   "merchant_card": {
     "title": "Kauppiaskortti",
     "subtitle": "Esittele kauppasi tai pajasi viikinkiyhteisölle",

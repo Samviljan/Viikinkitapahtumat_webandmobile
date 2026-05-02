@@ -473,6 +473,16 @@ See `/app/memory/test_credentials.md`.
   - User downloads `.aab` from above URL when Expo finishes (~10-15 min) and uploads to Play Console manually.
 
 
+## Iteration — Hanki kauppiaskortti CTA (Web + Mobile, 2026-05-02)
+- ✅ **Web `MerchantCardCTA.jsx`**: Uusi komponentti `/app/frontend/src/components/MerchantCardCTA.jsx`. Embedataan `Shops.jsx`:n loppuun (kategorioiden jälkeen, ennen footeria). 3 visibility-tilaa:
+  1. Anonyymi → "Rekisteröidy kauppiaaksi" -nappi → `/register`
+  2. Kirjautunut ilman aktiivista korttia → "Pyydä aktivointia" -nappi → `mailto:admin@viikinkitapahtumat.fi` esitäytetyllä subject + body
+  3. Kirjautunut aktiivisella `merchant_card.enabled=true` -kortilla → CTA piilotettu kokonaan
+- ✅ **Mobile**: Sama komponentti inline `(tabs)/shops.tsx`:ssä (`MerchantCardCTA`). Renderöidään FlatListin `ListFooterComponent`-positioon. `Linking.openURL` mailto-flowiin, `router.push("/settings/auth")` rekisteröitymiseen.
+- ✅ **i18n**: Uusi `merchant_cta`-namespace 3 kielelle (FI/EN/SV). DA/DE/ET/PL fallback EN. Mobiilissa hardcoded FI-stringit (kontekstuaalinen päättäjäkielisyys).
+- ✅ **TypeScript**: `AuthUser`-interfaceen lisätty `merchant_card?: { enabled, shop_name, category, merchant_until }`. TS clean.
+- ✅ **Verifikaatio Playwrightilla**: Kaikki 3 tilaa testattu — anonyymi näkee Rekisteröidy-napin, admin näkee Pyydä aktivointia -napin (mailto-linkki testattu), aktiivinen kauppiaskortti-käyttäjä ei näe CTA:ta.
+
 ## Iteration — Premium merchants visible separation (option C, 2026-05-02)
 - ✅ **Web `Shops.jsx`**: Lisätty 1) yläosan "★ Esillä olevat kauppiaat" -hero (kullainen reuna + "Yhteistyökumppanit ja viikinkiyhteisön tukijat"-subtitle + kaikki premium-kortit grid-näkymässä), 2) jokaisen kategorian sisälle "★ Premium-kauppiaat" + divider + "Muut kauppiaat" -alaotsikot. Premium-kortit näkyvät SEKÄ ylhäällä että oman kategoriansa kärjessä (option C).
 - ✅ **Mobile `shops.tsx`**: Sama looginen rakenne FlatList-row-tyypeillä `featured-header`, `featured-card`, `category-header`, `tier-header` ("Premium-kauppiaat" / "Muut kauppiaat"), `tier-divider`, `merchant`. Premium-hero ember-glow + kullainen reuna ennen ensimmäistä kategoriaa.

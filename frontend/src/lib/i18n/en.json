@@ -550,6 +550,20 @@
     "events_title": "Meet us at these events",
     "no_upcoming": "No upcoming events at the moment."
   },
+  "merchant_cta": {
+    "eyebrow": "Premium visibility",
+    "title": "Get a merchant card — reach the Nordic Viking community",
+    "lead": "A merchant card lifts your shop or smithy to the top of every Shops page and gives you your own profile page where people can learn more.",
+    "benefit_visibility": "Top placement in the \"Featured merchants\" strip on every page AND at the top of your category.",
+    "benefit_profile": "Your own profile page with photo, description, contact info and your upcoming events.",
+    "benefit_favorites": "Users can favourite you and receive notifications about your new events.",
+    "benefit_duration": "12-month activation — one payment, the whole year covered.",
+    "cta_register": "Register as a merchant",
+    "cta_request": "Request activation",
+    "email_subject": "Merchant card request",
+    "email_body": "Hello,\n\nI'd like to activate a merchant card on viikinkitapahtumat.fi.\n\nShop/smithy name:\nWebsite:\nCategory (gear/smith/other):\nShort description:\n\nBest regards,",
+    "fine_print": "Paid feature. Activation is done manually for now — Stripe payment integration coming soon."
+  },
   "merchant_card": {
     "title": "Merchant card",
     "subtitle": "Showcase your shop or smithy to the Viking community",

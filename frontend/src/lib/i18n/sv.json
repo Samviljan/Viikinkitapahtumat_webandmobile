@@ -459,6 +459,20 @@
     "events_title": "Träffa oss på dessa evenemang",
     "no_upcoming": "Inga kommande evenemang för tillfället."
   },
+  "merchant_cta": {
+    "eyebrow": "Premium-synlighet",
+    "title": "Skaffa ett handlarkort — nå den nordiska vikingagemenskapen",
+    "lead": "Ett handlarkort lyfter din butik eller smedja till toppen av varje Handlare-sida och ger dig en egen profilsida där folk kan läsa mer.",
+    "benefit_visibility": "Topplacering i \"Utvalda handlare\"-stripen på varje sida OCH i toppen av din kategori.",
+    "benefit_profile": "Egen profilsida med bild, beskrivning, kontaktuppgifter och kommande evenemang.",
+    "benefit_favorites": "Användare kan spara dig som favorit och få aviseringar om nya evenemang.",
+    "benefit_duration": "12 månaders aktivering — en betalning täcker hela året.",
+    "cta_register": "Registrera dig som handlare",
+    "cta_request": "Begär aktivering",
+    "email_subject": "Begäran om handlarkort",
+    "email_body": "Hej,\n\nJag vill aktivera ett handlarkort på viikinkitapahtumat.fi.\n\nButikens/smedjans namn:\nWebbsida:\nKategori (utrustning/smed/övrigt):\nKort beskrivning:\n\nMed vänliga hälsningar,",
+    "fine_print": "Avgiftsbelagd tjänst. Aktivering sker manuellt tills vidare — Stripe-betalningsintegration är på väg."
+  },
   "merchant_card": {
     "title": "Handlarkort",
     "subtitle": "Presentera din butik eller smedja för vikingagemenskapen",
