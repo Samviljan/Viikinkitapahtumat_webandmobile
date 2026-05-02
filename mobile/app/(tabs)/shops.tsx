@@ -57,57 +57,98 @@ export default function ShopsScreen() {
   const { t } = useSettings();
   const { isFavorite, toggle } = useFavoriteMerchants();
 
-  // Sorting rules — match the web Shops page exactly:
-  //   - PAID user merchant cards (`is_user_card`) sort BEFORE legacy
-  //     admin-curated entries within their category.
-  //   - Within the paid tier, FEATURED cards come first.
-  //   - Within the legacy tier, alphabetical order.
-  // No separate "Featured" hero strip — featured paid cards stand out via
-  // a star badge + image rendering inside their category list.
-  const sortMerchants = (list: typeof data) =>
+  const sortPaid = (list: typeof data) =>
     list.slice().sort((a, b) => {
-      const aPaid = a.is_user_card ? 1 : 0;
-      const bPaid = b.is_user_card ? 1 : 0;
-      if (aPaid !== bPaid) return bPaid - aPaid;
       const aFeat = a.featured ? 1 : 0;
       const bFeat = b.featured ? 1 : 0;
       if (aFeat !== bFeat) return bFeat - aFeat;
       return (a.name || "").localeCompare(b.name || "");
     });
 
+  const featuredAll = useMemo(
+    () => sortPaid(data.filter((m) => m.is_user_card)),
+    [data],
+  );
+
+  // Group by category, then split each category into paid + others tiers
+  // so the FlatList can render sub-headers ("★ Premium-kauppiaat" + "Muut")
+  // and a divider between them.
   const sections = useMemo(() => {
-    const map = new Map<string, typeof data>();
+    const map = new Map<string, { paid: typeof data; others: typeof data }>();
     for (const m of data) {
       const key = m.category || "other";
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(m);
+      if (!map.has(key)) map.set(key, { paid: [], others: [] });
+      const bucket = map.get(key)!;
+      if (m.is_user_card) bucket.paid.push(m);
+      else bucket.others.push(m);
     }
-    // sort each list internally (paid first), then sort categories alphabetically
     const out = Array.from(map.entries()).map(
-      ([cat, list]) => [cat, sortMerchants(list)] as [string, typeof data],
+      ([cat, b]) =>
+        [cat, { paid: sortPaid(b.paid), others: b.others }] as [
+          string,
+          { paid: typeof data; others: typeof data },
+        ],
     );
     out.sort(([a], [b]) => a.localeCompare(b));
     return out;
   }, [data]);
 
   type Row =
-    | { type: "section"; key: string; label: string }
+    | { type: "featured-header"; key: string }
+    | { type: "featured-card"; key: string; merchant: (typeof data)[number] }
+    | { type: "category-header"; key: string; label: string }
+    | { type: "tier-header"; key: string; label: string; tier: "paid" | "others" }
+    | { type: "tier-divider"; key: string }
     | { type: "merchant"; key: string; merchant: (typeof data)[number] };
 
   const rows: Row[] = useMemo(() => {
     const out: Row[] = [];
-    for (const [cat, list] of sections) {
+
+    // Top hero strip — all premium cards across categories.
+    if (featuredAll.length > 0) {
+      out.push({ type: "featured-header", key: "featured-header" });
+      for (const m of featuredAll) {
+        out.push({ type: "featured-card", key: `feat-${m.id}`, merchant: m });
+      }
+    }
+
+    for (const [cat, tiers] of sections) {
+      if (tiers.paid.length === 0 && tiers.others.length === 0) continue;
       out.push({
-        type: "section",
-        key: `s-${cat}`,
+        type: "category-header",
+        key: `cat-${cat}`,
         label: CATEGORY_LABELS[cat] || cat.toUpperCase(),
       });
-      for (const m of list) {
-        out.push({ type: "merchant", key: `m-${m.id}`, merchant: m });
+      if (tiers.paid.length > 0) {
+        out.push({
+          type: "tier-header",
+          key: `cat-${cat}-paid-h`,
+          label: "★ Premium-kauppiaat",
+          tier: "paid",
+        });
+        for (const m of tiers.paid) {
+          out.push({ type: "merchant", key: `m-${m.id}`, merchant: m });
+        }
+        if (tiers.others.length > 0) {
+          out.push({ type: "tier-divider", key: `cat-${cat}-div` });
+        }
+      }
+      if (tiers.others.length > 0) {
+        if (tiers.paid.length > 0) {
+          out.push({
+            type: "tier-header",
+            key: `cat-${cat}-other-h`,
+            label: "Muut kauppiaat",
+            tier: "others",
+          });
+        }
+        for (const m of tiers.others) {
+          out.push({ type: "merchant", key: `m-${m.id}`, merchant: m });
+        }
       }
     }
     return out;
-  }, [sections]);
+  }, [sections, featuredAll]);
 
   return (
     <AppBackground>
@@ -130,12 +171,76 @@ export default function ShopsScreen() {
             </View>
           }
           renderItem={({ item }) => {
-            if (item.type === "section") {
+            if (item.type === "featured-header") {
+              return (
+                <View style={styles.featuredHero} testID="featured-hero">
+                  <Text style={styles.featuredEyebrow}>
+                    ★ Esillä olevat kauppiaat
+                  </Text>
+                  <Text style={styles.featuredSubtitle}>
+                    Yhteistyökumppanit ja viikinkiyhteisön tukijat
+                  </Text>
+                </View>
+              );
+            }
+            if (item.type === "featured-card") {
+              const m = item.merchant;
+              const fav = isFavorite(m.id);
+              return (
+                <View style={styles.paidCard} testID={`featured-${m.id}`}>
+                  {m.image_url ? (
+                    <Image
+                      source={{ uri: imgSrc(m.image_url) }}
+                      style={styles.paidImage}
+                    />
+                  ) : null}
+                  <View style={styles.paidBody}>
+                    <View style={styles.paidTitleRow}>
+                      <Text style={styles.paidTitle}>{m.name}</Text>
+                      <FavoriteHeartButton
+                        testID={`fav-merchant-${m.id}`}
+                        isFav={fav}
+                        onPress={() => toggle(m.id)}
+                      />
+                    </View>
+                    {m.description ? (
+                      <Text style={styles.paidDesc} numberOfLines={3}>
+                        {m.description}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <LinkListRow
+                    testID={`featured-link-${m.id}`}
+                    icon={
+                      m.category === "smith" ? "hammer-outline" : "storefront-outline"
+                    }
+                    title={t("shops.view_details") || "Katso lisätiedot"}
+                    url={`/shops/${m.id}`}
+                  />
+                </View>
+              );
+            }
+            if (item.type === "category-header") {
               return <SectionTitle label={item.label} />;
             }
+            if (item.type === "tier-header") {
+              return (
+                <Text
+                  style={[
+                    styles.tierLabel,
+                    item.tier === "paid" && { color: colors.gold },
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              );
+            }
+            if (item.type === "tier-divider") {
+              return <View style={styles.tierDivider} />;
+            }
             const m = item.merchant;
-            // Paid user-card row: prominent rendering with image (if any) +
-            // heart toggle. Legacy entries keep the simple LinkListRow.
+            // Per-category paid card (this is hit when the merchant appears
+            // inside a category section after the "★ Premium" tier-header).
             if (m.is_user_card) {
               const fav = isFavorite(m.id);
               return (
@@ -155,9 +260,6 @@ export default function ShopsScreen() {
                         onPress={() => toggle(m.id)}
                       />
                     </View>
-                    {m.featured ? (
-                      <Text style={styles.paidFeatured}>★ {t("shops.featured_title") || "Esillä"}</Text>
-                    ) : null}
                     {m.description ? (
                       <Text style={styles.paidDesc} numberOfLines={3}>
                         {m.description}
@@ -248,6 +350,42 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: "uppercase",
     marginBottom: 4,
+  },
+  featuredHero: {
+    marginBottom: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius?.sm ?? 4,
+    borderWidth: 1,
+    borderColor: colors.gold,
+    backgroundColor: "rgba(201,161,74,0.08)",
+  },
+  featuredEyebrow: {
+    color: colors.gold,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+  },
+  featuredSubtitle: {
+    color: colors.stone,
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  tierLabel: {
+    color: colors.stone,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  tierDivider: {
+    height: 1,
+    backgroundColor: colors.edge,
+    marginVertical: spacing.md,
+    opacity: 0.6,
   },
   paidDesc: {
     color: colors.stone,

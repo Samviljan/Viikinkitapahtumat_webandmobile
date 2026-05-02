@@ -473,6 +473,12 @@ See `/app/memory/test_credentials.md`.
   - User downloads `.aab` from above URL when Expo finishes (~10-15 min) and uploads to Play Console manually.
 
 
+## Iteration — Premium merchants visible separation (option C, 2026-05-02)
+- ✅ **Web `Shops.jsx`**: Lisätty 1) yläosan "★ Esillä olevat kauppiaat" -hero (kullainen reuna + "Yhteistyökumppanit ja viikinkiyhteisön tukijat"-subtitle + kaikki premium-kortit grid-näkymässä), 2) jokaisen kategorian sisälle "★ Premium-kauppiaat" + divider + "Muut kauppiaat" -alaotsikot. Premium-kortit näkyvät SEKÄ ylhäällä että oman kategoriansa kärjessä (option C).
+- ✅ **Mobile `shops.tsx`**: Sama looginen rakenne FlatList-row-tyypeillä `featured-header`, `featured-card`, `category-header`, `tier-header` ("Premium-kauppiaat" / "Muut kauppiaat"), `tier-divider`, `merchant`. Premium-hero ember-glow + kullainen reuna ennen ensimmäistä kategoriaa.
+- ✅ **i18n**: Uudet avaimet `shops.featured_sub`, `shops.premium_title`, `shops.others_title` 3 kielelle (FI/EN/SV); DA/DE/ET/PL fallback EN.
+- ✅ TS clean, ESLint clean. Verifioitu Playwrightilla — `featured-strip` näkyy + jokaisen kategorian "Premium-kauppiaat" + "Muut kauppiaat" -alaotsikot näkyvät divider:n kera.
+
 ## Iteration — In-app Messages inbox + tabs UX (Web + Mobile, 2026-05-02)
 - ✅ **Backend**: Uusi `user_messages`-kokoelma + 6 endpointtia (`/messages/inbox`, `/messages/inbox/{event_id}`, `/messages/sent`, `/messages/sent/{event_id}`, `/messages/{id}` GET+DELETE). `POST /api/messages/send` kirjoittaa nyt per-recipient-kopion `user_messages`iin samalla `batch_id`:llä. Soft-delete (`deleted_by_recipient`/`deleted_by_sender`). Auto-mark-read recipient-luennassa. Indeksit `(recipient_id, event_id)`, `(sender_id, event_id)`, `batch_id`, `id` lisätty.
 - ✅ **Web**: Header-yläpalkkiin uusi mail-ikoni-painike kullaisen ember-pillin kanssa joka näyttää lukematon-laskurin (näkyvissä kirjautuneille). Reitti `/messages` muutettu uudeksi `Messages.jsx`-sivuksi 3 välilehdellä (Saapuneet / Lähetetyt / Lähetä uusi). Lähetä uusi -välilehti embeddaa olemassa olevan `SendMessage`-komponentin. Detail-modaali (`<Dialog>`) avautuu klikkaamalla viesti — sisältää koko bodyn, lähettäjän, päivämäärän, sekä Poista- ja Sulje-painikkeet. Vahvistettu Playwrightilla: send → header badge päivittyy → klikkaa tapahtuma → laajenee viestilistaksi → klikkaa viesti → detail aukeaa kokonaisilla bodyilla.

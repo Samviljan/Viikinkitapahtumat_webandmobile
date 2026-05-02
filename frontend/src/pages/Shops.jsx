@@ -151,74 +151,137 @@ export default function Shops() {
 
   // Sorting rules for the public Shops page:
   //   - PAID user merchant cards sort BEFORE legacy admin-curated entries
-  //     within their category (paying merchants get visibility above the
-  //     free directory).
+  //     within their category.
   //   - Within the paid tier, FEATURED cards sort first, then by name.
   //   - Within the legacy tier, original API order (alphabetical) is kept.
-  // No separate "Featured" hero strip — featured user cards stand out via
-  // a Star badge inside the card itself, not by being yanked out of their
-  // category.
-  const sortMerchants = (list) =>
+  // We split each category list into `paid` + `others` so the UI can render
+  // them with separate sub-headers ("★ Premium" + "Muut") and a divider.
+  // A top hero strip also lists ALL paid merchants regardless of category.
+  const sortPaid = (list) =>
     list.slice().sort((a, b) => {
-      const aPaid = a.is_user_card ? 1 : 0;
-      const bPaid = b.is_user_card ? 1 : 0;
-      if (aPaid !== bPaid) return bPaid - aPaid;            // paid first
       const aFeat = a.featured ? 1 : 0;
       const bFeat = b.featured ? 1 : 0;
-      if (aFeat !== bFeat) return bFeat - aFeat;            // featured paid first
+      if (aFeat !== bFeat) return bFeat - aFeat;
       return (a.name || "").localeCompare(b.name || "");
     });
-  const gear = useMemo(
-    () => sortMerchants(items.filter((m) => m.category === "gear")),
-    [items],
-  );
-  const smiths = useMemo(
-    () => sortMerchants(items.filter((m) => m.category === "smith")),
+
+  const splitByTier = (cat) => {
+    const inCat = items.filter((m) => m.category === cat);
+    return {
+      paid: sortPaid(inCat.filter((m) => m.is_user_card)),
+      others: inCat.filter((m) => !m.is_user_card),
+    };
+  };
+
+  const gear = useMemo(() => splitByTier("gear"), [items]);
+  const smiths = useMemo(() => splitByTier("smith"), [items]);
+  const featuredAll = useMemo(
+    () => sortPaid(items.filter((m) => m.is_user_card)),
     [items],
   );
 
   const canFavorite = !!(user && user.id);
   const favSet = useMemo(() => new Set(favorites), [favorites]);
 
+  const renderCategorySection = (titleKey, list, testidPrefix, icon) => {
+    if (list.paid.length === 0 && list.others.length === 0) return null;
+    return (
+      <div>
+        <div className="flex items-center gap-2 mb-5">
+          {icon}
+          <h3 className="font-serif text-2xl text-viking-bone">{t(titleKey)}</h3>
+        </div>
+        {list.paid.length > 0 ? (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <Star size={12} className="fill-viking-gold text-viking-gold" />
+              <span className="text-overline text-viking-gold">
+                {t("shops.premium_title")}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {list.paid.map((s) => (
+                <MerchantCard
+                  key={s.id}
+                  s={s}
+                  isFavorite={favSet.has(s.id)}
+                  onToggleFavorite={toggleFavorite}
+                  canFavorite={canFavorite}
+                  testid={`${testidPrefix}-${s.id}`}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {list.paid.length > 0 && list.others.length > 0 ? (
+          <div className="border-t border-viking-edge/60 my-6" />
+        ) : null}
+        {list.others.length > 0 ? (
+          <div>
+            {list.paid.length > 0 ? (
+              <div className="mb-3">
+                <span className="text-overline text-viking-stone">
+                  {t("shops.others_title")}
+                </span>
+              </div>
+            ) : null}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {list.others.map((s) => (
+                <MerchantCard
+                  key={s.id}
+                  s={s}
+                  isFavorite={favSet.has(s.id)}
+                  onToggleFavorite={toggleFavorite}
+                  canFavorite={canFavorite}
+                  testid={`${testidPrefix}-${s.id}`}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
   return (
     <>
       <PageHero eyebrow="ᚲᚨᚢᛈᛈᚨ" title={t("shops.title")} sub={t("shops.sub")} />
 
       <section className="mx-auto max-w-6xl px-4 sm:px-8 py-12 space-y-14">
-        <div>
-          <h3 className="font-serif text-2xl text-viking-bone mb-5">{t("shops.gear_title")}</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {gear.map((s) => (
-              <MerchantCard
-                key={s.id}
-                s={s}
-                isFavorite={favSet.has(s.id)}
-                onToggleFavorite={toggleFavorite}
-                canFavorite={canFavorite}
-                testid={`shop-${s.id}`}
-              />
-            ))}
+        {/* Top hero: featured/premium merchants across all categories */}
+        {featuredAll.length > 0 ? (
+          <div data-testid="featured-strip" className="carved-card rounded-sm p-6 sm:p-8 border-viking-gold/40">
+            <div className="flex items-center gap-2 mb-2">
+              <Star size={14} className="fill-viking-gold text-viking-gold" />
+              <span className="text-overline text-viking-gold">
+                {t("shops.featured_title")}
+              </span>
+            </div>
+            <p className="text-sm text-viking-stone mb-5 leading-relaxed">
+              {t("shops.featured_sub")}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {featuredAll.map((s) => (
+                <MerchantCard
+                  key={`featured-${s.id}`}
+                  s={s}
+                  isFavorite={favSet.has(s.id)}
+                  onToggleFavorite={toggleFavorite}
+                  canFavorite={canFavorite}
+                  testid={`featured-${s.id}`}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        ) : null}
 
-        <div>
-          <div className="flex items-center gap-2 mb-5">
-            <Hammer size={18} className="text-viking-ember" />
-            <h3 className="font-serif text-2xl text-viking-bone">{t("shops.smiths_title")}</h3>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {smiths.map((s) => (
-              <MerchantCard
-                key={s.id}
-                s={s}
-                isFavorite={favSet.has(s.id)}
-                onToggleFavorite={toggleFavorite}
-                canFavorite={canFavorite}
-                testid={`smith-${s.id}`}
-              />
-            ))}
-          </div>
-        </div>
+        {renderCategorySection("shops.gear_title", gear, "shop", null)}
+        {renderCategorySection(
+          "shops.smiths_title",
+          smiths,
+          "smith",
+          <Hammer size={18} className="text-viking-ember" />,
+        )}
       </section>
     </>
   );
