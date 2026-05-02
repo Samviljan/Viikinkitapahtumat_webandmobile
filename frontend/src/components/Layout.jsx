@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { useFavorites } from "@/lib/favorites";
-import { Menu, X, Globe2, Shield, LogOut, Star, User, UserCircle2 } from "lucide-react";
+import { Menu, X, Globe2, Shield, LogOut, Star, User, UserCircle2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 import NewsletterSignup from "@/components/NewsletterSignup";
 import {
   DropdownMenu,
@@ -114,6 +115,60 @@ function FavoritesNavLink() {
           className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-viking-ember text-viking-bone text-[10px] font-rune rounded-full flex items-center justify-center border border-viking-bg"
         >
           {count}
+        </span>
+      )}
+    </NavLink>
+  );
+}
+
+function MessagesNavLink() {
+  const { t } = useI18n();
+  const { user } = useAuth();
+  const location = useLocation();
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    if (!user || !user.role) {
+      setUnread(0);
+      return;
+    }
+    let cancelled = false;
+    api
+      .get("/messages/inbox")
+      .then((r) => {
+        if (cancelled) return;
+        const total = (r.data || []).reduce((acc, g) => acc + (g.unread || 0), 0);
+        setUnread(total);
+      })
+      .catch(() => !cancelled && setUnread(0));
+    return () => {
+      cancelled = true;
+    };
+    // Re-poll on route change so the badge clears after the user reads messages.
+  }, [user, location.pathname]);
+
+  if (!user || !user.role) return null;
+  return (
+    <NavLink
+      to="/messages"
+      data-testid="nav-messages"
+      title={t("messages.title")}
+      aria-label={t("messages.title")}
+      className={({ isActive }) =>
+        `relative inline-flex h-9 w-9 items-center justify-center rounded-sm border transition-colors ${
+          isActive
+            ? "border-viking-gold text-viking-gold"
+            : "border-viking-edge text-viking-bone hover:border-viking-gold hover:text-viking-gold"
+        }`
+      }
+    >
+      <Mail size={16} />
+      {unread > 0 && (
+        <span
+          data-testid="messages-unread-badge"
+          className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-viking-ember text-viking-bone text-[10px] font-rune rounded-full flex items-center justify-center border border-viking-bg"
+        >
+          {unread}
         </span>
       )}
     </NavLink>
@@ -233,6 +288,7 @@ export default function Layout({ children }) {
           </nav>
 
           <div className="flex items-center gap-2">
+            <MessagesNavLink />
             <FavoritesNavLink />
             <LanguageSwitcher />
             <AccountMenu />

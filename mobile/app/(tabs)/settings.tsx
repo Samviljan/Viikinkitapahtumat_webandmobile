@@ -45,14 +45,9 @@ export default function SettingsHub() {
             href: "/settings/attending",
             testID: "nav-attending",
           },
-        ]
-      : []),
-    ...(user?.paid_messaging_enabled &&
-    (user.user_types.includes("merchant") || user.user_types.includes("organizer"))
-      ? [
           {
-            icon: "megaphone-outline" as const,
-            titleKey: "messaging.nav_label",
+            icon: "mail-outline" as const,
+            titleKey: "messages.title",
             href: "/settings/messages",
             testID: "nav-messages",
           },

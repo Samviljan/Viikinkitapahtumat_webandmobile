@@ -431,6 +431,27 @@
     "targets_help_some": "Sõnum saadetakse ainult valitud kategooriate osalejatele.",
     "no_push_tokens": "Push-saajaid: 0. Ükski osaleja pole veel mobiilirakenduses push-teateid aktiveerinud. E-post toimib endiselt, kui valisid \"E-post\" või \"Push + E-post\"."
   },
+  "messages": {
+    "feature": "Sõnumid",
+    "title": "Sõnumid",
+    "tab_inbox": "Saabunud",
+    "tab_sent": "Saadetud",
+    "tab_compose": "Uus sõnum",
+    "loading": "Laadimine…",
+    "inbox_empty": "Sõnumeid pole veel.",
+    "sent_empty": "Sa pole veel ühtegi sõnumit saatnud.",
+    "from": "Saatja",
+    "to_recipients": "Saajad",
+    "recipients_unit": "saajat",
+    "batches_unit": "saatmist",
+    "total_unit": "kokku",
+    "no_subject": "(teemata)",
+    "delete": "Kustuta",
+    "delete_confirm": "Kas soovid selle sõnumi tõesti kustutada?",
+    "deleted_toast": "Sõnum kustutatud",
+    "close": "Sulge",
+    "detail_a11y": "Sõnumi sisu ja tegevusnupud"
+  },
   "password": {
     "change_title": "Muuda parooli",
     "change_btn": "Muuda parooli",

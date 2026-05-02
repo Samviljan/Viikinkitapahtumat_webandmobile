@@ -602,6 +602,27 @@
     "targets_help_some": "Meddelandet begränsas till deltagare i de valda kategorierna.",
     "no_push_tokens": "Push-mottagare: 0. Ingen av deltagarna har aktiverat push-notiser i mobilappen ännu. E-post fungerar fortfarande om du valt \"E-post\" eller \"Push + E-post\"."
   },
+  "messages": {
+    "feature": "Meddelanden",
+    "title": "Meddelanden",
+    "tab_inbox": "Inkorg",
+    "tab_sent": "Skickat",
+    "tab_compose": "Nytt meddelande",
+    "loading": "Laddar…",
+    "inbox_empty": "Inga meddelanden ännu.",
+    "sent_empty": "Du har inte skickat några meddelanden.",
+    "from": "Från",
+    "to_recipients": "Mottagare",
+    "recipients_unit": "mottagare",
+    "batches_unit": "utskick",
+    "total_unit": "totalt",
+    "no_subject": "(inget ämne)",
+    "delete": "Radera",
+    "delete_confirm": "Vill du radera detta meddelande?",
+    "deleted_toast": "Meddelande raderat",
+    "close": "Stäng",
+    "detail_a11y": "Meddelandeinnehåll och knappar"
+  },
   "password": {
     "change_title": "Byt lösenord",
     "change_btn": "Byt lösenord",

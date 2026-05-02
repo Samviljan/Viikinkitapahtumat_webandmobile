@@ -1691,6 +1691,36 @@ async def send_message_to_attendees(
         return_payload["quota_used"] = quota_used + 1
         return_payload["quota_limit"] = quota_limit
         return_payload["quota_remaining"] = max(0, quota_limit - (quota_used + 1))
+
+    # ── Inbox copies ─────────────────────────────────────────────────────
+    # Insert one `user_messages` row per consenting recipient so they can
+    # read the message in their in-app inbox even if they later disable
+    # push/email per-RSVP. Sender keeps a single batch_id grouping for the
+    # "Lähetetyt"-tab on the messages page.
+    batch_id = str(uuid.uuid4())
+    now_iso = datetime.now(timezone.utc).isoformat()
+    inbox_rows = [
+        {
+            "id": str(uuid.uuid4()),
+            "batch_id": batch_id,
+            "event_id": payload.event_id,
+            "sender_id": user["id"],
+            "sender_label": sender_label,
+            "recipient_id": uid,
+            "channel": payload.channel,
+            "subject": payload.subject[:200],
+            "body": payload.body,
+            "target_categories": target_categories,
+            "created_at": now_iso,
+            "read_at": None,
+            "deleted_by_recipient": False,
+            "deleted_by_sender": False,
+        }
+        for uid in consenter_ids
+    ]
+    if inbox_rows:
+        await db.user_messages.insert_many(inbox_rows)
+    return_payload["batch_id"] = batch_id
     return return_payload
 
 
@@ -1758,6 +1788,226 @@ async def get_event_quota_for_user(
         "limit": limit,
         "remaining": max(0, limit - used),
     }
+
+
+# -----------------------------------------------------------------------------
+# In-app inbox — every send now writes per-recipient rows into `user_messages`.
+# These endpoints power the unified `/messages` page (web) and `/settings/
+# messages` (mobile) with three tabs: Inbox / Sent / Compose.
+# -----------------------------------------------------------------------------
+def _localized_event_title(ev: dict) -> str:
+    for k in ("title_fi", "title_en", "title_sv", "title"):
+        if ev.get(k):
+            return ev[k]
+    return "Tapahtuma"
+
+
+async def _enrich_events_dict(event_ids: list[str]) -> dict[str, dict]:
+    """Fetch a small set of events keyed by id for inbox/sent grouping."""
+    if not event_ids:
+        return {}
+    rows = await db.events.find(
+        {"id": {"$in": list(set(event_ids))}},
+        {
+            "_id": 0,
+            "id": 1,
+            "title_fi": 1,
+            "title_en": 1,
+            "title_sv": 1,
+            "title": 1,
+            "start_date": 1,
+            "end_date": 1,
+            "image_url": 1,
+            "category": 1,
+            "country": 1,
+            "city": 1,
+            "location": 1,
+        },
+    ).to_list(500)
+    return {r["id"]: r for r in rows}
+
+
+@api_router.get("/messages/inbox")
+async def messages_inbox_overview(user: dict = Depends(get_current_user)):
+    """List events the current user has received messages for, with unread +
+    total counts. Soft-deleted (per-recipient) rows are excluded."""
+    pipeline = [
+        {"$match": {"recipient_id": user["id"], "deleted_by_recipient": False}},
+        {
+            "$group": {
+                "_id": "$event_id",
+                "total": {"$sum": 1},
+                "unread": {
+                    "$sum": {"$cond": [{"$eq": ["$read_at", None]}, 1, 0]}
+                },
+                "last_message_at": {"$max": "$created_at"},
+            }
+        },
+        {"$sort": {"last_message_at": -1}},
+    ]
+    rows = await db.user_messages.aggregate(pipeline).to_list(1000)
+    events = await _enrich_events_dict([r["_id"] for r in rows])
+    out = []
+    for r in rows:
+        ev = events.get(r["_id"]) or {"id": r["_id"]}
+        out.append(
+            {
+                "event": ev,
+                "total": r["total"],
+                "unread": r["unread"],
+                "last_message_at": r["last_message_at"],
+            }
+        )
+    return out
+
+
+@api_router.get("/messages/inbox/{event_id}")
+async def messages_inbox_for_event(
+    event_id: str, user: dict = Depends(get_current_user)
+):
+    """List inbox messages for a single event, newest first. Excludes ones
+    the recipient has soft-deleted."""
+    rows = await db.user_messages.find(
+        {
+            "recipient_id": user["id"],
+            "event_id": event_id,
+            "deleted_by_recipient": False,
+        },
+        {"_id": 0, "deleted_by_sender": 0},
+    ).sort("created_at", -1).to_list(500)
+    return rows
+
+
+@api_router.get("/messages/sent")
+async def messages_sent_overview(user: dict = Depends(get_current_user)):
+    """List events the current user has SENT messages for, grouped by event.
+    Counts unique batches (one batch = one /messages/send call)."""
+    pipeline = [
+        {"$match": {"sender_id": user["id"], "deleted_by_sender": False}},
+        {
+            "$group": {
+                "_id": {"event_id": "$event_id", "batch_id": "$batch_id"},
+                "recipients": {"$sum": 1},
+                "created_at": {"$max": "$created_at"},
+            }
+        },
+        {
+            "$group": {
+                "_id": "$_id.event_id",
+                "batches": {"$sum": 1},
+                "last_sent_at": {"$max": "$created_at"},
+            }
+        },
+        {"$sort": {"last_sent_at": -1}},
+    ]
+    rows = await db.user_messages.aggregate(pipeline).to_list(1000)
+    events = await _enrich_events_dict([r["_id"] for r in rows])
+    out = []
+    for r in rows:
+        ev = events.get(r["_id"]) or {"id": r["_id"]}
+        out.append(
+            {
+                "event": ev,
+                "batches": r["batches"],
+                "last_sent_at": r["last_sent_at"],
+            }
+        )
+    return out
+
+
+@api_router.get("/messages/sent/{event_id}")
+async def messages_sent_for_event(
+    event_id: str, user: dict = Depends(get_current_user)
+):
+    """List the user's sent batches for an event (one row per batch with
+    aggregate recipient count + a sample row to read body/subject)."""
+    pipeline = [
+        {
+            "$match": {
+                "sender_id": user["id"],
+                "event_id": event_id,
+                "deleted_by_sender": False,
+            }
+        },
+        {"$sort": {"created_at": 1}},
+        {
+            "$group": {
+                "_id": "$batch_id",
+                "recipients": {"$sum": 1},
+                "subject": {"$first": "$subject"},
+                "body": {"$first": "$body"},
+                "channel": {"$first": "$channel"},
+                "created_at": {"$first": "$created_at"},
+                "target_categories": {"$first": "$target_categories"},
+                "any_id": {"$first": "$id"},
+            }
+        },
+        {"$sort": {"created_at": -1}},
+    ]
+    rows = await db.user_messages.aggregate(pipeline).to_list(500)
+    return [
+        {
+            "batch_id": r["_id"],
+            "id": r["any_id"],
+            "subject": r["subject"],
+            "body": r["body"],
+            "channel": r["channel"],
+            "target_categories": r.get("target_categories") or [],
+            "created_at": r["created_at"],
+            "recipients": r["recipients"],
+        }
+        for r in rows
+    ]
+
+
+@api_router.get("/messages/{message_id}")
+async def messages_read_one(
+    message_id: str, user: dict = Depends(get_current_user)
+):
+    """Read a single message. Recipient access auto-sets `read_at` if unread.
+    Sender may also fetch own outgoing copy (any one row from the batch)."""
+    doc = await db.user_messages.find_one({"id": message_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Message not found")
+    if user["id"] == doc.get("recipient_id"):
+        if doc.get("deleted_by_recipient"):
+            raise HTTPException(status_code=404, detail="Message not found")
+        if not doc.get("read_at"):
+            now_iso = datetime.now(timezone.utc).isoformat()
+            await db.user_messages.update_one(
+                {"id": message_id}, {"$set": {"read_at": now_iso}}
+            )
+            doc["read_at"] = now_iso
+    elif user["id"] == doc.get("sender_id"):
+        if doc.get("deleted_by_sender"):
+            raise HTTPException(status_code=404, detail="Message not found")
+    else:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return doc
+
+
+@api_router.delete("/messages/{message_id}")
+async def messages_delete_one(
+    message_id: str, user: dict = Depends(get_current_user)
+):
+    """Soft-delete: recipient hides from their inbox, sender hides batch from
+    their sent list. Both flags can be set independently."""
+    doc = await db.user_messages.find_one({"id": message_id}, {"_id": 0, "id": 1, "recipient_id": 1, "sender_id": 1, "batch_id": 1})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Message not found")
+    if user["id"] == doc.get("recipient_id"):
+        await db.user_messages.update_one(
+            {"id": message_id}, {"$set": {"deleted_by_recipient": True}}
+        )
+        return {"deleted": True, "scope": "recipient"}
+    if user["id"] == doc.get("sender_id"):
+        # Sender deletes the whole batch from their sent view (idempotent).
+        await db.user_messages.update_many(
+            {"batch_id": doc["batch_id"], "sender_id": user["id"]},
+            {"$set": {"deleted_by_sender": True}},
+        )
+        return {"deleted": True, "scope": "sender_batch"}
+    raise HTTPException(status_code=403, detail="Forbidden")
 
 
 # -----------------------------------------------------------------------------
@@ -4298,6 +4548,10 @@ async def on_startup():
     await db.event_reminders.create_index([("event_id", 1), ("email", 1)], unique=True)
     await db.event_reminders.create_index("unsubscribe_token")
     await db.event_reminders.create_index("status")
+    await db.user_messages.create_index([("recipient_id", 1), ("event_id", 1)])
+    await db.user_messages.create_index([("sender_id", 1), ("event_id", 1)])
+    await db.user_messages.create_index("batch_id")
+    await db.user_messages.create_index("id", unique=True)
 
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@viikinkitapahtumat.fi").lower()
     admin_password = os.environ["ADMIN_PASSWORD"]

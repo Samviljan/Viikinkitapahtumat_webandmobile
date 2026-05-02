@@ -478,6 +478,27 @@
     "targets_help_some": "Beskeden begrænses til deltagere i de valgte kategorier.",
     "no_push_tokens": "Push-modtagere: 0. Ingen af deltagerne har endnu aktiveret push-notifikationer i mobilappen. E-mail fungerer stadig hvis du har valgt \"E-mail\" eller \"Push + E-mail\"."
   },
+  "messages": {
+    "feature": "Beskeder",
+    "title": "Beskeder",
+    "tab_inbox": "Indbakke",
+    "tab_sent": "Sendt",
+    "tab_compose": "Ny besked",
+    "loading": "Indlæser…",
+    "inbox_empty": "Ingen beskeder endnu.",
+    "sent_empty": "Du har ikke sendt nogen beskeder endnu.",
+    "from": "Fra",
+    "to_recipients": "Modtagere",
+    "recipients_unit": "modtagere",
+    "batches_unit": "afsendelser",
+    "total_unit": "i alt",
+    "no_subject": "(intet emne)",
+    "delete": "Slet",
+    "delete_confirm": "Vil du slette denne besked?",
+    "deleted_toast": "Besked slettet",
+    "close": "Luk",
+    "detail_a11y": "Beskedindhold og handlingsknapper"
+  },
   "courses": {
     "title": "Kurser & workshops",
     "sub": "Håndværk, sværdkamp og andre historiske færdighedskurser.",

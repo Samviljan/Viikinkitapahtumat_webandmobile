@@ -489,6 +489,27 @@
     "targets_help_some": "Message is limited to attendees in the selected categories only.",
     "no_push_tokens": "Push recipients: 0. None of the matching attendees have enabled push notifications via the mobile app yet. Email still works if you used \"Email\" or \"Push + Email\" as the channel."
   },
+  "messages": {
+    "feature": "Messaging",
+    "title": "Messages",
+    "tab_inbox": "Inbox",
+    "tab_sent": "Sent",
+    "tab_compose": "New message",
+    "loading": "Loading…",
+    "inbox_empty": "No messages yet.",
+    "sent_empty": "You haven't sent any messages yet.",
+    "from": "From",
+    "to_recipients": "Recipients",
+    "recipients_unit": "recipients",
+    "batches_unit": "sends",
+    "total_unit": "total",
+    "no_subject": "(no subject)",
+    "delete": "Delete",
+    "delete_confirm": "Are you sure you want to delete this message?",
+    "deleted_toast": "Message deleted",
+    "close": "Close",
+    "detail_a11y": "Message content and action buttons"
+  },
   "courses": {
     "title": "Courses & workshops",
     "sub": "Crafts, swordsmanship, and other historical skill courses.",

@@ -374,30 +374,6 @@ export default function MyEventsScreen() {
             return (
               <View>
                 <EventCard event={item.event} />
-                {item.canMessage ? (
-                  <Pressable
-                    testID={`message-event-${item.event.id}`}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/settings/messages" as never,
-                        params: { event_id: item.event.id },
-                      })
-                    }
-                    style={({ pressed }) => [
-                      styles.messageBtn,
-                      pressed && { opacity: 0.7 },
-                    ]}
-                  >
-                    <Ionicons
-                      name="paper-plane-outline"
-                      size={14}
-                      color={colors.gold}
-                    />
-                    <Text style={styles.messageBtnText}>
-                      {t("messaging.cta_send")}
-                    </Text>
-                  </Pressable>
-                ) : null}
               </View>
             );
           }}
@@ -497,28 +473,6 @@ const styles = StyleSheet.create({
   sectionCount: {
     color: colors.stone,
     fontSize: 11,
-  },
-  messageBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    alignSelf: "flex-start",
-    marginTop: -spacing.sm,
-    marginBottom: spacing.md,
-    marginLeft: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.gold,
-    backgroundColor: "rgba(201,161,74,0.08)",
-  },
-  messageBtnText: {
-    color: colors.gold,
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1,
-    textTransform: "uppercase",
   },
   filterRow: {
     flexDirection: "row",

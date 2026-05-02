@@ -478,6 +478,27 @@
     "targets_help_some": "Nachricht wird auf Teilnehmer der gewählten Kategorien beschränkt.",
     "no_push_tokens": "Push-Empfänger: 0. Keiner der Teilnehmer hat bisher Push-Benachrichtigungen in der mobilen App aktiviert. E-Mails funktionieren weiterhin, wenn der Kanal \"E-Mail\" oder \"Push + E-Mail\" ist."
   },
+  "messages": {
+    "feature": "Nachrichten",
+    "title": "Nachrichten",
+    "tab_inbox": "Posteingang",
+    "tab_sent": "Gesendet",
+    "tab_compose": "Neue Nachricht",
+    "loading": "Lädt…",
+    "inbox_empty": "Noch keine Nachrichten.",
+    "sent_empty": "Du hast noch keine Nachrichten gesendet.",
+    "from": "Von",
+    "to_recipients": "Empfänger",
+    "recipients_unit": "Empfänger",
+    "batches_unit": "Sendungen",
+    "total_unit": "insgesamt",
+    "no_subject": "(kein Betreff)",
+    "delete": "Löschen",
+    "delete_confirm": "Möchtest du diese Nachricht wirklich löschen?",
+    "deleted_toast": "Nachricht gelöscht",
+    "close": "Schließen",
+    "detail_a11y": "Nachrichteninhalt und Aktionsschaltflächen"
+  },
   "courses": {
     "title": "Kurse & Workshops",
     "sub": "Handwerk, Schwertkampf und andere historische Fertigkeitskurse.",

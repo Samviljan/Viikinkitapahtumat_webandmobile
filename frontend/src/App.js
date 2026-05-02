@@ -42,6 +42,7 @@ import Profile from "@/pages/Profile";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import SendMessage from "@/pages/SendMessage";
+import Messages from "@/pages/Messages";
 import UserGuide from "@/pages/UserGuide";
 
 function App() {
@@ -80,7 +81,8 @@ function App() {
               <Route path="/profile/merchant-card" element={<MerchantCardPage />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/messages" element={<SendMessage />} />
+              <Route path="/messages" element={<Messages />} />
+              <Route path="/messages/compose" element={<SendMessage />} />
               <Route path="/guide" element={<UserGuide />} />
               <Route
                 path="*"

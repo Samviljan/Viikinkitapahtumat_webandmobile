@@ -431,6 +431,27 @@
     "targets_help_some": "Wiadomość ograniczona do uczestników z wybranych kategorii.",
     "no_push_tokens": "Odbiorcy push: 0. Żaden z uczestników nie aktywował jeszcze powiadomień push w aplikacji mobilnej. E-mail nadal działa, jeśli wybrano kanał „E-mail\" lub „Push + E-mail\"."
   },
+  "messages": {
+    "feature": "Wiadomości",
+    "title": "Wiadomości",
+    "tab_inbox": "Odebrane",
+    "tab_sent": "Wysłane",
+    "tab_compose": "Nowa wiadomość",
+    "loading": "Wczytywanie…",
+    "inbox_empty": "Brak wiadomości.",
+    "sent_empty": "Nie wysłałeś jeszcze żadnych wiadomości.",
+    "from": "Od",
+    "to_recipients": "Odbiorcy",
+    "recipients_unit": "odbiorców",
+    "batches_unit": "wysyłek",
+    "total_unit": "łącznie",
+    "no_subject": "(brak tematu)",
+    "delete": "Usuń",
+    "delete_confirm": "Czy na pewno chcesz usunąć tę wiadomość?",
+    "deleted_toast": "Wiadomość usunięta",
+    "close": "Zamknij",
+    "detail_a11y": "Treść wiadomości i przyciski akcji"
+  },
   "password": {
     "change_title": "Zmień hasło",
     "change_btn": "Zmień hasło",

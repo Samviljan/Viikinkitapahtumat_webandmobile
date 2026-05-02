@@ -209,6 +209,27 @@ interface Dict {
     quota_used: string;
     quota_reached_title: string;
   };
+  messages: {
+    feature: string;
+    title: string;
+    tab_inbox: string;
+    tab_sent: string;
+    tab_compose: string;
+    loading: string;
+    inbox_empty: string;
+    sent_empty: string;
+    from: string;
+    to_recipients: string;
+    recipients_unit: string;
+    batches_unit: string;
+    total_unit: string;
+    no_subject: string;
+    delete: string;
+    delete_confirm: string;
+    deleted_toast: string;
+    close: string;
+    detail_a11y: string;
+  };
   info: {
     title: string;
     sub: string;
@@ -471,6 +492,27 @@ const baseTranslations: Partial<Record<Lang, Dict>> = {
       quota_used: "Käytetty {used}/{limit} viestiä",
       quota_reached_title: "Viestiraja täyttyi",
     },
+    messages: {
+      feature: "Viestintä",
+      title: "Viestit",
+      tab_inbox: "Saapuneet",
+      tab_sent: "Lähetetyt",
+      tab_compose: "Lähetä uusi",
+      loading: "Ladataan…",
+      inbox_empty: "Ei vielä saapuneita viestejä.",
+      sent_empty: "Et ole lähettänyt vielä viestejä.",
+      from: "Lähettäjä",
+      to_recipients: "Vastaanottajat",
+      recipients_unit: "vastaanottajaa",
+      batches_unit: "lähetystä",
+      total_unit: "yhteensä",
+      no_subject: "(ei otsikkoa)",
+      delete: "Poista",
+      delete_confirm: "Haluatko varmasti poistaa tämän viestin?",
+      deleted_toast: "Viesti poistettu",
+      close: "Sulje",
+      detail_a11y: "Viestin sisältö ja toimintopainikkeet",
+    },
     info: {
       title: "Tietoa sovelluksesta",
       sub: "Versio, yhteydenotto ja lisätietoja.",
@@ -726,6 +768,27 @@ const baseTranslations: Partial<Record<Lang, Dict>> = {
       quota_used: "Used {used}/{limit} messages",
       quota_reached_title: "Message limit reached",
     },
+    messages: {
+      feature: "Messaging",
+      title: "Messages",
+      tab_inbox: "Inbox",
+      tab_sent: "Sent",
+      tab_compose: "New message",
+      loading: "Loading…",
+      inbox_empty: "No messages yet.",
+      sent_empty: "You haven't sent any messages yet.",
+      from: "From",
+      to_recipients: "Recipients",
+      recipients_unit: "recipients",
+      batches_unit: "sends",
+      total_unit: "total",
+      no_subject: "(no subject)",
+      delete: "Delete",
+      delete_confirm: "Are you sure you want to delete this message?",
+      deleted_toast: "Message deleted",
+      close: "Close",
+      detail_a11y: "Message content and action buttons",
+    },
     info: {
       title: "About the app",
       sub: "Version, contact and more info.",
@@ -976,6 +1039,27 @@ const baseTranslations: Partial<Record<Lang, Dict>> = {
       cta_send: "Meddelande",
       quota_used: "Använt {used}/{limit} meddelanden",
       quota_reached_title: "Meddelandekvoten uppnådd",
+    },
+    messages: {
+      feature: "Meddelanden",
+      title: "Meddelanden",
+      tab_inbox: "Inkorg",
+      tab_sent: "Skickat",
+      tab_compose: "Nytt meddelande",
+      loading: "Laddar…",
+      inbox_empty: "Inga meddelanden ännu.",
+      sent_empty: "Du har inte skickat några meddelanden.",
+      from: "Från",
+      to_recipients: "Mottagare",
+      recipients_unit: "mottagare",
+      batches_unit: "utskick",
+      total_unit: "totalt",
+      no_subject: "(inget ämne)",
+      delete: "Radera",
+      delete_confirm: "Vill du radera detta meddelande?",
+      deleted_toast: "Meddelande raderat",
+      close: "Stäng",
+      detail_a11y: "Meddelandeinnehåll och knappar",
     },
     info: {
       title: "Om appen",
