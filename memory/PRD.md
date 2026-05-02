@@ -473,6 +473,20 @@ See `/app/memory/test_credentials.md`.
   - User downloads `.aab` from above URL when Expo finishes (~10-15 min) and uploads to Play Console manually.
 
 
+## Iteration — RSVP-muistutukset näkyvät Viestit-inboxissa (2026-05-02)
+- ✅ **Backend**: Uusi jaettu helper `_record_inbox_rows(event_id, recipients, sender_id, sender_label, channel, subject, body)` joka kirjoittaa per-vastaanottaja-rivit `user_messages`-kokoelmaan jaetulla `batch_id`:llä. Käytetään NYT sekä `/messages/send`-flow:ssa (refactor, sama lopputulos kuin aiemmin) että **päivittäisten RSVP-muistutusten ajossa** (`_run_daily_event_reminders`). 
+- ✅ **RSVP-muistutus** kirjoittaa inboxiin yhteistä `inbox_recipient_ids`-listaa hyödyntäen (push + email -käyttäjien union, deduplikoitu setiksi). `sender_id="system"`, `sender_label="Viikinkitapahtumat"`. Subject = tapahtuman otsikko. Body = "Tapahtuma alkaa pian — muista varata aika kalenteriin." Channel = "both" / "push" / "email" sen mukaan mitä lähetettiin.
+- ✅ **Idempotenssi**: `reminder_log`-kokoelmaan lisätty kolmas channel-rivi "inbox" → uudelleenajot eivät duplikoi inbox-rivejä (samalle tapahtumalle samalle päivälle vain yksi inbox-batch).
+- ✅ **End-to-end testattu**: Asetettiin testitapahtumalle huomispäivä, RSVP:llä notify_push+notify_email=true, ajettiin `_run_daily_event_reminders()` → inbox-rivi luotiin oikealla subject/sender/channel-arvoilla. Toinen ajo → 0 uusia rivejä (idempotenssi toimii). Testidata siivottu jälkikäteen.
+- ✅ Ruff clean.
+
+**Mitä tämä tarkoittaa käyttäjälle**: Jos käyttäjä on sallinut push-ilmoitukset johonkin tapahtumaan, hän saa ilmoituksen ENSIN puhelimensa push-bannerina ja löytää saman viestin myöhemmin **Viestit → Saapuneet** -valikosta lukemalla. Jos käyttäjä sulkee ilmoituksen vahingossa tai puhelin on offline, viesti löytyy silti inboxista myöhemmin.
+
+**Push-paikat jotka kirjoittavat inboxiin** (täysi kattavuus):
+- `/messages/send` (admin/maksulliset järjestäjät+kauppiaat) ✅
+- Päivittäinen RSVP-muistutus ✅
+- `/admin/push/test` (debug, ei kirjoita — tarkoituksenmukaista)
+
 ## Iteration — Top-hero poisto duplikaattien estämiseksi (2026-05-02)
 - ✅ **Web `Shops.jsx`**: Top-hero `featured-strip`-osio poistettu kokonaan (sekä JSX, `featuredAll`-useMemo että käyttöliittymäteksti). Premium-kortit näkyvät enää vain oman kategoriansa kärjessä `Premium-kauppiaat` -alaotsikon alla, divider, ja sitten `Muut kauppiaat`. Ei duplikaatteja.
 - ✅ **Mobiili `(tabs)/shops.tsx`**: Sama puhdistus — `featured-header` ja `featured-card` -row-tyypit poistettu, `featuredAll`-useMemo poistettu, `featuredHero/featuredEyebrow/featuredSubtitle`-tyylit poistettu. Sama per-kategoria Premium/Muut-rakenne säilyy ennallaan.

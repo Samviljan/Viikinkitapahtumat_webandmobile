@@ -1697,29 +1697,16 @@ async def send_message_to_attendees(
     # read the message in their in-app inbox even if they later disable
     # push/email per-RSVP. Sender keeps a single batch_id grouping for the
     # "Lähetetyt"-tab on the messages page.
-    batch_id = str(uuid.uuid4())
-    now_iso = datetime.now(timezone.utc).isoformat()
-    inbox_rows = [
-        {
-            "id": str(uuid.uuid4()),
-            "batch_id": batch_id,
-            "event_id": payload.event_id,
-            "sender_id": user["id"],
-            "sender_label": sender_label,
-            "recipient_id": uid,
-            "channel": payload.channel,
-            "subject": payload.subject[:200],
-            "body": payload.body,
-            "target_categories": target_categories,
-            "created_at": now_iso,
-            "read_at": None,
-            "deleted_by_recipient": False,
-            "deleted_by_sender": False,
-        }
-        for uid in consenter_ids
-    ]
-    if inbox_rows:
-        await db.user_messages.insert_many(inbox_rows)
+    batch_id = await _record_inbox_rows(
+        event_id=payload.event_id,
+        recipient_ids=consenter_ids,
+        sender_id=user["id"],
+        sender_label=sender_label,
+        channel=payload.channel,
+        subject=payload.subject,
+        body=payload.body,
+        target_categories=target_categories,
+    )
     return_payload["batch_id"] = batch_id
     return return_payload
 
@@ -2473,6 +2460,53 @@ async def delete_my_account(
 
 
 # -----------------------------------------------------------------------------
+# Inbox helper — record sent push/email notifications as user_messages rows
+# -----------------------------------------------------------------------------
+async def _record_inbox_rows(
+    event_id: str,
+    recipient_ids: list[str],
+    sender_id: str,
+    sender_label: str,
+    channel: str,
+    subject: str,
+    body: str,
+    target_categories: Optional[list[str]] = None,
+) -> str:
+    """Insert one `user_messages` row per recipient sharing one batch_id.
+
+    Used for both user-initiated `/messages/send` AND system-generated push
+    notifications (RSVP reminders, future notifications, etc.) so every
+    notification a user receives ends up in their in-app inbox where they
+    can read it later from the Viestit menu. Returns the batch_id.
+    """
+    if not recipient_ids:
+        return ""
+    batch_id = str(uuid.uuid4())
+    now_iso = datetime.now(timezone.utc).isoformat()
+    rows = [
+        {
+            "id": str(uuid.uuid4()),
+            "batch_id": batch_id,
+            "event_id": event_id,
+            "sender_id": sender_id,
+            "sender_label": sender_label,
+            "recipient_id": uid,
+            "channel": channel,
+            "subject": (subject or "")[:200],
+            "body": body or "",
+            "target_categories": target_categories or [],
+            "created_at": now_iso,
+            "read_at": None,
+            "deleted_by_recipient": False,
+            "deleted_by_sender": False,
+        }
+        for uid in recipient_ids
+    ]
+    await db.user_messages.insert_many(rows)
+    return batch_id
+
+
+# -----------------------------------------------------------------------------
 # Daily reminders — push + email reminders for events in the next 3 days
 # -----------------------------------------------------------------------------
 async def _run_daily_event_reminders(window_days: int = 3) -> dict:
@@ -2507,14 +2541,17 @@ async def _run_daily_event_reminders(window_days: int = 3) -> dict:
         push_user_ids = [r["user_id"] for r in rsvps if r.get("notify_push")]
         email_user_ids = [r["user_id"] for r in rsvps if r.get("notify_email")]
 
+        # Recipients who get an inbox copy = anyone who got either channel.
+        inbox_recipient_ids = list({*push_user_ids, *email_user_ids})
+        title = ev.get("title_fi") or ev.get("title") or "Viikinkitapahtumat"
+        body = "Tapahtuma alkaa pian — muista varata aika kalenteriin."
+
         # Push
         if push_user_ids:
             already = await db.reminder_log.find_one(
                 {"event_id": eid, "channel": "push", "date": today.isoformat()}
             )
             if not already:
-                title = ev.get("title_fi") or ev.get("title") or "Viikinkitapahtumat"
-                body = "Tapahtuma alkaa pian — muista varata aika kalenteriin."
                 result = await push_send_to_users(
                     db,
                     push_user_ids,
@@ -2529,6 +2566,37 @@ async def _run_daily_event_reminders(window_days: int = 3) -> dict:
                         "channel": "push",
                         "date": today.isoformat(),
                         "sent": result.get("sent", 0),
+                    }
+                )
+
+        # Inbox copies — every notified user gets a row in user_messages so
+        # they can read the reminder later from the Viestit menu.
+        if inbox_recipient_ids:
+            inbox_already = await db.reminder_log.find_one(
+                {"event_id": eid, "channel": "inbox", "date": today.isoformat()}
+            )
+            if not inbox_already:
+                # Channel reflects what was actually sent: both / push / email.
+                channel = (
+                    "both"
+                    if push_user_ids and email_user_ids
+                    else ("push" if push_user_ids else "email")
+                )
+                await _record_inbox_rows(
+                    event_id=eid,
+                    recipient_ids=inbox_recipient_ids,
+                    sender_id="system",
+                    sender_label="Viikinkitapahtumat",
+                    channel=channel,
+                    subject=title,
+                    body=body,
+                )
+                await db.reminder_log.insert_one(
+                    {
+                        "event_id": eid,
+                        "channel": "inbox",
+                        "date": today.isoformat(),
+                        "sent": len(inbox_recipient_ids),
                     }
                 )
 
