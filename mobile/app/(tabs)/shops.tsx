@@ -8,7 +8,7 @@ import { LinkListRow, SectionTitle } from "@/src/components/LinkListRow";
 import { useMerchants } from "@/src/hooks/useDirectory";
 import { useFavoriteMerchants } from "@/src/hooks/useFavoriteMerchants";
 import { useAuth } from "@/src/lib/auth";
-import { api } from "@/src/api/client";
+import { api, resolveImageUrl } from "@/src/api/client";
 import { colors, radius, spacing, text } from "@/src/lib/theme";
 import { useSettings } from "@/src/lib/i18n";
 
@@ -22,9 +22,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 function imgSrc(u?: string | null): string | undefined {
-  if (!u) return undefined;
-  if (u.startsWith("http")) return u;
-  return `${API}${u}`;
+  return resolveImageUrl(u) || undefined;
 }
 
 interface FavBtnProps {

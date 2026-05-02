@@ -17,6 +17,7 @@ import { resolveImageUrl } from "@/src/api/client";
 import { useEvent } from "@/src/hooks/useEvents";
 import { useFavorites } from "@/src/hooks/useFavorites";
 import { AttendBlock } from "@/src/components/AttendBlock";
+import EventStatsBlock from "@/src/components/EventStatsBlock";
 import EventMerchantsBlock from "@/src/components/EventMerchantsBlock";
 import EventOrganizersBlock from "@/src/components/EventOrganizersBlock";
 import OrganizerRequestCTA from "@/src/components/OrganizerRequestCTA";
@@ -115,6 +116,10 @@ export default function EventDetail() {
           <Text style={styles.fact}>{ev.organizer}</Text>
         </View>
 
+        <Text style={styles.description}>
+          {localized(ev as unknown as Record<string, unknown>, "description", lang) || ev.description_fi}
+        </Text>
+
         <View style={styles.actions}>
           <Pressable
             testID="action-fav"
@@ -150,6 +155,8 @@ export default function EventDetail() {
 
         <AttendBlock eventId={ev.id} />
 
+        <EventStatsBlock eventId={ev.id} />
+
         <OrganizerRequestCTA
           eventId={ev.id}
           organizerIds={(ev as unknown as { organizer_user_ids?: string[] }).organizer_user_ids || []}
@@ -158,10 +165,6 @@ export default function EventDetail() {
         <EventOrganizersBlock eventId={ev.id} />
 
         <EventMerchantsBlock eventId={ev.id} />
-
-        <Text style={styles.description}>
-          {localized(ev as unknown as Record<string, unknown>, "description", lang) || ev.description_fi}
-        </Text>
 
         {gallery.length > 0 ? (
           <View style={styles.gallerySection}>

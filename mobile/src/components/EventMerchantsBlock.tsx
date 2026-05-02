@@ -9,7 +9,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { api, resolveImageUrl } from "@/src/api/client";
 import { colors, radius, spacing } from "@/src/lib/theme";
-import { useSettings } from "@/src/lib/i18n";
 
 interface EventMerchant {
   id: string;
@@ -23,7 +22,6 @@ interface EventMerchant {
 
 export default function EventMerchantsBlock({ eventId }: { eventId: string }) {
   const router = useRouter();
-  const { t } = useSettings();
   const [merchants, setMerchants] = useState<EventMerchant[] | null>(null);
 
   useEffect(() => {
@@ -38,12 +36,9 @@ export default function EventMerchantsBlock({ eventId }: { eventId: string }) {
 
   return (
     <View style={styles.block} testID="event-merchants">
-      <Text style={styles.title}>
-        {t("events.merchants_present") || "Kauppiaita paikalla"}
-      </Text>
+      <Text style={styles.title}>Kauppiaita paikalla</Text>
       <Text style={styles.help}>
-        {t("events.merchants_present_help") ||
-          "Nämä kauppiaat ovat ilmoittaneet osallistuvansa tähän tapahtumaan."}
+        Nämä kauppiaat ovat ilmoittaneet osallistuvansa tähän tapahtumaan.
       </Text>
       <View style={styles.grid}>
         {merchants.map((m) => {

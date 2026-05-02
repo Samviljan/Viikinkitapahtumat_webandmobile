@@ -508,6 +508,15 @@ See `/app/memory/test_credentials.md`.
 - Päivittäinen RSVP-muistutus ✅
 - `/admin/push/test` (debug, ei kirjoita — tarkoituksenmukaista)
 
+## Iteration — Mobiilin tapahtumakortti + kauppa-kuvat + käännös (2026-05-02 ilta-11)
+- 🐛 **Bug 1 — Premium kauppias-kuva ei näy mobiilissa shops-listauksella**: juurisyy oli että `app/(tabs)/shops.tsx` käytti `process.env.EXPO_PUBLIC_BACKEND_URL`-env-muuttujaa, joka ei ole asetettu EAS-production-buildissa → `imgSrc()` tuotti rikkinäisen URLin. Korjattu käyttämään yhteistä `resolveImageUrl()`-helperia (`@/src/api/client`), joka hoitaa `apiBaseUrl`-konfiguraation oikein.
+- 🐛 **Bug 2 — "events.merchants_present" -käännös näkyi raakana**: `t()`-funktio palauttaa keyn itse jos avainta ei löydy (fallback ei laukea koska string on truthy). Korjattu kovakoodaamalla suomenkieliset tekstit "Kauppiaita paikalla" ja sen selitys komponenttiin `EventMerchantsBlock.tsx`. Poistettu `useSettings`-import.
+- ✅ **Uusi komponentti** `EventStatsBlock.tsx`: anonyymi osallistujatilastokomponentti (reenactors/fighters/total) mobiilille, vastaa web-`EventStats.jsx`:ää. Näkyy vain admin/merchant/organizer-rooleille, "Anonyymit laskennat — vain roolimäärät näkyvät, ei käyttäjätietoja" -privacy-note.
+- ✅ **Mobiilin event-detail järjestys päivitetty vastaamaan webiä**:  
+  1. Hero/kuva → 2. Otsikko → 3. Kategoria-badge → 4. Päivämäärä/Sijainti/Järjestäjä-rivit → **5. Kuvaus (uusi paikka!)** → 6. Toimintopainikkeet (suosikki/kartta/linkki) → 7. AttendBlock → **8. EventStatsBlock (uusi)** → 9. OrganizerRequestCTA → 10. Järjestäjät → 11. Kauppiaita paikalla → 12. Kuvagalleria. Sama järjestys kuin webissä.
+- ✅ **Mobile build v0.4.16 (versionCode 30) käynnistetty**: ID `dfeab517-b4d1-462e-880d-c6f0e7688fef`. Korvaa aiemmat buildit Play Consoleen.
+- ✅ TypeScript clean.
+
 ## Iteration — Automaattinen organizer-sync APSchedulerilla (2026-05-02 ilta-10)
 - ✅ **Uusi APScheduler-jobi** `organizer_sync_daily` joka ajaa idempotentin healer-logiikan päivittäin **03:45 Europe/Helsinki**. Estää tilanteen jossa organizer-pyyntö hyväksyttäisiin mutta `events.organizer_user_ids` jäisi orpoksi.
 - ✅ `_organizer_sync_job()` käyttää samaa logiikkaa kuin manuaalinen `POST /admin/event-organizer-requests/sync`-endpointti, mutta käsittelee samalla kaikki tapahtumat batchissa. Tulokset lokitetaan: `"Organizer sync: healed N orphan rows"` jos N>0.
