@@ -4968,6 +4968,87 @@ async def admin_remove_event_organizer(
     return {"removed": True}
 
 
+class AdminAddOrganizerPayload(BaseModel):
+    user_id: str = Field(..., min_length=1)
+    event_id: str = Field(..., min_length=1)
+    full_name: str = Field(..., min_length=1, max_length=200)
+    email: EmailStr
+    phone: Optional[str] = Field(default="", max_length=60)
+    note: Optional[str] = Field(default="", max_length=1000)
+
+
+@api_router.post("/admin/event-organizers", status_code=201)
+async def admin_add_event_organizer(
+    payload: AdminAddOrganizerPayload,
+    admin: dict = Depends(get_admin_or_moderator),
+):
+    """Admin shortcut: manually register a user as an approved organizer
+    for an event *without* requiring the user to submit a request first.
+    Creates a synthetic approved `event_organizer_requests` row (so the
+    public /events/{id}/organizers endpoint surfaces the official
+    name+contact), adds user_id to events.organizer_user_ids (max 3),
+    and ensures the user has the organizer user_type.
+    """
+    user = await db.users.find_one(
+        {"id": payload.user_id},
+        {"_id": 0, "id": 1, "email": 1, "nickname": 1, "name": 1, "user_types": 1},
+    )
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    ev = await db.events.find_one(
+        {"id": payload.event_id},
+        {"_id": 0, "id": 1, "status": 1, "organizer_user_ids": 1},
+    )
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+    current = list(ev.get("organizer_user_ids") or [])
+    if payload.user_id in current:
+        raise HTTPException(
+            status_code=409,
+            detail="User is already an organizer for this event",
+        )
+    if len(current) >= MAX_ORGANIZERS_PER_EVENT:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Event already has the maximum of {MAX_ORGANIZERS_PER_EVENT} organizers",
+        )
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    await db.events.update_one(
+        {"id": payload.event_id},
+        {"$addToSet": {"organizer_user_ids": payload.user_id}},
+    )
+    # Synthesize an approved request so /events/{id}/organizers surfaces
+    # the full_name/email/phone that the admin entered (these may differ
+    # from the user's account nickname/email).
+    req_doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": payload.user_id,
+        "user_email": user.get("email"),
+        "user_nickname": user.get("nickname") or user.get("name") or "",
+        "event_id": payload.event_id,
+        "full_name": payload.full_name.strip(),
+        "email": str(payload.email).strip(),
+        "phone": (payload.phone or "").strip(),
+        "note": (payload.note or "").strip(),
+        "status": "approved",
+        "created_at": now_iso,
+        "updated_at": now_iso,
+        "processed_at": now_iso,
+        "processed_by": admin.get("id"),
+        "admin_note": "Manuaalisesti lisätty adminin toimesta",
+        "source": "admin_manual",
+    }
+    await db.event_organizer_requests.insert_one(req_doc)
+    if "organizer" not in (user.get("user_types") or []):
+        await db.users.update_one(
+            {"id": payload.user_id},
+            {"$addToSet": {"user_types": "organizer"}},
+        )
+    req_doc.pop("_id", None)
+    return {"ok": True, "request": req_doc, "organizer_user_ids": current + [payload.user_id]}
+
+
 # -----------------------------------------------------------------------------
 # Merchant cards admin list
 # -----------------------------------------------------------------------------

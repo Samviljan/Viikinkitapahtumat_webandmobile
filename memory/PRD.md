@@ -508,6 +508,16 @@ See `/app/memory/test_credentials.md`.
 - Päivittäinen RSVP-muistutus ✅
 - `/admin/push/test` (debug, ei kirjoita — tarkoituksenmukaista)
 
+## Iteration — Adminin manuaalinen järjestäjän lisäys (2026-05-02 ilta-6)
+- ✅ **Backend uusi endpoint** `POST /api/admin/event-organizers`: admin lisää olemassa olevan käyttäjän (`user_id`) hyväksytyksi järjestäjäksi tapahtumaan (`event_id`) antamillaan yhteystiedoilla (`full_name`, `email`, `phone`). Luo synteettisen approved-pyynnön `event_organizer_requests`-kokoelmaan (admin_note="Manuaalisesti lisätty"), lisää `user_id` tapahtuman `organizer_user_ids`-listaan ja lisää käyttäjälle `user_types:organizer` jos puuttuu. Säilyttää max 3 organizers/event cap (409) + dedupe (409).
+- ✅ **Web uusi komponentti** `ManualAddOrganizerDialog.jsx` admin-paneliin. Dialog-lomake sisältää:
+  - Tapahtuma-valitsin haulla (title_fi/en/location-suodatus, top 20 näkyy kerralla)
+  - Käyttäjä-valitsin haulla (email/nickname/name-suodatus, top 20)
+  - Nimi/email/puhelin-kentät (esitäyttyy valitulta käyttäjältä)
+  - Submit → `POST /admin/event-organizers` + toast-ilmoitus ja lista päivittyy
+- ✅ **Integroitu admin-sivulle** `/admin/event-organizer-requests`: header sai "Lisää järjestäjä manuaalisesti" -napin oikeaan reunaan (data-testid `manual-add-organizer-btn`).
+- ✅ **E2E-testattu**: curl-kutsu 201 luonti, julkinen `/events/{id}/organizers` palauttaa heti manuaalisesti annetun nimen+yhteystiedot, duplicate 409. Playwright-UI: dialog avautuu, 20 tapahtumaa + 7 käyttäjää listautuu etsintäkenttien alle. Lint clean.
+
 ## Iteration — Virallisen järjestäjän allekirjoitus tapahtumaviesteihin (2026-05-02 ilta-5)
 - ✅ **Backend `POST /messages/send`**: jos lähettäjä on hyväksytty järjestäjä (user.id ∈ event.organizer_user_ids), vastaava `event_organizer_requests`-dokumentti haetaan ja sen `full_name` + tapahtuman otsikko yhdistetään allekirjoitukseksi: `— Ragnar Lothbrok, Sleipnir fighting camp, Ulvila -järjestäjä`. Korvaa aiemman generic nicknamen (`user.nickname`/`merchant_name`).
 - ✅ **Push-viestin runko**: body-tekstin loppuun lisätään `— {organizer_sig}` aivan kuten aiemmin, mutta nyt virallisella nimellä. 200 merkin cap pysyy.

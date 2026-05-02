@@ -11,6 +11,7 @@ import { CheckCircle2, XCircle, Inbox, Loader2, ShieldCheck, Mail, Phone } from 
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import ManualAddOrganizerDialog from "@/components/admin/ManualAddOrganizerDialog";
 
 const TABS = ["pending", "approved", "rejected"];
 
@@ -77,11 +78,14 @@ export default function AdminEventOrganizerRequests() {
 
   return (
     <div className="space-y-6" data-testid="admin-event-organizer-requests">
-      <header className="flex items-center gap-3 flex-wrap">
-        <ShieldCheck className="text-viking-gold" />
-        <h1 className="text-2xl font-serif text-viking-bone">
-          Tapahtumajärjestäjien pyynnöt
-        </h1>
+      <header className="flex items-center gap-3 flex-wrap justify-between">
+        <div className="flex items-center gap-3">
+          <ShieldCheck className="text-viking-gold" />
+          <h1 className="text-2xl font-serif text-viking-bone">
+            Tapahtumajärjestäjien pyynnöt
+          </h1>
+        </div>
+        <ManualAddOrganizerDialog onAdded={() => reload(tab)} />
       </header>
 
       <div className="flex gap-2 border-b border-viking-edge">
