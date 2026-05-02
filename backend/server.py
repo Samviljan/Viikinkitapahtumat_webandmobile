@@ -69,8 +69,45 @@ def verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
 
 
+_JWT_SECRET_FALLBACK_PATH = "/tmp/_emergent_viikinki_jwt_secret"
+
+
 def get_jwt_secret() -> str:
-    return os.environ["JWT_SECRET"]
+    """Return the JWT signing secret.
+
+    Preferred source: `JWT_SECRET` env var (set via `.env` locally, or via the
+    deploy dashboard in production). If missing — which can happen on a fresh
+    Emergent deployment before the operator has configured secrets — we fall
+    back to a container-local file with a cryptographically random secret so
+    auth still works. The fallback survives across uvicorn reloads within the
+    same pod but not across pod restarts; that's an acceptable compromise vs
+    the alternative of crashing the whole app at import time.
+    """
+    from_env = os.environ.get("JWT_SECRET")
+    if from_env:
+        return from_env
+    try:
+        with open(_JWT_SECRET_FALLBACK_PATH, "r") as fh:
+            cached = fh.read().strip()
+        if cached:
+            return cached
+    except FileNotFoundError:
+        pass
+    import secrets as _secrets
+    generated = _secrets.token_urlsafe(48)
+    try:
+        with open(_JWT_SECRET_FALLBACK_PATH, "w") as fh:
+            fh.write(generated)
+    except OSError:
+        # Filesystem is read-only — we still have a valid secret for this
+        # process, callers just won't persist it across restarts.
+        pass
+    logger.warning(
+        "JWT_SECRET not set in environment; using container-local fallback. "
+        "Configure JWT_SECRET in your deployment env vars for stable tokens "
+        "across pod restarts."
+    )
+    return generated
 
 
 def create_access_token(user_id: str, email: str) -> str:
@@ -4803,23 +4840,33 @@ async def on_startup():
     await db.merchant_card_requests.create_index("id", unique=True)
 
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@viikinkitapahtumat.fi").lower()
-    admin_password = os.environ["ADMIN_PASSWORD"]
-    existing = await db.users.find_one({"email": admin_email})
-    if existing is None:
-        await db.users.insert_one({
-            "id": str(uuid.uuid4()),
-            "email": admin_email,
-            "password_hash": hash_password(admin_password),
-            "name": "Admin",
-            "role": "admin",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        })
-        logger.info("Admin user seeded: %s", admin_email)
-    elif not verify_password(admin_password, existing["password_hash"]):
-        await db.users.update_one(
-            {"email": admin_email},
-            {"$set": {"password_hash": hash_password(admin_password)}},
+    admin_password = os.environ.get("ADMIN_PASSWORD")
+    if not admin_password:
+        # Production deploys may not have the admin-seed password set — that
+        # is fine, the admin user was seeded once already and we don't want
+        # the startup event to crash the whole app over a missing seed var.
+        logger.warning(
+            "ADMIN_PASSWORD not set; skipping admin seeding. Set it in the "
+            "deployment environment variables if you need to rotate the "
+            "admin password on next boot."
         )
+    else:
+        existing = await db.users.find_one({"email": admin_email})
+        if existing is None:
+            await db.users.insert_one({
+                "id": str(uuid.uuid4()),
+                "email": admin_email,
+                "password_hash": hash_password(admin_password),
+                "name": "Admin",
+                "role": "admin",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            })
+            logger.info("Admin user seeded: %s", admin_email)
+        elif not verify_password(admin_password, existing["password_hash"]):
+            await db.users.update_one(
+                {"email": admin_email},
+                {"$set": {"password_hash": hash_password(admin_password)}},
+            )
 
     # Auto-seed merchants / guilds taxonomy on first startup of an empty DB.
     # Idempotent: only runs when collections are empty so manual edits aren't
