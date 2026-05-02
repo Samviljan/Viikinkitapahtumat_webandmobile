@@ -4950,6 +4950,99 @@ async def admin_reject_event_organizer_request(
     return {"rejected": True, "request": res}
 
 
+class ContactOrganizerPayload(BaseModel):
+    from_name: str = Field(..., min_length=1, max_length=120)
+    from_email: EmailStr
+    subject: str = Field(..., min_length=1, max_length=200)
+    body: str = Field(..., min_length=1, max_length=4000)
+
+
+@api_router.post("/events/{event_id}/organizers/{user_id}/contact")
+async def contact_event_organizer(
+    event_id: str,
+    user_id: str,
+    payload: ContactOrganizerPayload,
+):
+    """Public endpoint: send a message from a visitor to an approved
+    organizer of this event. The organizer's real email address stays
+    hidden — we look it up server-side from the latest approved
+    `event_organizer_requests` row. Reply-To is set to the visitor's
+    email so the organizer can respond directly via their mail client.
+    """
+    ev = await db.events.find_one(
+        {"id": event_id, "status": "approved"},
+        {"_id": 0, "id": 1, "title_fi": 1, "title_en": 1, "organizer_user_ids": 1},
+    )
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if user_id not in (ev.get("organizer_user_ids") or []):
+        raise HTTPException(status_code=404, detail="Organizer not found for this event")
+    org_req = await db.event_organizer_requests.find_one(
+        {"event_id": event_id, "user_id": user_id, "status": "approved"},
+        {"_id": 0, "full_name": 1, "email": 1},
+        sort=[("processed_at", -1)],
+    )
+    if not org_req or not (org_req.get("email") or "").strip():
+        raise HTTPException(status_code=404, detail="Organizer has no contact email on file")
+
+    to_email = org_req["email"].strip()
+    organizer_name = org_req.get("full_name") or "Tapahtuman järjestäjä"
+    ev_title = ev.get("title_fi") or ev.get("title_en") or "Viikinkitapahtumat"
+
+    site = os.environ.get("PUBLIC_SITE_URL", "https://viikinkitapahtumat.fi")
+    subject_line = f"[{ev_title}] {payload.subject.strip()}"
+    html = (
+        f"<div style='font-family:system-ui,Arial,sans-serif;background:#0E0B09;color:#E8E2D5;padding:24px;'>"
+        f"<div style='max-width:560px;margin:auto;border:1px solid #352A23;padding:24px;'>"
+        f"<div style='font-size:11px;letter-spacing:1.6px;color:#C19C4D;text-transform:uppercase;'>"
+        f"Viesti tapahtuman järjestäjälle · {html_escape(ev_title)}</div>"
+        f"<h1 style='font-family:Georgia,serif;color:#E8E2D5;margin:8px 0 16px;'>"
+        f"{html_escape(payload.subject.strip())}</h1>"
+        f"<div style='white-space:pre-wrap;line-height:1.55;color:#E8E2D5;'>"
+        f"{html_escape(payload.body.strip())}</div>"
+        f"<hr style='border:none;border-top:1px solid #352A23;margin:24px 0;'>"
+        f"<div style='font-size:13px;color:#E8E2D5;'>Lähettäjä: "
+        f"<strong>{html_escape(payload.from_name.strip())}</strong></div>"
+        f"<div style='font-size:12px;color:#C19C4D;margin-top:4px;'>"
+        f"Vastaa sähköpostiin: "
+        f"<a href='mailto:{html_escape(str(payload.from_email))}' style='color:#C19C4D;'>"
+        f"{html_escape(str(payload.from_email))}</a></div>"
+        f"<div style='font-size:11px;color:#8E8276;margin-top:12px;'>"
+        f"Viesti lähetetty osoitteen <a href='{site}' style='color:#C19C4D;'>"
+        f"viikinkitapahtumat.fi</a> kautta. Et koskaan paljasta omaa sähköpostiosoitettasi "
+        f"lähettäjälle — voit vastata suoraan sähköpostiohjelmastasi.</div>"
+        f"</div></div>"
+    )
+    from email_service import send_email as svc_send_email
+    try:
+        await svc_send_email(
+            to_email,
+            subject_line,
+            html,
+            reply_to=str(payload.from_email),
+        )
+    except TypeError:
+        # Older email_service signature without reply_to — fall back gracefully
+        await svc_send_email(to_email, subject_line, html)
+    except Exception:
+        logger.exception("Failed sending organizer contact email for %s", event_id)
+        raise HTTPException(status_code=502, detail="Message could not be sent")
+
+    # Audit log (no PII leaked to public — only org recipient + event)
+    await db.organizer_contact_log.insert_one(
+        {
+            "event_id": event_id,
+            "organizer_user_id": user_id,
+            "organizer_name": organizer_name,
+            "from_name": payload.from_name.strip(),
+            "from_email": str(payload.from_email),
+            "subject": payload.subject.strip()[:200],
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
+    return {"ok": True}
+
+
 @api_router.delete("/admin/events/{event_id}/organizers/{user_id}")
 async def admin_remove_event_organizer(
     event_id: str,

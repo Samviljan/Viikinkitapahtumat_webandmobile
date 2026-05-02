@@ -508,6 +508,15 @@ See `/app/memory/test_credentials.md`.
 - Päivittäinen RSVP-muistutus ✅
 - `/admin/push/test` (debug, ei kirjoita — tarkoituksenmukaista)
 
+## Iteration — Organizer-rivi pelkäksi nimeksi + Kysy järjestäjältä -lomake (2026-05-02 ilta-8)
+- ✅ **Backend uusi public endpoint** `POST /api/events/{event_id}/organizers/{user_id}/contact`: ottaa vastaan `from_name, from_email, subject, body` kaikilta (ei vaadi kirjautumista), hakee organizerin oikean sähköpostin server-side `event_organizer_requests`-kokoelmasta, lähettää Resendin kautta HTML-sähköpostin järjestäjälle. Email-osoite EI KOSKAAN palaudu julkiselle API:lle. Reply-To yritetään asettaa lähettäjän osoitteeksi (fallback TypeError-branch jos email_service ei tue). Audit-loki `organizer_contact_log`-kokoelmaan (event_id, org_user_id, org_name, from_name, from_email, subject, created_at).
+- ✅ **Error-casescet**: 404 olematon event, 404 olematon/väärä organizer, 404 jos organizerilla ei ole email on file, 502 jos sähköpostin lähetys epäonnistuu.
+- ✅ **Web `EventOrganizers.jsx` kirjoitettu uudelleen**: näyttää vain nimimerkin + pienellä harmaalla "Lähetä viesti" -CTA:n. Rivi on `<button>`, klikkaaminen avaa `ContactOrganizerDialog`:n. Puhelin täysin pois public-näkymästä.
+- ✅ **Web uusi komponentti** `ContactOrganizerDialog.jsx`: yhteydenottolomake (nimi, email, aihe, viesti) jossa on kirjautuneelle käyttäjälle esitäytetyt nimi+email-kentät. Submit → `POST /.../contact` + toast + sulku.
+- ✅ **Mobile `EventOrganizersBlock.tsx` kirjoitettu uudelleen**: sama rivi-malli (vain nimi + "Lähetä viesti" -CTA), Pressable avaa Modal-pohjaisen lomakkeen samoilla kentillä. Success-statusteksti "Viesti lähetetty ✓" ja auto-sulku 1,2s:n kuluttua.
+- ✅ **E2E-testattu**: curl julkiseen endpointtiin (ilman tokenia) → 200 `{"ok":true}`, audit-loki tallentuu oikein organizer-tiedoilla ja lähettäjän tiedoilla. 404-virhetapaukset toimivat. Playwright UI: rivin teksti `"Ragnar Lothbrok" + "Lähetä viesti"` (puhelin+email pois), dialog avautuu klikattaessa, 5 lomakekenttää läsnä.
+- ✅ **Mobile build v0.4.15 (versionCode 29) käynnistetty**: ID `bde05038-32a0-4fd8-a2ab-a52805bda3b6`.
+
 ## Iteration — Piilota sähköposti julkisesta organizers-listasta (2026-05-02 ilta-7)
 - ✅ **Web `EventOrganizers.jsx`**: poistettu `<a mailto:...>` -rivi. Vain nimi + puhelin näkyvät. Admin-paneli (`AdminEventOrganizerRequests.jsx`) näyttää edelleen sähköpostin yhteystietona sisäiseen käyttöön.
 - ✅ **Mobile `EventOrganizersBlock.tsx`**: sama muutos — sähköposti-Pressable poistettu, nimi + puhelin jäävät.

@@ -1,16 +1,18 @@
 /**
  * Public list of approved organizers for this event. Hides itself if
- * none. Each row shows full name + phone so users can reach the
- * organizer with a question. Email is intentionally hidden from the
- * public view (admin panel still surfaces it) to reduce scraping and
- * spam risk for organizers.
+ * none. Shows only the organizer's full name (as a public "nickname").
+ * Clicking the name opens a contact form that routes the message to
+ * the organizer's real email server-side — the address itself is
+ * never exposed on the public event page.
  */
 import React, { useEffect, useState } from "react";
-import { ShieldCheck, Phone } from "lucide-react";
+import { ShieldCheck, MessageSquare } from "lucide-react";
 import { api } from "@/lib/api";
+import ContactOrganizerDialog from "@/components/ContactOrganizerDialog";
 
 export default function EventOrganizers({ eventId }) {
   const [list, setList] = useState(null);
+  const [contactTarget, setContactTarget] = useState(null);
 
   useEffect(() => {
     if (!eventId) return;
@@ -32,25 +34,33 @@ export default function EventOrganizers({ eventId }) {
       </h2>
       <div className="space-y-2">
         {list.map((o) => (
-          <div
+          <button
             key={o.user_id}
+            type="button"
+            onClick={() => setContactTarget(o)}
             data-testid={`event-organizer-${o.user_id}`}
-            className="flex flex-wrap items-center gap-x-3 gap-y-1 p-3 rounded-sm border border-viking-edge bg-viking-shadow/40"
+            className="group w-full flex items-center justify-between gap-3 p-3 rounded-sm border border-viking-edge bg-viking-shadow/40 hover:border-viking-gold/60 hover:bg-viking-shadow/70 transition-colors text-left"
           >
-            <ShieldCheck size={14} className="text-viking-gold flex-shrink-0" />
-            <span className="font-serif text-viking-bone">{o.full_name}</span>
-            {o.phone ? (
-              <a
-                href={`tel:${o.phone}`}
-                className="flex items-center gap-1 text-xs text-viking-stone hover:text-viking-gold transition-colors"
-              >
-                <Phone size={11} />
-                {o.phone}
-              </a>
-            ) : null}
-          </div>
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={14} className="text-viking-gold flex-shrink-0" />
+              <span className="font-serif text-viking-bone group-hover:text-viking-gold transition-colors">
+                {o.full_name}
+              </span>
+            </div>
+            <span className="flex items-center gap-1 text-[11px] uppercase tracking-wider text-viking-stone group-hover:text-viking-gold transition-colors">
+              <MessageSquare size={11} />
+              Lähetä viesti
+            </span>
+          </button>
         ))}
       </div>
+      <ContactOrganizerDialog
+        open={!!contactTarget}
+        onOpenChange={(v) => !v && setContactTarget(null)}
+        eventId={eventId}
+        organizerUserId={contactTarget?.user_id}
+        organizerName={contactTarget?.full_name}
+      />
     </section>
   );
 }
