@@ -4267,6 +4267,184 @@ async def admin_toggle_merchant_card_featured(
     return res.get("merchant_card") or {}
 
 
+# -----------------------------------------------------------------------------
+# Merchant Card activation requests
+# -----------------------------------------------------------------------------
+class MerchantCardRequestPayload(BaseModel):
+    shop_name: str = Field(..., min_length=1, max_length=200)
+    website: Optional[str] = Field(default="", max_length=500)
+    category: str = Field(default="gear")  # "gear" | "smith" | "other"
+    description: Optional[str] = Field(default="", max_length=1500)
+
+
+@api_router.post("/merchant-card-requests", status_code=201)
+async def submit_merchant_card_request(
+    payload: MerchantCardRequestPayload, user: dict = Depends(get_current_user)
+):
+    """Logged-in user submits a merchant-card activation request. Only one
+    `pending` request per user — a duplicate POST returns the existing one."""
+    cat = payload.category if payload.category in ("gear", "smith", "other") else "gear"
+    existing = await db.merchant_card_requests.find_one(
+        {"user_id": user["id"], "status": "pending"}, {"_id": 0}
+    )
+    now_iso = datetime.now(timezone.utc).isoformat()
+    if existing:
+        # Update the in-flight request with newest details, leaves status alone.
+        await db.merchant_card_requests.update_one(
+            {"id": existing["id"]},
+            {"$set": {
+                "shop_name": payload.shop_name.strip(),
+                "website": (payload.website or "").strip(),
+                "category": cat,
+                "description": (payload.description or "").strip(),
+                "updated_at": now_iso,
+            }},
+        )
+        existing.update({
+            "shop_name": payload.shop_name.strip(),
+            "website": (payload.website or "").strip(),
+            "category": cat,
+            "description": (payload.description or "").strip(),
+            "updated_at": now_iso,
+        })
+        return existing
+    doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "user_email": user.get("email"),
+        "user_name": user.get("name") or user.get("nickname") or "",
+        "shop_name": payload.shop_name.strip(),
+        "website": (payload.website or "").strip(),
+        "category": cat,
+        "description": (payload.description or "").strip(),
+        "status": "pending",
+        "created_at": now_iso,
+        "updated_at": now_iso,
+        "processed_at": None,
+        "processed_by": None,
+        "admin_note": None,
+    }
+    await db.merchant_card_requests.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@api_router.get("/merchant-card-requests/mine")
+async def my_merchant_card_request(user: dict = Depends(get_current_user)):
+    """Returns the user's most recent request (any status), or null."""
+    doc = await db.merchant_card_requests.find_one(
+        {"user_id": user["id"]},
+        {"_id": 0},
+        sort=[("created_at", -1)],
+    )
+    return doc
+
+
+@api_router.get("/admin/merchant-card-requests")
+async def admin_list_merchant_card_requests(
+    status: Optional[str] = None,
+    _admin: dict = Depends(get_admin_or_moderator),
+):
+    """Admin: list all requests (optionally filtered by status)."""
+    q: dict = {}
+    if status in ("pending", "approved", "rejected"):
+        q["status"] = status
+    rows = await db.merchant_card_requests.find(q, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return rows
+
+
+class MerchantCardRequestDecision(BaseModel):
+    note: Optional[str] = None
+
+
+@api_router.post("/admin/merchant-card-requests/{request_id}/approve")
+async def admin_approve_merchant_card_request(
+    request_id: str,
+    payload: Optional[MerchantCardRequestDecision] = None,
+    admin: dict = Depends(get_admin_or_moderator),
+):
+    """Approve a request — auto-activates the user's merchant card with the
+    requested shop_name/category/description, sets the 12-month window, and
+    adds the `merchant` user_type if missing."""
+    req = await db.merchant_card_requests.find_one(
+        {"id": request_id}, {"_id": 0}
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+    if req.get("status") != "pending":
+        raise HTTPException(status_code=409, detail="Request already processed")
+
+    user_id = req["user_id"]
+    user = await db.users.find_one(
+        {"id": user_id}, {"_id": 0, "id": 1, "merchant_card": 1, "user_types": 1}
+    )
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if "merchant" not in (user.get("user_types") or []):
+        await db.users.update_one(
+            {"id": user_id}, {"$addToSet": {"user_types": "merchant"}}
+        )
+    existing = user.get("merchant_card") or {}
+    now_iso = datetime.now(timezone.utc).isoformat()
+    new_card = {
+        "enabled": True,
+        "shop_name": req.get("shop_name") or existing.get("shop_name") or "",
+        "website": req.get("website") or existing.get("website") or "",
+        "phone": existing.get("phone") or "",
+        "email": existing.get("email") or "",
+        "description": req.get("description") or existing.get("description") or "",
+        "image_url": existing.get("image_url"),
+        "category": req.get("category") or existing.get("category") or "gear",
+        "featured": bool(existing.get("featured", False)),
+        "merchant_until": _merchant_until_iso(MERCHANT_CARD_DEFAULT_MONTHS),
+        "created_at": existing.get("created_at") or now_iso,
+        "updated_at": now_iso,
+    }
+    await db.users.update_one({"id": user_id}, {"$set": {"merchant_card": new_card}})
+    await db.merchant_card_requests.update_one(
+        {"id": request_id},
+        {"$set": {
+            "status": "approved",
+            "processed_at": now_iso,
+            "processed_by": admin.get("id"),
+            "admin_note": (payload.note if payload else None) or None,
+        }},
+    )
+    return {"approved": True, "merchant_card": new_card}
+
+
+@api_router.post("/admin/merchant-card-requests/{request_id}/reject")
+async def admin_reject_merchant_card_request(
+    request_id: str,
+    payload: Optional[MerchantCardRequestDecision] = None,
+    admin: dict = Depends(get_admin_or_moderator),
+):
+    res = await db.merchant_card_requests.find_one_and_update(
+        {"id": request_id, "status": "pending"},
+        {"$set": {
+            "status": "rejected",
+            "processed_at": datetime.now(timezone.utc).isoformat(),
+            "processed_by": admin.get("id"),
+            "admin_note": (payload.note if payload else None) or None,
+        }},
+        return_document=True,
+        projection={"_id": 0},
+    )
+    if not res:
+        raise HTTPException(status_code=404, detail="Pending request not found")
+    return {"rejected": True, "request": res}
+
+
+@api_router.get("/admin/merchant-card-requests/pending-count")
+async def admin_pending_request_count(_admin: dict = Depends(get_admin_or_moderator)):
+    """Lightweight badge counter for the admin panel header."""
+    n = await db.merchant_card_requests.count_documents({"status": "pending"})
+    return {"pending": n}
+
+
+# -----------------------------------------------------------------------------
+# Merchant cards admin list
+# -----------------------------------------------------------------------------
 @api_router.get("/admin/merchant-cards")
 async def admin_list_merchant_cards(_admin: dict = Depends(get_admin_or_moderator)):
     """Lists every user with a merchant_card sub-document (enabled or not)
@@ -4552,6 +4730,9 @@ async def on_startup():
     await db.user_messages.create_index([("sender_id", 1), ("event_id", 1)])
     await db.user_messages.create_index("batch_id")
     await db.user_messages.create_index("id", unique=True)
+    await db.merchant_card_requests.create_index("user_id")
+    await db.merchant_card_requests.create_index("status")
+    await db.merchant_card_requests.create_index("id", unique=True)
 
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@viikinkitapahtumat.fi").lower()
     admin_password = os.environ["ADMIN_PASSWORD"]

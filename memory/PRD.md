@@ -473,6 +473,14 @@ See `/app/memory/test_credentials.md`.
   - User downloads `.aab` from above URL when Expo finishes (~10-15 min) and uploads to Play Console manually.
 
 
+## Iteration — In-app Merchant Card Requests + Admin inbox (2026-05-02)
+- ✅ **Backend**: Uusi `merchant_card_requests`-kokoelma + 6 endpointtia (POST submit, GET /mine, admin GET list + pending-count, POST approve, POST reject). **Approve auto-aktivoi käyttäjän `merchant_card`-sub-docin** kentillä shop_name/category/description pyynnöstä, asettaa `merchant_until` = +12 kk, lisää `merchant`-user_typen jos puuttuu. Yhden pyynnön rajoite — duplicate POST päivittää olemassa olevaa pyyntöä. Indeksit lisätty.
+- ✅ **Web**: Korvasin `MerchantCardCTA.jsx`:n mailto-flowin in-app `<Dialog>`-lomakkeella (kaupan nimi, kategoriavalinta, verkkosivu, esittely). Uusi admin-sivu `/admin/merchant-requests` (`AdminMerchantRequests.jsx`) 3 välilehdellä (Odottaa / Hyväksytty / Hylätty). Sidebar-navissa uusi "Kauppiaspyynnöt"-linkki ember-pillillä joka näyttää pending-määrän.
+- ✅ **Mobile**: `(tabs)/shops.tsx` CTA käyttää nyt natiivia `<Modal>`-lomaketta `Linking.openURL`-mailton sijaan. Sama 3-tilan logiikka (anonyymi → /settings/auth, kirjautunut → modal, aktiivinen kortti → piilo). Existing-pyyntö ladataan `/merchant-card-requests/mine` -kutsulla ja näkyy "Päivitä pyyntö"-tilassa.
+- ✅ **Fine print muutos**: "Toistaiseksi toiminto on maksuton. Mahdollinen maksullisuus tapahtuu tulevissa julkaisuversioissa, ja siitä tiedotetaan erikseen ennen käyttöönottoa." — sekä webissä (3 kielelle) että mobiilissa.
+- ✅ **End-to-end verifikaatio**: dialog→submit (admin-tilillä) → admin-paneliin ilmestyi pending-pyyntö badge-luvulla 1 → curl-approve → user's merchant_card.enabled=true automaattisesti shop_name/category/description-kentillä. Testi-data siivottu jälkikäteen.
+- ✅ TS clean, ESLint clean, ruff clean.
+
 ## Iteration — Hanki kauppiaskortti CTA (Web + Mobile, 2026-05-02)
 - ✅ **Web `MerchantCardCTA.jsx`**: Uusi komponentti `/app/frontend/src/components/MerchantCardCTA.jsx`. Embedataan `Shops.jsx`:n loppuun (kategorioiden jälkeen, ennen footeria). 3 visibility-tilaa:
   1. Anonyymi → "Rekisteröidy kauppiaaksi" -nappi → `/register`
