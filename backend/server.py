@@ -1758,7 +1758,33 @@ async def send_message_to_attendees(
     # Sender nickname is appended to every push/email body so recipients always
     # know who the message is from. Admin uses "Viikinkitapahtumat" since the
     # site itself is the sender for site-wide announcements.
-    sender_label = (
+    #
+    # If the sender is an APPROVED event organizer for this specific event,
+    # replace the generic nickname with the official organizer signature
+    # (full_name + role + email). This adds credibility to messages and
+    # routes follow-up questions to the real organizer, not to platform
+    # support.
+    organizer_sig: Optional[str] = None
+    organizer_email: Optional[str] = None
+    if not is_admin and user["id"] in (ev.get("organizer_user_ids") or []):
+        org_req = await db.event_organizer_requests.find_one(
+            {
+                "event_id": payload.event_id,
+                "user_id": user["id"],
+                "status": "approved",
+            },
+            {"_id": 0, "full_name": 1, "email": 1},
+            sort=[("processed_at", -1)],
+        )
+        if org_req and org_req.get("full_name"):
+            ev_title_short = (ev.get("title_fi") or ev.get("title_en") or "").strip()
+            suffix = (
+                f", {ev_title_short} -järjestäjä" if ev_title_short else ", järjestäjä"
+            )
+            organizer_sig = f"{org_req['full_name']}{suffix}"
+            organizer_email = (org_req.get("email") or "").strip() or None
+
+    sender_label = organizer_sig or (
         user.get("nickname")
         or user.get("merchant_name")
         or user.get("organizer_name")
@@ -1783,13 +1809,22 @@ async def send_message_to_attendees(
         from email_service import send_email as svc_send_email
         site = os.environ.get("PUBLIC_SITE_URL", "https://viikinkitapahtumat.fi")
         ev_title = ev.get("title_fi") or ev.get("title") or "Viikinkitapahtumat"
+        signature_block = (
+            f"<div style='margin-top:18px;font-size:13px;color:#C19C4D;'>— {html_escape(sender_label)}</div>"
+        )
+        if organizer_email:
+            signature_block += (
+                f"<div style='font-size:12px;color:#E8E2D5;margin-top:4px;'>"
+                f"<a href='mailto:{html_escape(organizer_email)}' style='color:#C19C4D;'>"
+                f"{html_escape(organizer_email)}</a></div>"
+            )
         html = (
             f"<div style='font-family:system-ui,Arial,sans-serif;background:#0E0B09;color:#E8E2D5;padding:24px;'>"
             f"<div style='max-width:560px;margin:auto;border:1px solid #352A23;padding:24px;'>"
             f"<div style='font-size:11px;letter-spacing:1.6px;color:#C19C4D;text-transform:uppercase;'>{html_escape(ev_title)}</div>"
             f"<h1 style='font-family:Georgia,serif;color:#E8E2D5;margin:8px 0 16px;'>{html_escape(payload.subject)}</h1>"
             f"<div style='white-space:pre-wrap;line-height:1.55;color:#E8E2D5;'>{html_escape(payload.body)}</div>"
-            f"<div style='margin-top:18px;font-size:13px;color:#C19C4D;'>— {html_escape(sender_label)}</div>"
+            f"{signature_block}"
             f"<hr style='border:none;border-top:1px solid #352A23;margin:24px 0;'>"
             f"<div style='font-size:11px;color:#8E8276;'>Lähettäjä: {html_escape(sender_label)} · "
             f"<a href='{site}/profile' style='color:#C19C4D;'>Hallinnoi viestiasetuksia</a></div>"

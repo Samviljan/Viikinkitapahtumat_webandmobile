@@ -508,6 +508,13 @@ See `/app/memory/test_credentials.md`.
 - Päivittäinen RSVP-muistutus ✅
 - `/admin/push/test` (debug, ei kirjoita — tarkoituksenmukaista)
 
+## Iteration — Virallisen järjestäjän allekirjoitus tapahtumaviesteihin (2026-05-02 ilta-5)
+- ✅ **Backend `POST /messages/send`**: jos lähettäjä on hyväksytty järjestäjä (user.id ∈ event.organizer_user_ids), vastaava `event_organizer_requests`-dokumentti haetaan ja sen `full_name` + tapahtuman otsikko yhdistetään allekirjoitukseksi: `— Ragnar Lothbrok, Sleipnir fighting camp, Ulvila -järjestäjä`. Korvaa aiemman generic nicknamen (`user.nickname`/`merchant_name`).
+- ✅ **Push-viestin runko**: body-tekstin loppuun lisätään `— {organizer_sig}` aivan kuten aiemmin, mutta nyt virallisella nimellä. 200 merkin cap pysyy.
+- ✅ **Sähköpostin HTML**: kultainen `— {organizer_sig}` -rivi + sen alla `ragnar@vikings.fi` -klikattava mailto-linkki. Ohjaa vastaanottajan kysymykset suoraan oikealle järjestäjälle, ei alustan support-kanavaan.
+- ✅ **Ei-organizerille** (tavallinen kauppias tai admin tai järjestäjä tapahtumassa johon ei ole hyväksytty): allekirjoitus pysyy entisenä (nickname/merchant_name/Viikinkitapahtumat). Vain hyväksytty organizer saa virallisen allekirjoituksen.
+- ✅ **Testattu**: kutsu `POST /messages/send` organizer-roolilla → allekirjoitus muodostuu `"Ragnar Lothbrok, Sleipnir fighting camp, Ulvila -järjestäjä"` + email `ragnar@vikings.fi`. Lint clean, backend restart clean.
+
 ## Iteration — Tapahtumajärjestäjäpyynnöt + viestien lähetyksen rajoitus (2026-05-02 ilta-4)
 - ✅ **Backend uusi kokoelma** `event_organizer_requests` (4 indeksiä: user+event, event_id, status, id-unique). Tapahtumissa uusi `organizer_user_ids: List[str]` (max 3).
 - ✅ **6 uutta endpointtia**:
