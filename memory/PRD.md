@@ -473,6 +473,13 @@ See `/app/memory/test_credentials.md`.
   - User downloads `.aab` from above URL when Expo finishes (~10-15 min) and uploads to Play Console manually.
 
 
+## Iteration — Native build v22 (versionCode 23) käynnistys + RuntimeVersion-fix (2026-05-02)
+- 🐛 **Diagnoosi**: Aiemmat OTA-päivitykset eivät menneet mobiiliin perille koska Android-build versionCode 21 oli rakennettu **ilman `runtimeVersion`-asetusta** app.json:ssa. Kun ajettiin `eas update`, EAS CLI auto-lisäsi `runtimeVersion: {policy: appVersion}` ja julkaisi päivityksen tagattuna runtime-versioon 0.4.8 — mutta puhelimessa oleva binääri ei sisällä mitään runtime-versiota, joten `expo-updates` ei voinut yhdistää päivitykseen.
+- ✅ **Korjaus**: app.json sisältää nyt `runtimeVersion: {policy: appVersion}`. Käynnistetty uusi natiivibuild EAS Cloud Buildilla (Build ID `c46cc8fe-61a9-4a7b-a3e3-82f4856b04f1`, versionCode bumpattiin 21 → 23 koska 22 jäi kesken aiemmasta yrityksestä). Tämä build sisältää KAIKKI viime aikojen muutokset (kaupat-järjestys, premium-jako, hanki-CTA, viestit-inbox, top-heron poisto, RSVP-muistutukset inboxiin) JA korjaa runtimeVersionin niin että jatkossa OTA-päivitykset toimivat oikein.
+- ⏳ **Build käynnissä**: EAS Cloud Buildin Linux-x64-koneella (~15-25 min). Tilaohjeet: https://expo.dev/accounts/samviljan/projects/viikinkitapahtumat/builds/c46cc8fe-61a9-4a7b-a3e3-82f4856b04f1
+- ✅ **Token-turvallisuus**: Käytetty väliaikaista Expo-tokenia vain käynnistystä varten — käyttäjää ohjeistettu poistamaan token expo.devistä heti.
+- ⚠️ **Hermes-binääri korjattu**: Edellinen OTA-yritys vaati Hermes-bytecode-bundlerin x86→aarch64-emulointia qemulla (kontaineri on aarch64). EAS Cloud Build pyörittää itse natiivin x64-koneen joten emulointi ei tarpeen tässä buildissa. Wrappperi-skripti palautettu alkuperäiseksi binääriksi ennen buildia.
+
 ## Iteration — RSVP-muistutukset näkyvät Viestit-inboxissa (2026-05-02)
 - ✅ **Backend**: Uusi jaettu helper `_record_inbox_rows(event_id, recipients, sender_id, sender_label, channel, subject, body)` joka kirjoittaa per-vastaanottaja-rivit `user_messages`-kokoelmaan jaetulla `batch_id`:llä. Käytetään NYT sekä `/messages/send`-flow:ssa (refactor, sama lopputulos kuin aiemmin) että **päivittäisten RSVP-muistutusten ajossa** (`_run_daily_event_reminders`). 
 - ✅ **RSVP-muistutus** kirjoittaa inboxiin yhteistä `inbox_recipient_ids`-listaa hyödyntäen (push + email -käyttäjien union, deduplikoitu setiksi). `sender_id="system"`, `sender_label="Viikinkitapahtumat"`. Subject = tapahtuman otsikko. Body = "Tapahtuma alkaa pian — muista varata aika kalenteriin." Channel = "both" / "push" / "email" sen mukaan mitä lähetettiin.
