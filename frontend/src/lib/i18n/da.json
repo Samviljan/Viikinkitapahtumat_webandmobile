@@ -59,7 +59,9 @@
     "duration_one": "1-dages begivenhed",
     "duration_n": "{n}-dages begivenhed",
     "open_in_maps": "Åbn i Kort",
-    "open_website": "Åbn websted"
+    "open_website": "Åbn websted",
+    "merchants_present": "Handlere på stedet",
+    "merchants_present_help": "Disse handlere har tilkendegivet, at de deltager i arrangementet."
   },
   "submit": {
     "title": "Indsend et arrangement",

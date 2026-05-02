@@ -59,7 +59,9 @@
     "duration_one": "1-Tages-Veranstaltung",
     "duration_n": "{n}-Tages-Veranstaltung",
     "open_in_maps": "In Karten öffnen",
-    "open_website": "Webseite öffnen"
+    "open_website": "Webseite öffnen",
+    "merchants_present": "Händler vor Ort",
+    "merchants_present_help": "Diese Händler haben angekündigt, an dieser Veranstaltung teilzunehmen."
   },
   "submit": {
     "title": "Ein Event einreichen",

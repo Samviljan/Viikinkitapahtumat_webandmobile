@@ -508,6 +508,15 @@ See `/app/memory/test_credentials.md`.
 - Päivittäinen RSVP-muistutus ✅
 - `/admin/push/test` (debug, ei kirjoita — tarkoituksenmukaista)
 
+## Iteration — "Kauppiaita paikalla" tapahtumasivulla (Web + Mobile, 2026-05-02 ilta-3)
+- ✅ **Backend uusi public endpoint** `GET /api/events/{event_id}/merchants` — palauttaa lista kauppiaista (aktiivinen `merchant_card.enabled=true`, ei vanhentunut) jotka ovat RSVP-merkinneet tapahtumaan. Lajittelu: featured ensin, sitten nimi. Mukana `id, name, description, url, category, image_url, featured, is_user_card`. 404 jos tapahtumaa ei löydy, `[]` jos ei kauppiaita.
+- ✅ **Web `EventMerchants.jsx`** -komponentti: 1–3 -sarakkeinen grid (responsiivinen), 64×64 kuva tai kategoria-ikoni-placeholder, ★ featured-merkki, otsikko + 2-rivinen kuvauskatkelma. Klikkaaminen vie `/shops/<id>` -merchant-detail-sivulle. Komponentti piilottaa itsensä jos lista on tyhjä.
+- ✅ **Mobile `EventMerchantsBlock.tsx`**: sama visuaalinen rakenne mobiilissa pystylistana. Käyttää yhteistä `resolveImageUrl()`-helperia. Napautus `router.push('/shops/<id>')`.
+- ✅ **i18n 7 kielelle**: `events.merchants_present` + `events.merchants_present_help` käännetty FI/EN/SV/DA/DE/ET/PL.
+- ✅ **End-to-end testattu**: Sleipnir fighting camp -tapahtumassa 2 RSVP-merkittyä kauppiasta (Helkas Forge + Viikinkitapahtumat) — molemmat näkyvät webissä oikein. Olematon tapahtuma → 404, tyhjä tapahtuma → `[]` (komponentti piilossa).
+- ✅ **Mobile build v0.4.12 (versionCode 26) käynnistetty**: `2f32d8ef-202b-4918-ba10-32716d3368c5`. Sisältää kaikki päivän muutokset (merchant-detail kuva + tapahtumalista, kauppiaita paikalla tapahtumassa). Korvaa aiemman v0.4.11-buildin Play Console -lataukseksi.
+- ✅ TypeScript clean, ESLint clean, ruff clean.
+
 ## Iteration — Mobile merchant-detail puuttuvat tiedot (2026-05-02 ilta-2)
 - ✅ **Korjaus**: Mobiilin `/shops/[id].tsx` käytti väärin `process.env.EXPO_PUBLIC_BACKEND_URL`-fallbackia kuvan URL:in muodostuksessa → EAS-buildatussa sovelluksessa env-muuttuja ei ole asetettu, joten kauppiaan lataama kuva (`/api/uploads/profile-images/...`) ei latautunut. Vaihdettu käyttämään koko sovelluksen yhteistä `resolveImageUrl()`-helperia (`@/api/client`).
 - ✅ **Lisätty "Tapaa meidät tapahtumissa" -sektio**: aiemmin mobiilin merchant-detail-näytöllä ei ollut listaa kauppiaan tulevista tapahtumista. Backend palauttaa `events`-kentän jo (web `MerchantDetail.jsx` käyttää sitä), mutta mobiili ohitti sen. Nyt sektio renderöityy `merchant-events-block`-testID:llä — kalenteri-ikoni + tapahtuman otsikko + päivämääräväli + sijainti + maan lippu. Kortti on `Pressable` joka navigoi `/event/{id}`-näyttöön.

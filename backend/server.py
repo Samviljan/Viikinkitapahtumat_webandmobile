@@ -1550,6 +1550,59 @@ async def admin_clear_user_push_tokens(user_id: str):
 # -----------------------------------------------------------------------------
 # Anonymous attendance stats (visible to merchants/organizers — privacy-safe)
 # -----------------------------------------------------------------------------
+@api_router.get("/events/{event_id}/merchants")
+async def event_merchants(event_id: str):
+    """Public list of merchant cards whose owner has RSVPed to this event.
+    Returns a small array suitable for an "Tapaa meidät tapahtumissa" /
+    "Kauppiaita paikalla" strip on the event detail page. Filters to
+    enabled, non-expired user merchant cards only — legacy directory
+    merchants are skipped (they don't RSVP).
+    """
+    ev = await db.events.find_one(
+        {"id": event_id, "status": "approved"}, {"_id": 0, "id": 1}
+    )
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    rows = await db.event_attendees.find(
+        {"event_id": event_id}, {"_id": 0, "user_id": 1}
+    ).to_list(5000)
+    user_ids = [r["user_id"] for r in rows]
+    if not user_ids:
+        return []
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    cursor = db.users.find(
+        {
+            "id": {"$in": user_ids},
+            "merchant_card.enabled": True,
+            "$or": [
+                {"merchant_card.merchant_until": {"$exists": False}},
+                {"merchant_card.merchant_until": None},
+                {"merchant_card.merchant_until": {"$gte": now_iso}},
+            ],
+        },
+        {"_id": 0, "id": 1, "merchant_card": 1},
+    )
+    docs = await cursor.to_list(500)
+    out: list[dict] = []
+    for u in docs:
+        c = u.get("merchant_card") or {}
+        out.append({
+            "id": u["id"],
+            "name": (c.get("shop_name") or "").strip(),
+            "description": (c.get("description") or "").strip(),
+            "url": (c.get("website") or "").strip(),
+            "category": c.get("category") or "gear",
+            "image_url": c.get("image_url"),
+            "featured": bool(c.get("featured", False)),
+            "is_user_card": True,
+            "user_id": u["id"],
+        })
+    out.sort(key=lambda x: (not x["featured"], (x["name"] or "").lower()))
+    return out
+
+
 @api_router.get("/events/{event_id}/stats")
 async def event_attendance_stats(
     event_id: str, user: dict = Depends(get_current_user)

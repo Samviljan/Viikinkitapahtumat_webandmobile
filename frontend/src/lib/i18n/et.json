@@ -60,7 +60,9 @@
     "duration_one": "Kestab 1 päeva",
     "duration_n": "Kestab {n} päeva",
     "open_in_maps": "Ava kaardil",
-    "open_website": "Ava veebisait"
+    "open_website": "Ava veebisait",
+    "merchants_present": "Kauplejad kohal",
+    "merchants_present_help": "Need kauplejad on teatanud, et osalevad sellel sündmusel."
   },
   "submit": {
     "title": "Teatage üritusest",

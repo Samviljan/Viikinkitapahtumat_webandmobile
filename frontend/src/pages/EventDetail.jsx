@@ -10,6 +10,7 @@ import FavoriteButton from "@/components/FavoriteButton";
 import RemindMeButton from "@/components/RemindMeButton";
 import AttendButton from "@/components/AttendButton";
 import EventStats from "@/components/EventStats";
+import EventMerchants from "@/components/EventMerchants";
 import { flagFor } from "@/lib/countries";
 import { resolveImageUrl } from "@/lib/images";
 
@@ -253,6 +254,7 @@ export default function EventDetail() {
             <AttendButton eventId={event.id} />
             <EventStats eventId={event.id} />
           </div>
+          <EventMerchants eventId={event.id} />
         </div>
       </div>
     </article>

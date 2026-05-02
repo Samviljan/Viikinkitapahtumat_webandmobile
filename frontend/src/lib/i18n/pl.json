@@ -60,7 +60,9 @@
     "duration_one": "Trwa 1 dzień",
     "duration_n": "Trwa {n} dni",
     "open_in_maps": "Otwórz w Mapach",
-    "open_website": "Otwórz stronę"
+    "open_website": "Otwórz stronę",
+    "merchants_present": "Kupcy na miejscu",
+    "merchants_present_help": "Ci kupcy zadeklarowali udział w tym wydarzeniu."
   },
   "submit": {
     "title": "Zgłoś wydarzenie",

@@ -65,7 +65,9 @@
     "duration_one": "Kestää 1 päivän",
     "duration_n": "Kestää {n} päivää",
     "open_in_maps": "Avaa kartalla",
-    "open_website": "Avaa verkkosivu"
+    "open_website": "Avaa verkkosivu",
+    "merchants_present": "Kauppiaita paikalla",
+    "merchants_present_help": "Nämä kauppiaat ovat ilmoittaneet osallistuvansa tähän tapahtumaan."
   },
   "submit": {
     "title": "Ilmoita tapahtuma",

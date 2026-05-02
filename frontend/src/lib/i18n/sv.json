@@ -64,7 +64,9 @@
     "duration_one": "Pågår i 1 dag",
     "duration_n": "Pågår i {n} dagar",
     "open_in_maps": "Öppna i Kartor",
-    "open_website": "Öppna webbplats"
+    "open_website": "Öppna webbplats",
+    "merchants_present": "Handlare på plats",
+    "merchants_present_help": "Dessa handlare har anmält att de deltar i evenemanget."
   },
   "submit": {
     "title": "Anmäl evenemang",
