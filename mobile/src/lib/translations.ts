@@ -253,7 +253,7 @@ const baseTranslations: Partial<Record<Lang, Dict>> = {
       favorites: "Suosikit",
       myevents: "Tapahtumani",
       calendar: "Kalenteri",
-      shops: "Kauppiaat",
+      shops: "Kaupat",
       settings: "Asetukset",
     },
     home: {

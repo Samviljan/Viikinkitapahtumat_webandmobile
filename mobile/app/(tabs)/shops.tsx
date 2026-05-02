@@ -130,66 +130,45 @@ export default function ShopsScreen() {
             </View>
           }
           renderItem={({ item }) => {
-            if (item.type === "featured-header") {
-              return <SectionTitle label="Esillä olevat kauppiaat" />;
-            }
             if (item.type === "section") {
               return <SectionTitle label={item.label} />;
             }
-            if (item.type === "featured-card") {
-              const m = item.merchant;
+            const m = item.merchant;
+            // Paid user-card row: prominent rendering with image (if any) +
+            // heart toggle. Legacy entries keep the simple LinkListRow.
+            if (m.is_user_card) {
               const fav = isFavorite(m.id);
               return (
-                <View style={styles.featuredCard} testID={`featured-${m.id}`}>
+                <View style={styles.paidCard} testID={`merchant-${m.id}`}>
                   {m.image_url ? (
-                    <Image source={{ uri: imgSrc(m.image_url) }} style={styles.featuredImage} />
+                    <Image
+                      source={{ uri: imgSrc(m.image_url) }}
+                      style={styles.paidImage}
+                    />
                   ) : null}
-                  <View style={styles.featuredBody}>
-                    <View style={styles.featuredTitleRow}>
-                      <Text style={styles.featuredTitle}>{m.name}</Text>
+                  <View style={styles.paidBody}>
+                    <View style={styles.paidTitleRow}>
+                      <Text style={styles.paidTitle}>{m.name}</Text>
                       <FavoriteHeartButton
                         testID={`fav-merchant-${m.id}`}
                         isFav={fav}
                         onPress={() => toggle(m.id)}
                       />
                     </View>
+                    {m.featured ? (
+                      <Text style={styles.paidFeatured}>★ {t("shops.featured_title") || "Esillä"}</Text>
+                    ) : null}
                     {m.description ? (
-                      <Text style={styles.featuredDesc} numberOfLines={3}>
+                      <Text style={styles.paidDesc} numberOfLines={3}>
                         {m.description}
                       </Text>
                     ) : null}
                   </View>
                   <LinkListRow
-                    testID={`featured-link-${m.id}`}
+                    testID={`merchant-link-${m.id}`}
                     icon={m.category === "smith" ? "hammer-outline" : "storefront-outline"}
-                    title={m.url ? "Avaa kotisivut" : m.name}
-                    subtitle={m.url || undefined}
-                    url={m.url}
-                  />
-                </View>
-              );
-            }
-            const m = item.merchant;
-            // User-card row gets a heart toggle on the right edge; legacy
-            // entries keep the original LinkListRow (no detail page → no
-            // favourite either, mirrors web behaviour).
-            if (m.is_user_card) {
-              const fav = isFavorite(m.id);
-              return (
-                <View style={styles.merchantRowWrap}>
-                  <View style={{ flex: 1 }}>
-                    <LinkListRow
-                      testID={`merchant-${m.id}`}
-                      icon={m.category === "smith" ? "hammer-outline" : "storefront-outline"}
-                      title={m.name}
-                      subtitle={m.description || undefined}
-                      url={m.url}
-                    />
-                  </View>
-                  <FavoriteHeartButton
-                    testID={`fav-merchant-${m.id}`}
-                    isFav={fav}
-                    onPress={() => toggle(m.id)}
+                    title={t("shops.view_details") || "Katso lisätiedot"}
+                    url={`/shops/${m.id}`}
                   />
                 </View>
               );
@@ -234,44 +213,46 @@ const styles = StyleSheet.create({
   center: { alignItems: "center", paddingVertical: spacing.xxl },
   empty: { color: colors.stone, padding: spacing.lg, textAlign: "center" },
   error: { color: colors.ember, padding: spacing.lg, textAlign: "center" },
-  featuredCard: {
+  paidCard: {
     marginBottom: spacing.md,
     borderRadius: radius?.sm ?? 4,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: colors.edge,
+    borderColor: colors.gold,
     backgroundColor: colors.surface,
   },
-  featuredImage: {
+  paidImage: {
     width: "100%",
     aspectRatio: 16 / 9,
     backgroundColor: colors.surface2,
   },
-  featuredBody: {
+  paidBody: {
     padding: spacing.md,
   },
-  featuredTitleRow: {
+  paidTitleRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
     gap: spacing.sm,
     marginBottom: 4,
   },
-  featuredTitle: {
+  paidTitle: {
     flex: 1,
     color: colors.bone,
     fontSize: 18,
     fontWeight: "600",
   },
-  featuredDesc: {
+  paidFeatured: {
+    color: colors.gold,
+    fontSize: 11,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  paidDesc: {
     color: colors.stone,
     fontSize: 13,
     lineHeight: 18,
-  },
-  merchantRowWrap: {
-    flexDirection: "row",
-    alignItems: "stretch",
-    gap: spacing.xs,
   },
   heart: {
     padding: spacing.sm,

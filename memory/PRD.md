@@ -473,6 +473,12 @@ See `/app/memory/test_credentials.md`.
   - User downloads `.aab` from above URL when Expo finishes (~10-15 min) and uploads to Play Console manually.
 
 
+## Iteration — Merchant sort + tab rename + default images batch (2026-05-02)
+- ✅ **Web `/shops` järjestys verifioitu**: Helkas Forge (paid + featured) näkyy oman kategoriansa (Seppiä) kärjessä `★ ESILLÄ OLEVAT KAUPPIAAT`-badgella. Ei erillistä "Featured"-stripiä — featured-merkki näkyy nyt kortin sisällä.
+- ✅ **Mobiili `/shops` puhdistettu**: poistettu kuollut `featured-card`/`featured-header` -koodi (TS-virheet 0). Maksulliset kortit renderöidään prominent-tyylisinä (kullainen reuna, kuva 16:9 jos saatavilla, otsikko + sydän + kuvaus + "Katso lisätiedot"-rivi).
+- ✅ **Mobiili FI-välilehden nimi**: `tab.shops` muutettu `"Kauppiaat"` → `"Kaupat"` (lyhyempi, mahtuu paremmin tab-bariin). Muut kielet ennallaan.
+- ✅ **AI Default Event Images -batch ajettu**: 12/12 oletuskuvaa GridFS:ssä (2 per kategoria — market/training_camp/course/festival/meetup/other). Generoitu Gemini Nano Bananalla (gemini-3.1-flash-image-preview) Emergent LLM keylllä. Helper-skripti `/app/backend/scripts/run_default_image_batch.py` voidaan ajaa uudelleen lisää-kuville.
+
 ## Build-status (viimeksi yritetty 2026-04-30 klo 13:00)
 
 ### Mobile (Android)
