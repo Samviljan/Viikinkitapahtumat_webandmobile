@@ -5246,6 +5246,37 @@ async def _merchant_card_expiry_sweep() -> dict:
     return summary
 
 
+async def _organizer_sync_job() -> dict:
+    """Daily APScheduler self-heal — re-runs the same logic as
+    POST /admin/event-organizer-requests/sync to ensure every approved
+    organizer request is reflected in events.organizer_user_ids."""
+    rows = await db.event_organizer_requests.find(
+        {"status": "approved"},
+        {"_id": 0, "event_id": 1, "user_id": 1},
+    ).to_list(5000)
+    by_event: dict[str, list[str]] = {}
+    for r in rows:
+        by_event.setdefault(r["event_id"], []).append(r["user_id"])
+    added_total = 0
+    for eid, uids in by_event.items():
+        ev = await db.events.find_one({"id": eid}, {"_id": 0, "organizer_user_ids": 1})
+        if not ev:
+            continue
+        current = set(ev.get("organizer_user_ids") or [])
+        to_add = [u for u in uids if u not in current][: max(0, MAX_ORGANIZERS_PER_EVENT - len(current))]
+        if to_add:
+            await db.events.update_one(
+                {"id": eid},
+                {"$addToSet": {"organizer_user_ids": {"$each": to_add}}},
+            )
+            added_total += len(to_add)
+    summary = {"added": added_total, "ran_at": datetime.now(timezone.utc).isoformat()}
+    if added_total:
+        logger.info("Organizer sync: healed %d orphan rows", added_total)
+    return summary
+
+
+
 @api_router.post("/admin/guilds", response_model=GuildOut, status_code=201)
 async def admin_create_guild(payload: GuildIn, _admin: dict = Depends(get_admin_or_moderator)):
     doc = payload.model_dump()
@@ -5591,11 +5622,21 @@ async def on_startup():
         id="merchant_card_expiry",
         replace_existing=True,
     )
+    # Organizer sync — daily at 03:45 Europe/Helsinki. Idempotent self-heal
+    # to ensure every approved organizer request is reflected in the
+    # corresponding event's organizer_user_ids. Catches any orphan rows
+    # left by failed admin add/approve requests.
+    scheduler.add_job(
+        _organizer_sync_job,
+        CronTrigger(hour=3, minute=45),
+        id="organizer_sync_daily",
+        replace_existing=True,
+    )
     scheduler.start()
     logger.info(
         "APScheduler started — monthly digest 1st@09:00, weekly admin report Mon@09:00, "
         "event reminders daily@09:00, translation sweep every 6h, prod events sync 06:00+18:00, "
-        "merchant card expiry daily@03:30, Europe/Helsinki"
+        "merchant card expiry daily@03:30, organizer sync daily@03:45, Europe/Helsinki"
     )
 
 

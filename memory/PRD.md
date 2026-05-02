@@ -508,6 +508,12 @@ See `/app/memory/test_credentials.md`.
 - Päivittäinen RSVP-muistutus ✅
 - `/admin/push/test` (debug, ei kirjoita — tarkoituksenmukaista)
 
+## Iteration — Automaattinen organizer-sync APSchedulerilla (2026-05-02 ilta-10)
+- ✅ **Uusi APScheduler-jobi** `organizer_sync_daily` joka ajaa idempotentin healer-logiikan päivittäin **03:45 Europe/Helsinki**. Estää tilanteen jossa organizer-pyyntö hyväksyttäisiin mutta `events.organizer_user_ids` jäisi orpoksi.
+- ✅ `_organizer_sync_job()` käyttää samaa logiikkaa kuin manuaalinen `POST /admin/event-organizer-requests/sync`-endpointti, mutta käsittelee samalla kaikki tapahtumat batchissa. Tulokset lokitetaan: `"Organizer sync: healed N orphan rows"` jos N>0.
+- ✅ Backend käynnistyi puhtaasti, APScheduler vahvistaa: `"organizer sync daily@03:45"` rekisteröity yhdessä muiden cronien kanssa.
+- ✅ Manuaalinen sync-nappi admin-panelissa pysyy myös käytettävissä välittömään korjaukseen.
+
 ## Iteration — Healer: synkronoi orpo-organizer-pyynnöt tapahtumiin (2026-05-02 ilta-9)
 - 🐛 **Bug-raportti tuotannosta**: Käyttäjä lisäsi manuaalisesti Toni Lähteenmäen kahteen tapahtumaan, mutta Toni ei näkynyt julkisesti tapahtumakortilla. Diagnoosi: `event_organizer_requests` rivi tallentui ja näkyi "Hyväksytyt"-listassa, mutta `events.organizer_user_ids` -kenttä ei päivittynyt → tapahtumakortti pysyi ilman järjestäjää. Ei ole reproduisoitavissa preview-DB:ssä — todennäköisesti race condition, network error tai vanha frontend-versio.
 - ✅ **Korjaus**: Uusi heal-endpoint `POST /api/admin/event-organizer-requests/sync` joka käy läpi kaikki `status=approved`-rivit ja `$addToSet`-päivittää tapahtumiin puuttuvat `organizer_user_ids`. Idempotentti, säilyttää MAX_ORGANIZERS_PER_EVENT=3 -capin, palauttaa diff-yhteenvedon (`added`, `added_count`, `already_ok`, `missing_events`).
