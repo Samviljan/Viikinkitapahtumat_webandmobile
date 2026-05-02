@@ -508,6 +508,13 @@ See `/app/memory/test_credentials.md`.
 - Päivittäinen RSVP-muistutus ✅
 - `/admin/push/test` (debug, ei kirjoita — tarkoituksenmukaista)
 
+## Iteration — Mobile merchant-detail puuttuvat tiedot (2026-05-02 ilta-2)
+- ✅ **Korjaus**: Mobiilin `/shops/[id].tsx` käytti väärin `process.env.EXPO_PUBLIC_BACKEND_URL`-fallbackia kuvan URL:in muodostuksessa → EAS-buildatussa sovelluksessa env-muuttuja ei ole asetettu, joten kauppiaan lataama kuva (`/api/uploads/profile-images/...`) ei latautunut. Vaihdettu käyttämään koko sovelluksen yhteistä `resolveImageUrl()`-helperia (`@/api/client`).
+- ✅ **Lisätty "Tapaa meidät tapahtumissa" -sektio**: aiemmin mobiilin merchant-detail-näytöllä ei ollut listaa kauppiaan tulevista tapahtumista. Backend palauttaa `events`-kentän jo (web `MerchantDetail.jsx` käyttää sitä), mutta mobiili ohitti sen. Nyt sektio renderöityy `merchant-events-block`-testID:llä — kalenteri-ikoni + tapahtuman otsikko + päivämääräväli + sijainti + maan lippu. Kortti on `Pressable` joka navigoi `/event/{id}`-näyttöön.
+- ✅ **i18n + lippu**: lokalisoitu otsikko (lang-aware `eventTitle`), 21 maan lippu-emoji-mappi (sama kuin webissä).
+- ✅ **EAS production build v0.4.11 (versionCode 25) käynnistetty**: ID `fc0c44e2-460a-4a0b-9e95-c466a550c97d`. Korvaa aiemman v0.4.10-buildin Play Console -lataukseksi (yksi upload riittää).
+- ✅ TypeScript clean (0 virhettä).
+
 ## Iteration — Push token admin visibility + self-service clear (2026-05-02 evening)
 - ✅ **Backend**: `GET /api/admin/users` palauttaa nyt `push_token_count: int` per käyttäjä (ei tokeneita → 0).
 - ✅ **Backend uusi endpoint** `DELETE /api/users/me/push-tokens` — käyttäjä voi itse tyhjentää kaikki vanhat Expo push -tokeninsa (reset-työkalu kun laite ei saa pushia vanhentuneiden kopioiden takia).

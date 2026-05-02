@@ -1,8 +1,9 @@
 /**
  * Mobile merchant detail screen — mirrors the web `MerchantDetail.jsx`.
  *
- * Shows full merchant card (image, description, contact info, website) and
- * lets the user favourite/unfavourite via the heart button.
+ * Shows full merchant card (image, description, contact info, website,
+ * upcoming events the merchant is RSVPed to) and lets the user
+ * favourite/unfavourite via the heart button.
  */
 import React, { useEffect, useState } from "react";
 import {
@@ -20,13 +21,23 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppBackground } from "@/src/components/AppBackground";
-import { api } from "@/src/api/client";
+import { api, resolveImageUrl } from "@/src/api/client";
 import { useAuth } from "@/src/lib/auth";
 import { useFavoriteMerchants } from "@/src/hooks/useFavoriteMerchants";
+import { useSettings } from "@/src/lib/i18n";
+import { formatDateRange } from "@/src/lib/format";
 import { colors, radius, spacing } from "@/src/lib/theme";
 
-const API = process.env.EXPO_PUBLIC_BACKEND_URL || process.env.REACT_APP_BACKEND_URL || "";
-
+interface MerchantEvent {
+  id: string;
+  title_fi?: string;
+  title_en?: string;
+  title_sv?: string;
+  date?: string;
+  date_end?: string;
+  location?: string;
+  country?: string;
+}
 interface Merchant {
   id: string;
   name: string;
@@ -40,12 +51,19 @@ interface Merchant {
   city?: string;
   featured?: boolean;
   is_user_card?: boolean;
+  events?: MerchantEvent[];
 }
 
-function imgSrc(url?: string): string | undefined {
-  if (!url) return undefined;
-  if (url.startsWith("http")) return url;
-  return `${API}${url}`;
+const COUNTRY_FLAG: Record<string, string> = {
+  FI: "🇫🇮", SE: "🇸🇪", NO: "🇳🇴", DK: "🇩🇰", IS: "🇮🇸",
+  EE: "🇪🇪", LV: "🇱🇻", LT: "🇱🇹", PL: "🇵🇱", DE: "🇩🇪",
+  NL: "🇳🇱", GB: "🇬🇧", IE: "🇮🇪", BE: "🇧🇪", FR: "🇫🇷",
+  ES: "🇪🇸", PT: "🇵🇹", IT: "🇮🇹", SI: "🇸🇮", HR: "🇭🇷", UA: "🇺🇦",
+};
+
+function eventTitle(ev: MerchantEvent, lang: string): string {
+  const o = ev as unknown as Record<string, string | undefined>;
+  return o[`title_${lang}`] || ev.title_fi || ev.title_en || ev.title_sv || ev.id;
 }
 
 export default function MerchantDetailScreen() {
@@ -54,6 +72,7 @@ export default function MerchantDetailScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { isFavorite, toggle } = useFavoriteMerchants();
+  const { lang } = useSettings();
   const [m, setM] = useState<Merchant | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -104,6 +123,9 @@ export default function MerchantDetailScreen() {
     Linking.openURL(url).catch(() => Alert.alert("Linkin avaus epäonnistui"));
   };
 
+  const heroSrc = resolveImageUrl(m.image_url);
+  const events = m.events || [];
+
   return (
     <AppBackground>
       <SafeAreaView edges={["top"]} style={styles.safe} testID="merchant-detail">
@@ -138,9 +160,9 @@ export default function MerchantDetailScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.scroll}>
-          {m.image_url ? (
+          {heroSrc ? (
             <Image
-              source={{ uri: imgSrc(m.image_url) }}
+              source={{ uri: heroSrc }}
               style={styles.hero}
               resizeMode="cover"
               testID="merchant-image"
@@ -178,39 +200,92 @@ export default function MerchantDetailScreen() {
               <Text style={styles.description}>{m.description}</Text>
             ) : null}
 
-            <View style={styles.contactBlock}>
-              {m.url ? (
-                <Pressable
-                  testID="merchant-website"
-                  onPress={() => openLink(m.url)}
-                  style={({ pressed }) => [styles.contactRow, pressed && { opacity: 0.7 }]}
-                >
-                  <Ionicons name="globe-outline" size={16} color={colors.gold} />
-                  <Text style={styles.contactText} numberOfLines={1}>
-                    {m.url}
-                  </Text>
-                </Pressable>
-              ) : null}
-              {m.phone ? (
-                <Pressable
-                  testID="merchant-phone"
-                  onPress={() => openLink(`tel:${m.phone}`)}
-                  style={({ pressed }) => [styles.contactRow, pressed && { opacity: 0.7 }]}
-                >
-                  <Ionicons name="call-outline" size={16} color={colors.gold} />
-                  <Text style={styles.contactText}>{m.phone}</Text>
-                </Pressable>
-              ) : null}
-              {m.email ? (
-                <Pressable
-                  testID="merchant-email"
-                  onPress={() => openLink(`mailto:${m.email}`)}
-                  style={({ pressed }) => [styles.contactRow, pressed && { opacity: 0.7 }]}
-                >
-                  <Ionicons name="mail-outline" size={16} color={colors.gold} />
-                  <Text style={styles.contactText}>{m.email}</Text>
-                </Pressable>
-              ) : null}
+            {m.url || m.phone || m.email ? (
+              <View style={styles.contactBlock}>
+                <Text style={styles.sectionTitle}>Yhteystiedot</Text>
+                {m.url ? (
+                  <Pressable
+                    testID="merchant-website"
+                    onPress={() => openLink(m.url)}
+                    style={({ pressed }) => [styles.contactRow, pressed && { opacity: 0.7 }]}
+                  >
+                    <Ionicons name="globe-outline" size={16} color={colors.gold} />
+                    <Text style={styles.contactText} numberOfLines={1}>
+                      {m.url}
+                    </Text>
+                  </Pressable>
+                ) : null}
+                {m.phone ? (
+                  <Pressable
+                    testID="merchant-phone"
+                    onPress={() => openLink(`tel:${m.phone}`)}
+                    style={({ pressed }) => [styles.contactRow, pressed && { opacity: 0.7 }]}
+                  >
+                    <Ionicons name="call-outline" size={16} color={colors.gold} />
+                    <Text style={styles.contactText}>{m.phone}</Text>
+                  </Pressable>
+                ) : null}
+                {m.email ? (
+                  <Pressable
+                    testID="merchant-email"
+                    onPress={() => openLink(`mailto:${m.email}`)}
+                    style={({ pressed }) => [styles.contactRow, pressed && { opacity: 0.7 }]}
+                  >
+                    <Ionicons name="mail-outline" size={16} color={colors.gold} />
+                    <Text style={styles.contactText}>{m.email}</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
+
+            <View style={styles.eventsBlock} testID="merchant-events-block">
+              <Text style={styles.sectionTitle}>Tapaa meidät tapahtumissa</Text>
+              {events.length === 0 ? (
+                <Text style={styles.eventsEmpty}>Ei tulevia tapahtumia.</Text>
+              ) : (
+                events.map((ev) => {
+                  const title = eventTitle(ev, lang);
+                  const flag = ev.country ? COUNTRY_FLAG[ev.country] : "";
+                  return (
+                    <Pressable
+                      key={ev.id}
+                      testID={`merchant-event-${ev.id}`}
+                      onPress={() => router.push(`/event/${ev.id}` as never)}
+                      style={({ pressed }) => [styles.eventRow, pressed && { opacity: 0.7 }]}
+                    >
+                      <Ionicons
+                        name="calendar-outline"
+                        size={16}
+                        color={colors.gold}
+                        style={{ marginTop: 2 }}
+                      />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.eventTitle} numberOfLines={2}>
+                          {title}
+                        </Text>
+                        <View style={styles.eventMeta}>
+                          <Text style={styles.eventMetaText}>
+                            {formatDateRange(ev.date, ev.date_end)}
+                          </Text>
+                          {ev.location ? (
+                            <View style={styles.eventLocRow}>
+                              <Ionicons
+                                name="location-outline"
+                                size={11}
+                                color={colors.stone}
+                              />
+                              <Text style={styles.eventMetaText}>
+                                {ev.location}
+                                {flag ? ` ${flag}` : ""}
+                              </Text>
+                            </View>
+                          ) : null}
+                        </View>
+                      </View>
+                    </Pressable>
+                  );
+                })
+              )}
             </View>
           </View>
         </ScrollView>
@@ -280,6 +355,14 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginTop: spacing.md,
   },
+  sectionTitle: {
+    color: colors.gold,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+    marginBottom: spacing.sm,
+  },
   contactBlock: {
     marginTop: spacing.lg,
     paddingTop: spacing.lg,
@@ -299,6 +382,41 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(14,11,9,0.85)",
   },
   contactText: { color: colors.bone, fontSize: 13, flex: 1 },
+  eventsBlock: {
+    marginTop: spacing.lg,
+    paddingTop: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.edge,
+  },
+  eventsEmpty: {
+    color: colors.stone,
+    fontSize: 13,
+    fontStyle: "italic",
+  },
+  eventRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    marginBottom: 8,
+    borderRadius: radius?.sm ?? 4,
+    borderWidth: 1,
+    borderColor: colors.edge,
+    backgroundColor: "rgba(14,11,9,0.85)",
+  },
+  eventTitle: {
+    color: colors.bone,
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 19,
+  },
+  eventMeta: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 4,
+  },
+  eventMetaText: { color: colors.stone, fontSize: 11 },
+  eventLocRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.md },
   errorText: { color: colors.stone, fontSize: 14 },
   backBtn: {
