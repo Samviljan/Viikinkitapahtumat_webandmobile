@@ -278,7 +278,8 @@
       "newsletter": "Newsletter",
       "content": "Content",
       "merchant_requests": "Merchant requests",
-      "system": "System"
+      "system": "System",
+      "event_organizer_requests": "Organizer requests"
     },
     "merchant_requests": {
       "title": "Merchant card requests",

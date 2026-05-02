@@ -225,7 +225,8 @@
       "messages": "Sõnumid",
       "newsletter": "Uudiskiri",
       "content": "Sisu",
-      "system": "Süsteem"
+      "system": "Süsteem",
+      "event_organizer_requests": "Korraldajataotlused"
     },
     "overview": {
       "quick_links": "Kiirlingid",

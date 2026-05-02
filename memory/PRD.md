@@ -508,6 +508,25 @@ See `/app/memory/test_credentials.md`.
 - Päivittäinen RSVP-muistutus ✅
 - `/admin/push/test` (debug, ei kirjoita — tarkoituksenmukaista)
 
+## Iteration — Tapahtumajärjestäjäpyynnöt + viestien lähetyksen rajoitus (2026-05-02 ilta-4)
+- ✅ **Backend uusi kokoelma** `event_organizer_requests` (4 indeksiä: user+event, event_id, status, id-unique). Tapahtumissa uusi `organizer_user_ids: List[str]` (max 3).
+- ✅ **6 uutta endpointtia**:
+  - `POST /api/events/{id}/organizer-requests` — käyttäjä (organizer/admin-rooli) lähettää pyynnön. Päivittää aiemman pending-pyynnön sallitusti. 403 jos ei oikeutettu rooli, 404 jos tapahtumaa ei löydy, 409 jos jo hyväksytty.
+  - `GET /api/events/{id}/organizer-requests/mine` — käyttäjän oma pyyntö (null jos ei ole).
+  - `GET /api/events/{id}/organizers` — public-lista hyväksytyistä järjestäjistä (full_name + email + phone).
+  - `GET /api/admin/event-organizer-requests?status=...` — admin/moderator-lista (rikastettu event_title + event_start_date).
+  - `GET /api/admin/event-organizer-requests/pending-count` — sidebar-badge.
+  - `POST /api/admin/event-organizer-requests/{id}/approve|reject` — käsittely. **Approve enforced max 3 / event** (409 jos täynnä).
+  - `DELETE /api/admin/events/{event_id}/organizers/{user_id}` — admin poistaa hyväksytyn järjestäjän.
+- ✅ **Viestien lähetyksen rajoitus**:
+  - `POST /messages/send`: organizer-only-käyttäjä voi lähettää vain tapahtumiin joissa on hyväksytty järjestäjä (organizer_user_ids). Merchant-only säilyttää RSVP-perusteisen säännön. Merchant+organizer-käyttäjä saa molemmat oikeudet.
+  - `GET /users/me/messageable-events`: organizer-tapahtumat tulevat organizer-roolille (eivät RSVP-perusteiset), merchantille jatkuu RSVP-pohjainen, kaksoisrooleille union.
+- ✅ **Web `EventOrganizerRequestCTA.jsx`**: state-machine-nappi EventDetail-sivulla. Nappi näkyy vain organizer/admin-rooleille. Tilat: `Pyydä järjestäjäksi` → `Pyyntö käsittelyssä` → `Olet hyväksytty järjestäjä ✓` (oranssi/featured) tai `Pyyntö hylätty — yritä uudelleen`. Dialogi-lomake (nimi, sähköposti, puhelin, lisätiedot, vahvistus-checkbox).
+- ✅ **Web `EventOrganizers.jsx`**: julkinen "Tapahtuman järjestäjät" -sektio EventDetail-sivulla mailto/tel-linkeillä.
+- ✅ **Web admin-paneli `AdminEventOrganizerRequests.jsx`**: 3-välilehtinen näkymä (Odottaa/Hyväksytyt/Hylätyt), approve/reject-napit, ember-badge sidebarissa lukematon-laskurille. Sidebar-linkki "Järjestäjäpyynnöt" käännetty 7 kielelle.
+- ✅ **Mobile `OrganizerRequestCTA.tsx` + `EventOrganizersBlock.tsx`**: sama state-machine-nappi + Modal-pohjainen lomake mobiilin event-detail-näytöllä, julkinen järjestäjä-lista alla.
+- ✅ **End-to-end testattu**: organizer-rooli pyytää → admin hyväksyy → user lisätty organizer_user_ids:iin + käyttäjälle lisätty user_types:organizer (jos puuttui) → julkinen organizers-endpoint näyttää oikean nimen+yhteystiedot → duplicate 409 → max 3 cap 409. Web UI verifioitu Playwrightilla. TS clean, lint clean.
+
 ## Iteration — "Kauppiaita paikalla" tapahtumasivulla (Web + Mobile, 2026-05-02 ilta-3)
 - ✅ **Backend uusi public endpoint** `GET /api/events/{event_id}/merchants` — palauttaa lista kauppiaista (aktiivinen `merchant_card.enabled=true`, ei vanhentunut) jotka ovat RSVP-merkinneet tapahtumaan. Lajittelu: featured ensin, sitten nimi. Mukana `id, name, description, url, category, image_url, featured, is_user_card`. 404 jos tapahtumaa ei löydy, `[]` jos ei kauppiaita.
 - ✅ **Web `EventMerchants.jsx`** -komponentti: 1–3 -sarakkeinen grid (responsiivinen), 64×64 kuva tai kategoria-ikoni-placeholder, ★ featured-merkki, otsikko + 2-rivinen kuvauskatkelma. Klikkaaminen vie `/shops/<id>` -merchant-detail-sivulle. Komponentti piilottaa itsensä jos lista on tyhjä.

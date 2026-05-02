@@ -279,6 +279,7 @@
       "newsletter": "Uutiskirje",
       "content": "Sisältö",
       "merchant_requests": "Kauppiaspyynnöt",
+      "event_organizer_requests": "Järjestäjäpyynnöt",
       "system": "Järjestelmä"
     },
     "merchant_requests": {

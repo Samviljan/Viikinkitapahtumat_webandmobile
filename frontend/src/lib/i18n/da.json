@@ -268,7 +268,8 @@
       "messages": "Beskeder",
       "newsletter": "Nyhedsbrev",
       "content": "Indhold",
-      "system": "System"
+      "system": "System",
+      "event_organizer_requests": "Arrangøranmodninger"
     },
     "overview": {
       "quick_links": "Hurtige links",

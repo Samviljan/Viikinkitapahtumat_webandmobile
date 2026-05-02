@@ -225,7 +225,8 @@
       "messages": "Wiadomości",
       "newsletter": "Newsletter",
       "content": "Treść",
-      "system": "System"
+      "system": "System",
+      "event_organizer_requests": "Wnioski organizatorów"
     },
     "overview": {
       "quick_links": "Szybkie linki",

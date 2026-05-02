@@ -268,7 +268,8 @@
       "messages": "Nachrichten",
       "newsletter": "Newsletter",
       "content": "Inhalt",
-      "system": "System"
+      "system": "System",
+      "event_organizer_requests": "Veranstalter-Anfragen"
     },
     "overview": {
       "quick_links": "Schnellzugriff",

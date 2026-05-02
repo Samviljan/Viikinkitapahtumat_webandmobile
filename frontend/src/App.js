@@ -36,6 +36,7 @@ import AdminMessages from "@/pages/admin/AdminMessages";
 import AdminNewsletter from "@/pages/admin/AdminNewsletter";
 import AdminContent from "@/pages/admin/AdminContent";
 import AdminMerchantRequests from "@/pages/admin/AdminMerchantRequests";
+import AdminEventOrganizerRequests from "@/pages/admin/AdminEventOrganizerRequests";
 import AdminSystem from "@/pages/admin/AdminSystem";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -75,6 +76,7 @@ function App() {
                 <Route path="newsletter" element={<AdminNewsletter />} />
                 <Route path="content" element={<AdminContent />} />
                 <Route path="merchant-requests" element={<AdminMerchantRequests />} />
+                <Route path="event-organizer-requests" element={<AdminEventOrganizerRequests />} />
                 <Route path="system" element={<AdminSystem />} />
               </Route>
               <Route path="/login" element={<Login />} />

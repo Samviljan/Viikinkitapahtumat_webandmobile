@@ -17,6 +17,7 @@ import {
   Store,
   Settings,
   ShoppingBag,
+  ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
@@ -30,6 +31,7 @@ const SECTIONS = [
   { to: "/admin/newsletter", key: "admin.nav.newsletter", icon: Mail },
   { to: "/admin/content", key: "admin.nav.content", icon: Store },
   { to: "/admin/merchant-requests", key: "admin.nav.merchant_requests", icon: ShoppingBag, withBadge: "merchantRequests" },
+  { to: "/admin/event-organizer-requests", key: "admin.nav.event_organizer_requests", icon: ShieldCheck, withBadge: "eventOrganizerRequests" },
   { to: "/admin/system", key: "admin.nav.system", icon: Settings },
 ];
 
@@ -38,6 +40,7 @@ export default function AdminLayout() {
   const { t } = useI18n();
   const location = useLocation();
   const [pendingMR, setPendingMR] = useState(0);
+  const [pendingEOR, setPendingEOR] = useState(0);
 
   // Poll pending merchant-card request count once per route change so the
   // sidebar badge stays fresh after admin approves/rejects a row.
@@ -51,6 +54,13 @@ export default function AdminLayout() {
         setPendingMR(r.data?.pending || 0);
       })
       .catch(() => !cancelled && setPendingMR(0));
+    api
+      .get("/admin/event-organizer-requests/pending-count")
+      .then((r) => {
+        if (cancelled) return;
+        setPendingEOR(r.data?.pending || 0);
+      })
+      .catch(() => !cancelled && setPendingEOR(0));
     return () => {
       cancelled = true;
     };
@@ -109,6 +119,14 @@ export default function AdminLayout() {
                     className="ml-1 inline-flex min-w-[18px] h-[18px] px-1.5 items-center justify-center bg-viking-ember text-viking-bone text-[10px] rounded-full font-rune"
                   >
                     {pendingMR}
+                  </span>
+                ) : null}
+                {withBadge === "eventOrganizerRequests" && pendingEOR > 0 ? (
+                  <span
+                    data-testid="admin-eor-badge"
+                    className="ml-1 inline-flex min-w-[18px] h-[18px] px-1.5 items-center justify-center bg-viking-ember text-viking-bone text-[10px] rounded-full font-rune"
+                  >
+                    {pendingEOR}
                   </span>
                 ) : null}
               </NavLink>

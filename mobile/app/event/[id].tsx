@@ -18,6 +18,8 @@ import { useEvent } from "@/src/hooks/useEvents";
 import { useFavorites } from "@/src/hooks/useFavorites";
 import { AttendBlock } from "@/src/components/AttendBlock";
 import EventMerchantsBlock from "@/src/components/EventMerchantsBlock";
+import EventOrganizersBlock from "@/src/components/EventOrganizersBlock";
+import OrganizerRequestCTA from "@/src/components/OrganizerRequestCTA";
 import { flagFor } from "@/src/lib/countries";
 import {
   countdownLabel,
@@ -147,6 +149,13 @@ export default function EventDetail() {
         </View>
 
         <AttendBlock eventId={ev.id} />
+
+        <OrganizerRequestCTA
+          eventId={ev.id}
+          organizerIds={(ev as unknown as { organizer_user_ids?: string[] }).organizer_user_ids || []}
+        />
+
+        <EventOrganizersBlock eventId={ev.id} />
 
         <EventMerchantsBlock eventId={ev.id} />
 

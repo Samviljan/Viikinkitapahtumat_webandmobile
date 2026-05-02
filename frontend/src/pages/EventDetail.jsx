@@ -11,6 +11,8 @@ import RemindMeButton from "@/components/RemindMeButton";
 import AttendButton from "@/components/AttendButton";
 import EventStats from "@/components/EventStats";
 import EventMerchants from "@/components/EventMerchants";
+import EventOrganizers from "@/components/EventOrganizers";
+import EventOrganizerRequestCTA from "@/components/EventOrganizerRequestCTA";
 import { flagFor } from "@/lib/countries";
 import { resolveImageUrl } from "@/lib/images";
 
@@ -253,7 +255,14 @@ export default function EventDetail() {
           <div className="mt-6 pt-6 border-t border-viking-edge">
             <AttendButton eventId={event.id} />
             <EventStats eventId={event.id} />
+            <div className="mt-4">
+              <EventOrganizerRequestCTA
+                eventId={event.id}
+                organizerIds={event.organizer_user_ids || []}
+              />
+            </div>
           </div>
+          <EventOrganizers eventId={event.id} />
           <EventMerchants eventId={event.id} />
         </div>
       </div>

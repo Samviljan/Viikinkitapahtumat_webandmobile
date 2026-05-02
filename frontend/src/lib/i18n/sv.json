@@ -256,7 +256,8 @@
       "newsletter": "Nyhetsbrev",
       "content": "Innehåll",
       "merchant_requests": "Handlaransökningar",
-      "system": "System"
+      "system": "System",
+      "event_organizer_requests": "Arrangörsförfrågningar"
     },
     "merchant_requests": {
       "title": "Handlarkortsansökningar",

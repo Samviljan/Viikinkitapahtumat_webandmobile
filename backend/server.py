@@ -1662,16 +1662,34 @@ async def send_message_to_attendees(
     # Sender must be RSVPed to this event (admin bypasses for site-wide).
     # This prevents spam from random merchants spamming events they have no
     # connection to: only people committed to attending may send messages.
+    # ORGANIZER-specific rule: organizers can only send to events where the
+    # admin has approved them as official event organizers (organizer_user_ids).
+    # Merchants still use the RSVP rule.
     if not is_admin:
-        own_rsvp = await db.event_attendees.find_one(
-            {"event_id": payload.event_id, "user_id": user["id"]},
-            {"_id": 1},
+        is_organizer_only = (
+            "organizer" in user_types and "merchant" not in user_types
         )
-        if not own_rsvp:
-            raise HTTPException(
-                status_code=403,
-                detail="You can only message attendees of events you yourself attend",
+        if is_organizer_only:
+            organizer_ids = ev.get("organizer_user_ids") or []
+            if user["id"] not in organizer_ids:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Organizers can only message events they are an approved organizer of",
+                )
+        else:
+            own_rsvp = await db.event_attendees.find_one(
+                {"event_id": payload.event_id, "user_id": user["id"]},
+                {"_id": 1},
             )
+            # Merchant+organizer users: allow if EITHER an approved organizer
+            # OR an RSVP exists. This keeps the merchant flow open while
+            # giving the organizer flow priority for events they run.
+            organizer_ids = ev.get("organizer_user_ids") or []
+            if not own_rsvp and user["id"] not in organizer_ids:
+                raise HTTPException(
+                    status_code=403,
+                    detail="You can only message attendees of events you yourself attend",
+                )
 
     # Per-event quota for non-admin senders. Counter = total message_log rows
     # by this sender for this event; this means leaving and re-RSVPing does
@@ -2130,6 +2148,7 @@ async def list_messageable_events(user: dict = Depends(get_current_user)):
     today = datetime.now(timezone.utc).date()
     from_iso = (today - timedelta(days=14)).isoformat()
     is_admin = user.get("role") == "admin"
+    user_types = set(user.get("user_types") or [])
     base_filter = {
         "status": "approved",
         "$or": [
@@ -2139,15 +2158,26 @@ async def list_messageable_events(user: dict = Depends(get_current_user)):
     }
     if is_admin:
         events = await db.events.find(base_filter, {"_id": 0}).sort("start_date", 1).to_list(2000)
-    else:
+        return {"events": events}
+
+    # Organizer-only users get events where they are an approved organizer.
+    # Merchants get events they have RSVPed to.
+    # Users with BOTH roles see the union.
+    ids: set[str] = set()
+    if "organizer" in user_types:
+        org_events = await db.events.find(
+            {"organizer_user_ids": user["id"]}, {"_id": 0, "id": 1}
+        ).to_list(500)
+        ids.update(e["id"] for e in org_events)
+    if "merchant" in user_types or not user_types:
         rsvps = await db.event_attendees.find(
             {"user_id": user["id"]}, {"_id": 0, "event_id": 1}
         ).to_list(5000)
-        ids = [r["event_id"] for r in rsvps]
-        if not ids:
-            return {"events": []}
-        f = dict(base_filter, id={"$in": ids})
-        events = await db.events.find(f, {"_id": 0}).sort("start_date", 1).to_list(2000)
+        ids.update(r["event_id"] for r in rsvps)
+    if not ids:
+        return {"events": []}
+    f = dict(base_filter, id={"$in": list(ids)})
+    events = await db.events.find(f, {"_id": 0}).sort("start_date", 1).to_list(2000)
     return {"events": events}
 
 
@@ -4635,6 +4665,275 @@ async def admin_pending_request_count(_admin: dict = Depends(get_admin_or_modera
 
 
 # -----------------------------------------------------------------------------
+# Event organizer activation requests
+# -----------------------------------------------------------------------------
+MAX_ORGANIZERS_PER_EVENT = 3
+
+
+class EventOrganizerRequestPayload(BaseModel):
+    full_name: str = Field(..., min_length=1, max_length=200)
+    email: EmailStr
+    phone: Optional[str] = Field(default="", max_length=60)
+    note: Optional[str] = Field(default="", max_length=1000)
+
+
+@api_router.post("/events/{event_id}/organizer-requests", status_code=201)
+async def submit_event_organizer_request(
+    event_id: str,
+    payload: EventOrganizerRequestPayload,
+    user: dict = Depends(get_current_user),
+):
+    """Logged-in user (organizer/admin role) requests to be added as an
+    official organizer for the given approved event. Admin reviews and
+    approves; max 3 organizers per event.
+    """
+    user_types = set(user.get("user_types") or [])
+    is_admin = user.get("role") == "admin"
+    if not is_admin and "organizer" not in user_types:
+        raise HTTPException(
+            status_code=403,
+            detail="Only users with the organizer role can request to organize events",
+        )
+    ev = await db.events.find_one(
+        {"id": event_id, "status": "approved"}, {"_id": 0, "id": 1, "organizer_user_ids": 1}
+    )
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if user["id"] in (ev.get("organizer_user_ids") or []):
+        raise HTTPException(status_code=409, detail="Already an approved organizer for this event")
+
+    existing = await db.event_organizer_requests.find_one(
+        {"user_id": user["id"], "event_id": event_id, "status": "pending"},
+        {"_id": 0},
+    )
+    now_iso = datetime.now(timezone.utc).isoformat()
+    if existing:
+        await db.event_organizer_requests.update_one(
+            {"id": existing["id"]},
+            {"$set": {
+                "full_name": payload.full_name.strip(),
+                "email": str(payload.email).strip(),
+                "phone": (payload.phone or "").strip(),
+                "note": (payload.note or "").strip(),
+                "updated_at": now_iso,
+            }},
+        )
+        existing.update({
+            "full_name": payload.full_name.strip(),
+            "email": str(payload.email).strip(),
+            "phone": (payload.phone or "").strip(),
+            "note": (payload.note or "").strip(),
+            "updated_at": now_iso,
+        })
+        return existing
+
+    doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "user_email": user.get("email"),
+        "user_nickname": user.get("nickname") or user.get("name") or "",
+        "event_id": event_id,
+        "full_name": payload.full_name.strip(),
+        "email": str(payload.email).strip(),
+        "phone": (payload.phone or "").strip(),
+        "note": (payload.note or "").strip(),
+        "status": "pending",
+        "created_at": now_iso,
+        "updated_at": now_iso,
+        "processed_at": None,
+        "processed_by": None,
+        "admin_note": None,
+    }
+    await db.event_organizer_requests.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@api_router.get("/events/{event_id}/organizer-requests/mine")
+async def my_event_organizer_request(
+    event_id: str, user: dict = Depends(get_current_user)
+):
+    """Returns the current user's most recent request for this event, or null."""
+    doc = await db.event_organizer_requests.find_one(
+        {"user_id": user["id"], "event_id": event_id},
+        {"_id": 0},
+        sort=[("created_at", -1)],
+    )
+    return doc
+
+
+@api_router.get("/events/{event_id}/organizers")
+async def list_event_organizers(event_id: str):
+    """Public list of approved organizers for this event. Returns
+    `[{user_id, full_name, email, phone}]`. Empty array if none.
+    """
+    ev = await db.events.find_one(
+        {"id": event_id, "status": "approved"},
+        {"_id": 0, "id": 1, "organizer_user_ids": 1},
+    )
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+    ids = ev.get("organizer_user_ids") or []
+    if not ids:
+        return []
+    # Look up the latest approved request per (user_id, event_id) to surface
+    # the official name+contact (the user submitted as part of the request).
+    rows = await db.event_organizer_requests.find(
+        {"event_id": event_id, "user_id": {"$in": ids}, "status": "approved"},
+        {"_id": 0, "user_id": 1, "full_name": 1, "email": 1, "phone": 1},
+        sort=[("processed_at", -1)],
+    ).to_list(50)
+    seen: set = set()
+    out: list[dict] = []
+    for r in rows:
+        if r["user_id"] in seen:
+            continue
+        seen.add(r["user_id"])
+        out.append({
+            "user_id": r["user_id"],
+            "full_name": r.get("full_name") or "",
+            "email": r.get("email") or "",
+            "phone": r.get("phone") or "",
+        })
+    return out
+
+
+@api_router.get("/admin/event-organizer-requests")
+async def admin_list_event_organizer_requests(
+    status: Optional[str] = None,
+    _admin: dict = Depends(get_admin_or_moderator),
+):
+    q: dict = {}
+    if status in ("pending", "approved", "rejected"):
+        q["status"] = status
+    rows = await db.event_organizer_requests.find(q, {"_id": 0}).sort("created_at", -1).to_list(2000)
+    # Enrich with event titles for the admin UI.
+    if rows:
+        eids = list({r["event_id"] for r in rows})
+        evs = await db.events.find(
+            {"id": {"$in": eids}}, {"_id": 0, "id": 1, "title_fi": 1, "title_en": 1, "start_date": 1}
+        ).to_list(2000)
+        ev_map = {e["id"]: e for e in evs}
+        for r in rows:
+            ev = ev_map.get(r["event_id"]) or {}
+            r["event_title"] = ev.get("title_fi") or ev.get("title_en") or r["event_id"]
+            r["event_start_date"] = ev.get("start_date") or ""
+    return rows
+
+
+@api_router.get("/admin/event-organizer-requests/pending-count")
+async def admin_event_organizer_pending_count(_admin: dict = Depends(get_admin_or_moderator)):
+    n = await db.event_organizer_requests.count_documents({"status": "pending"})
+    return {"pending": n}
+
+
+@api_router.post("/admin/event-organizer-requests/{request_id}/approve")
+async def admin_approve_event_organizer_request(
+    request_id: str,
+    payload: Optional[MerchantCardRequestDecision] = None,
+    admin: dict = Depends(get_admin_or_moderator),
+):
+    """Approve: add the user to events.organizer_user_ids (max 3).
+    Returns 409 if the event already has 3 organizers, or if the request
+    is no longer pending.
+    """
+    req = await db.event_organizer_requests.find_one({"id": request_id}, {"_id": 0})
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+    if req.get("status") != "pending":
+        raise HTTPException(status_code=409, detail="Request already processed")
+
+    ev = await db.events.find_one(
+        {"id": req["event_id"]},
+        {"_id": 0, "id": 1, "organizer_user_ids": 1},
+    )
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+    current = list(ev.get("organizer_user_ids") or [])
+    if req["user_id"] in current:
+        # Already an organizer — mark request as approved without re-adding
+        await db.event_organizer_requests.update_one(
+            {"id": request_id},
+            {"$set": {
+                "status": "approved",
+                "processed_at": datetime.now(timezone.utc).isoformat(),
+                "processed_by": admin.get("id"),
+                "admin_note": (payload.note if payload else None) or None,
+            }},
+        )
+        return {"approved": True, "organizer_user_ids": current}
+    if len(current) >= MAX_ORGANIZERS_PER_EVENT:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Event already has the maximum of {MAX_ORGANIZERS_PER_EVENT} organizers",
+        )
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    await db.events.update_one(
+        {"id": req["event_id"]},
+        {"$addToSet": {"organizer_user_ids": req["user_id"]}},
+    )
+    await db.event_organizer_requests.update_one(
+        {"id": request_id},
+        {"$set": {
+            "status": "approved",
+            "processed_at": now_iso,
+            "processed_by": admin.get("id"),
+            "admin_note": (payload.note if payload else None) or None,
+        }},
+    )
+    # Auto-add organizer user_type if missing (so they appear in admin lists).
+    user_doc = await db.users.find_one(
+        {"id": req["user_id"]}, {"_id": 0, "user_types": 1}
+    )
+    if user_doc and "organizer" not in (user_doc.get("user_types") or []):
+        await db.users.update_one(
+            {"id": req["user_id"]}, {"$addToSet": {"user_types": "organizer"}}
+        )
+    return {"approved": True, "organizer_user_ids": current + [req["user_id"]]}
+
+
+@api_router.post("/admin/event-organizer-requests/{request_id}/reject")
+async def admin_reject_event_organizer_request(
+    request_id: str,
+    payload: Optional[MerchantCardRequestDecision] = None,
+    admin: dict = Depends(get_admin_or_moderator),
+):
+    res = await db.event_organizer_requests.find_one_and_update(
+        {"id": request_id, "status": "pending"},
+        {"$set": {
+            "status": "rejected",
+            "processed_at": datetime.now(timezone.utc).isoformat(),
+            "processed_by": admin.get("id"),
+            "admin_note": (payload.note if payload else None) or None,
+        }},
+        return_document=True,
+        projection={"_id": 0},
+    )
+    if not res:
+        raise HTTPException(status_code=404, detail="Pending request not found")
+    return {"rejected": True, "request": res}
+
+
+@api_router.delete("/admin/events/{event_id}/organizers/{user_id}")
+async def admin_remove_event_organizer(
+    event_id: str,
+    user_id: str,
+    _admin: dict = Depends(get_admin_or_moderator),
+):
+    """Admin: remove an approved organizer from an event. Useful if an
+    organizer cancels or was approved by mistake. Does not delete the
+    historical request record."""
+    res = await db.events.update_one(
+        {"id": event_id},
+        {"$pull": {"organizer_user_ids": user_id}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return {"removed": True}
+
+
+# -----------------------------------------------------------------------------
 # Merchant cards admin list
 # -----------------------------------------------------------------------------
 @api_router.get("/admin/merchant-cards")
@@ -4925,6 +5224,10 @@ async def on_startup():
     await db.merchant_card_requests.create_index("user_id")
     await db.merchant_card_requests.create_index("status")
     await db.merchant_card_requests.create_index("id", unique=True)
+    await db.event_organizer_requests.create_index([("user_id", 1), ("event_id", 1)])
+    await db.event_organizer_requests.create_index("event_id")
+    await db.event_organizer_requests.create_index("status")
+    await db.event_organizer_requests.create_index("id", unique=True)
 
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@viikinkitapahtumat.fi").lower()
     admin_password = os.environ.get("ADMIN_PASSWORD")
