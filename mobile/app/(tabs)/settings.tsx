@@ -45,12 +45,6 @@ export default function SettingsHub() {
             href: "/settings/attending",
             testID: "nav-attending",
           },
-          {
-            icon: "mail-outline" as const,
-            titleKey: "messages.title",
-            href: "/settings/messages",
-            testID: "nav-messages",
-          },
         ]
       : []),
     {

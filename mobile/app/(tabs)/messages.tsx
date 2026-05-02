@@ -22,7 +22,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { AppBackground } from "@/src/components/AppBackground";
 import { colors, radius, spacing, text } from "@/src/lib/theme";
 import { useSettings } from "@/src/lib/i18n";
@@ -745,7 +745,6 @@ function ComposerView({ initialEventId }: { initialEventId: string }) {
 
 // ─── Tabs shell ────────────────────────────────────────────────────────
 export default function MessagesScreen() {
-  const router = useRouter();
   const params = useLocalSearchParams<{ event_id?: string | string[]; tab?: string | string[] }>();
   const initialEventId = Array.isArray(params.event_id) ? params.event_id[0] : params.event_id || "";
   const initialTabRaw = Array.isArray(params.tab) ? params.tab[0] : params.tab;
@@ -771,17 +770,8 @@ export default function MessagesScreen() {
   return (
     <AppBackground>
       <SafeAreaView edges={["top"]} style={styles.safe} testID="messages-screen">
-        <View style={styles.topBar}>
-          <Pressable
-            testID="messages-back"
-            onPress={() => router.back()}
-            hitSlop={12}
-            style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.6 }]}
-          >
-            <Ionicons name="chevron-back" size={22} color={colors.gold} />
-          </Pressable>
-          <Text style={styles.topBarTitle}>{t("messages.title")}</Text>
-          <View style={{ width: 40 }} />
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>{t("messages.title")}</Text>
         </View>
 
         <View style={styles.tabBar}>
@@ -829,22 +819,18 @@ export default function MessagesScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "transparent" },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
+  header: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.edge,
   },
-  backBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
-  topBarTitle: {
+  headerTitle: {
     color: colors.bone,
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "700",
     letterSpacing: 2,
-    flex: 1,
     textAlign: "center",
   },
   tabBar: {

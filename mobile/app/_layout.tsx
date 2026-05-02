@@ -42,7 +42,7 @@ export default function RootLayout() {
             <Stack.Screen name="settings/auth" options={{ headerShown: false }} />
             <Stack.Screen name="settings/forgot-password" options={{ headerShown: false }} />
             <Stack.Screen name="settings/attending" options={{ headerShown: false }} />
-            <Stack.Screen name="settings/messages" options={{ headerShown: false }} />
+            <Stack.Screen name="shops/[id]" options={{ headerShown: false }} />
           </Stack>
         </SafeAreaProvider>
       </AuthProvider>

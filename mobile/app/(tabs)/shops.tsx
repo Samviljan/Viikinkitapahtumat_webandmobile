@@ -308,6 +308,7 @@ export default function ShopsScreen() {
   const { data, loading, error } = useMerchants();
   const { t } = useSettings();
   const { isFavorite, toggle } = useFavoriteMerchants();
+  const router = useRouter();
 
   const sortPaid = (list: typeof data) =>
     list.slice().sort((a, b) => {
@@ -431,20 +432,36 @@ export default function ShopsScreen() {
             }
             const m = item.merchant;
             // Per-category paid card (this is hit when the merchant appears
-            // inside a category section after the "★ Premium" tier-header).
+            // inside a category section after the "Premium" tier-header).
             if (m.is_user_card) {
               const fav = isFavorite(m.id);
               return (
-                <View style={styles.paidCard} testID={`merchant-${m.id}`}>
+                <Pressable
+                  testID={`merchant-${m.id}`}
+                  onPress={() => router.push(`/shops/${m.id}` as never)}
+                  style={({ pressed }) => [styles.paidCard, pressed && { opacity: 0.85 }]}
+                >
                   {m.image_url ? (
                     <Image
                       source={{ uri: imgSrc(m.image_url) }}
                       style={styles.paidImage}
+                      resizeMode="cover"
+                      testID={`merchant-image-${m.id}`}
                     />
-                  ) : null}
+                  ) : (
+                    <View style={[styles.paidImage, styles.paidImageFallback]}>
+                      <Ionicons
+                        name={m.category === "smith" ? "hammer-outline" : "storefront-outline"}
+                        size={28}
+                        color={colors.gold}
+                      />
+                    </View>
+                  )}
                   <View style={styles.paidBody}>
                     <View style={styles.paidTitleRow}>
-                      <Text style={styles.paidTitle}>{m.name}</Text>
+                      <Text style={styles.paidTitle} numberOfLines={2}>
+                        {m.name}
+                      </Text>
                       <FavoriteHeartButton
                         testID={`fav-merchant-${m.id}`}
                         isFav={fav}
@@ -452,18 +469,16 @@ export default function ShopsScreen() {
                       />
                     </View>
                     {m.description ? (
-                      <Text style={styles.paidDesc} numberOfLines={3}>
+                      <Text style={styles.paidDesc} numberOfLines={2}>
                         {m.description}
                       </Text>
                     ) : null}
+                    <View style={styles.paidCtaRow}>
+                      <Ionicons name="chevron-forward" size={14} color={colors.gold} />
+                      <Text style={styles.paidCtaText}>Katso lisätiedot</Text>
+                    </View>
                   </View>
-                  <LinkListRow
-                    testID={`merchant-link-${m.id}`}
-                    icon={m.category === "smith" ? "hammer-outline" : "storefront-outline"}
-                    title={t("shops.view_details") || "Katso lisätiedot"}
-                    url={`/shops/${m.id}`}
-                  />
-                </View>
+                </Pressable>
               );
             }
             return (
@@ -517,8 +532,26 @@ const styles = StyleSheet.create({
   },
   paidImage: {
     width: "100%",
-    aspectRatio: 16 / 9,
+    aspectRatio: 2.2,
     backgroundColor: colors.surface2,
+  },
+  paidImageFallback: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  paidCtaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 8,
+    alignSelf: "flex-start",
+  },
+  paidCtaText: {
+    color: colors.gold,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
   },
   paidBody: {
     padding: spacing.md,

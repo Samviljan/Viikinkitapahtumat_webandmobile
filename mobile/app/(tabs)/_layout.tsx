@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/src/lib/theme";
 import { useFavorites } from "@/src/hooks/useFavorites";
 import { useSettings } from "@/src/lib/i18n";
+import { useAuth } from "@/src/lib/auth";
+import { api } from "@/src/api/client";
 
 /**
  * Custom tabs layout (replaces expo-router's <Tabs/>) so that ONLY the
@@ -23,6 +25,8 @@ interface TabDef {
   icon: React.ComponentProps<typeof Ionicons>["name"];
   testID: string;
   showBadge?: boolean;
+  showMessagesBadge?: boolean;
+  authOnly?: boolean;
 }
 
 const TABS: TabDef[] = [
@@ -30,6 +34,7 @@ const TABS: TabDef[] = [
   { href: "/favorites", labelKey: "tab.myevents", icon: "bookmarks", testID: "tab-myevents", showBadge: true },
   { href: "/calendar", labelKey: "tab.calendar", icon: "calendar", testID: "tab-cal" },
   { href: "/shops", labelKey: "tab.shops", icon: "storefront", testID: "tab-shops" },
+  { href: "/messages", labelKey: "messages.title", icon: "mail", testID: "tab-messages", authOnly: true, showMessagesBadge: true },
   { href: "/settings", labelKey: "tab.settings", icon: "settings-sharp", testID: "tab-settings" },
 ];
 
@@ -39,6 +44,31 @@ export default function TabsLayout() {
   const { count } = useFavorites();
   const insets = useSafeAreaInsets();
   const { t } = useSettings();
+  const { user } = useAuth();
+  const [unreadMessages, setUnreadMessages] = React.useState(0);
+
+  // Poll unread messages count when logged in. Runs once per pathname change
+  // so the badge clears right after the user opens the messages tab.
+  React.useEffect(() => {
+    if (!user?.id) {
+      setUnreadMessages(0);
+      return;
+    }
+    let cancelled = false;
+    api
+      .get<{ unread: number }[]>("/messages/inbox")
+      .then((r) => {
+        if (cancelled) return;
+        const total = (r.data || []).reduce((acc, g) => acc + (g.unread || 0), 0);
+        setUnreadMessages(total);
+      })
+      .catch(() => !cancelled && setUnreadMessages(0));
+    return () => {
+      cancelled = true;
+    };
+  }, [user, pathname]);
+
+  const visibleTabs = TABS.filter((t) => !t.authOnly || !!user?.id);
 
   return (
     <View style={styles.root}>
@@ -52,7 +82,7 @@ export default function TabsLayout() {
         ]}
         testID="bottom-tabbar"
       >
-        {TABS.map((tab) => {
+        {visibleTabs.map((tab) => {
           const active =
             tab.href === "/"
               ? pathname === "/" || pathname.endsWith("/(tabs)") || pathname.endsWith("/index")
@@ -73,6 +103,11 @@ export default function TabsLayout() {
                 {tab.showBadge && count > 0 ? (
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>{count}</Text>
+                  </View>
+                ) : null}
+                {tab.showMessagesBadge && unreadMessages > 0 ? (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{unreadMessages}</Text>
                   </View>
                 ) : null}
               </View>
