@@ -1,0 +1,60 @@
+{
+  "summary": "Frontend-only mobile preview test (/api/mobile-app/) on 414x896 viewport. Verified anonymous tab bar (Viestit correctly hidden), smaller premium merchant card image (aspectRatio 2.20), merchant card click → /shops/<id>, merchant detail page testids (merchant-detail, merchant-back, merchant-image, merchant-website), and back navigation to shops. BLOCKED on logged-in flow: the published mobile web bundle has extra.apiBaseUrl hardcoded to the PRODUCTION domain 'https://viikinkitapahtumat.fi', so every login POST from the preview deployment cross-origins to prod — where the preview-only test users (admin@viikinkitapahtumat.fi and webuser_1777367519@viikinki.fi) don't exist → 401 Invalid credentials. Therefore Viestit/Messages tab visibility for authenticated users and merchant-fav-toggle could not be validated in the preview. Code inspection of /app/mobile/app/(tabs)/_layout.tsx (line 37 + visibleTabs filter) and /app/mobile/app/shops/[id].tsx shows the logic is correct; only the config-to-prod issue prevents verification.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Mobile web login (preview environment)",
+        "issue": "Mobile app.json has extra.apiBaseUrl='https://viikinkitapahtumat.fi' which is baked into dist/ build. Preview deployment of /api/mobile-app/ posts POST /api/auth/login to production, so preview-only test users fail with 401. This blocks all authenticated QA on the preview. Works in native builds that target prod, but makes preview auth-gated testing impossible.",
+        "affected_selectors": ["auth-email", "auth-password", "auth-submit"]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Mobile auth form (/settings/auth)",
+        "issues": ["Error toast text appears, but error message color (pale) against dark background has low contrast — minor"]
+      }
+    ]
+  },
+  "verified_features": [
+    "Anonymous bottom tab bar shows 5 tabs (tab-home, tab-myevents, tab-cal, tab-shops, tab-settings) and correctly HIDES tab-messages.",
+    "Mobile app web preview loads at /api/mobile-app/ with events list and bottom-tabbar.",
+    "Shops (Kaupat) tab renders 23 merchant cards; premium card image bounding box 380x173 (aspect 2.20) — smaller than full hero as required.",
+    "Tapping premium card (data-testid merchant-<id>, e.g. merchant-user_96f38b26130c) navigates to /shops/user_96f38b26130c.",
+    "Merchant detail page at /shops/<id> renders merchant-detail, merchant-back, merchant-image, merchant-website testids.",
+    "merchant-back returns to /shops list.",
+    "No TypeScript/console errors beyond expected 401 (login block) and 2×404 (favicon/asset) and benign expo-notifications web warnings."
+  ],
+  "blocked_features": [
+    "Logged-in bottom tab bar visibility of tab-messages (Viestit).",
+    "Messages screen sub-tabs (Saapuneet/Lähetetyt/Lähetä uusi).",
+    "merchant-fav-toggle visibility on merchant detail when authenticated."
+  ],
+  "test_report_links": [],
+  "action_items": [
+    "Make mobile app.json extra.apiBaseUrl environment-driven (process.env.EXPO_PUBLIC_API_BASE_URL) OR when building the /api/mobile-app/ preview bundle, override apiBaseUrl to the preview backend REACT_APP_BACKEND_URL so preview QA can authenticate. Example: `EXPO_PUBLIC_API_BASE_URL=https://events-refresh-1.preview.emergentagent.com npx expo export --platform web`.",
+    "Alternatively, reset the admin@viikinkitapahtumat.fi password in the PRODUCTION DB to TestAdmin123! so admin login works cross-origin (less recommended — prod pollution).",
+    "After resolving the apiBaseUrl issue, re-run QA for: (1) Viestit tab appearing after login, (2) Messages screen sub-tabs, (3) merchant-fav-toggle on detail page.",
+    "Note: merchant-fav-toggle was MISSING on detail page while anonymous — verify that this is the intended anonymous-hidden behaviour and not a bug (expected per spec: heart button only if logged in)."
+  ],
+  "critical_code_review_comments": [
+    "/app/mobile/app.json line 81: hardcoded apiBaseUrl to prod domain makes preview deployment unable to authenticate — use env var + app.config.js dynamic config.",
+    "Mobile web web-preview cross-origins to prod, meaning cookies/httpOnly tokens will NOT persist for the preview iframe under /api/mobile-app/ (different origin). This is a second-order bug caused by the same hardcoding.",
+    "_layout.tsx messages badge fetch of /api/messages/inbox will also hit prod cross-origin from preview; no CORS headers likely allowed → silent failures. OK but noisy."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "not tested (frontend-only scope)",
+    "frontend": "75% (all anonymous + shops + merchant detail flows PASS; auth-gated flows BLOCKED by env config)"
+  },
+  "test_credentials": "admin@viikinkitapahtumat.fi / TestAdmin123! — fails against prod (401). webuser_1777367519@viikinki.fi / passw0rd123 — works against preview backend via cURL but fails via mobile web app because app posts to prod.",
+  "seed_data_creation": "None.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Use Playwright viewport 414x896. URL base is <REACT_APP_BACKEND_URL>/api/mobile-app/. Auth inputs have testids auth-email, auth-password, auth-submit. Shops list contains merchant-<id> testids; first premium card is merchant-user_96f38b26130c. Merchant detail page has merchant-detail, merchant-back, merchant-image, merchant-website, and merchant-fav-toggle (logged-in only). Before auth testing, confirm that the mobile web bundle apiBaseUrl has been switched to the preview backend (inspect network tab on login POST — it must go to events-refresh-1.preview.emergentagent.com, NOT viikinkitapahtumat.fi).",
+  "rca of the issue": "Root cause of auth-gated test failure: /app/mobile/app.json has `extra.apiBaseUrl: 'https://viikinkitapahtumat.fi'`. This value is embedded at `npx expo export` time into /app/mobile/dist/_expo/static/js/web/entry-*.js (confirmed via grep). The API client (/app/mobile/src/api/client.ts line 6-7) reads Constants.expoConfig.extra.apiBaseUrl first, falling back to the preview URL only if extra.apiBaseUrl is undefined. So every network call from the preview mobile web (auth/login, messages/inbox badge, favourites, etc.) targets production. Test users exist only in the preview DB → all authed flows 401. Reproduction: open /api/mobile-app/settings/auth, fill creds, submit → Network tab shows POST https://viikinkitapahtumat.fi/api/auth/login → 401. Mitigation: (a) change app.json extra.apiBaseUrl to use ${process.env.EXPO_PUBLIC_API_BASE_URL} via app.config.js, (b) rebuild dist with EXPO_PUBLIC_API_BASE_URL=<preview URL> for preview deployments, (c) for native prod builds continue to set it to viikinkitapahtumat.fi."
+}

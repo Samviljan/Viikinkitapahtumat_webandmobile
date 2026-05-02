@@ -103,3 +103,82 @@ Common causes:
   app launch, so the user needs to background+foreground once.
 - Expo dashboard → Updates → Latest — verify the update was published
   to the correct branch (`production`) and channel (`production`).
+
+---
+
+## Release notes — viimeisimmät buildit
+
+### v0.4.9 (versionCode 23) — toukokuu 2026 _(nykyinen / rakenteilla)_
+
+**Kauppiaskortit ja merchant-detail-näyttö**
+- Uusi "Hanki kauppiaskortti" CTA (Web + Mobile) joka ohjaa rekisteröinnin
+  tai in-app-lomakkeen kautta — mailto-flow poistettu.
+- Uusi `merchant_card_requests`-kokoelma backendissä + admin-paneliin
+  oma "Kauppiaspyynnöt"-sivu badge-laskurilla. Admin-approve
+  aktivoi käyttäjän kauppiaskortin automaattisesti (12 kk subscription,
+  shop_name/category/description kopioidaan pyynnöstä).
+- Kauppiaskortti näkyy premium-merkittynä oman kategoriansa kärjessä
+  ("Premium-kauppiaat" + divider + "Muut kauppiaat"). Ei enää top-hero
+  duplikaattia.
+- **Mobiili**: merchant-kortin thumbnail pienennetty näkyväksi,
+  kortti on klikattava → uusi `/shops/[id]` merchant-detail-näyttö
+  kuvalla, yhteystiedoilla, verkkosivulinkillä ja suosikki-vaihdolla.
+- Välilehden nimi mobiilissa `"Kauppiaat" → "Kaupat"` (mahtuu paremmin).
+
+**In-app -viesti-inbox**
+- Uusi `user_messages`-kokoelma + 6 endpointtia (inbox, sent, soft-delete,
+  auto-mark-read).
+- Web: yläpalkin mail-ikoni ember-pillillä näyttää lukematon-laskurin.
+- **Mobiili: Viestit-välilehti siirretty pää-tab-bariin** (näkyy vain
+  kirjautuneille, ember-badge lukematon-laskurille). 3 välilehteä
+  (Saapuneet / Lähetetyt / Lähetä uusi).
+- Paid-messaging-käyttäjien RSVP-kohtainen viestikvootta (presetit
+  A=10, B=20, C=30, D=vapaa), per-event-kvoottanäkymä UI:ssa.
+
+**AI-oletuskuvat + kauppiaslajittelu**
+- 12/12 AI-oletuskuvaa GridFS:ssä (Gemini Nano Banana) 6 kategoriaan
+  — käytetään tapahtumille joissa ei ole käyttäjän kuvaa.
+
+**Infra ja tuotanto**
+- **Backend 520 crash -fix**: `ADMIN_PASSWORD` ja `JWT_SECRET`
+  fallback-logiikka startup-eventiin, estää Cloudflare 520:n jos env
+  puuttuu tuotannosta.
+- **`bump-version.js` + `yarn build:prod`** — automaattinen versionName
+  patch-bump jotta Play Store ei enää cachea vanhaa versiota.
+
+---
+
+### v0.4.8 (versionCode 21) — huhti-toukokuu 2026
+
+**Web↔mobiili favorites-sync**
+- Backend (`users.favorite_event_ids`) on nyt totuuslähde — web ja
+  mobiili näkevät samat suosikit.
+- 4 uutta endpointtia: GET/POST/DELETE/PUT `/api/users/me/favorites`.
+- Anonyymien localStorage/AsyncStorage-suosikit migratoituvat serveriin
+  kirjautumisen yhteydessä.
+
+**Mobiili — Tapahtumani-välilehti**
+- Uusi filter-chip (Suosikit / Osallistun / Molemmat), default
+  "Molemmat". Tyhjätilan info-teksti per filter.
+
+**Moderator-rooli + password-reset-kovennus**
+- `users.is_moderator: bool`, 33 endpointtia siirretty hyväksymään
+  moderaattori (5 jäi admin-only: password rotation, paid-messaging
+  toggle, moderator-toggle, POST admin-users, admin promotion).
+- `DELETE /admin/users/{id}` estää moderaattoria poistamasta admineja
+  (403).
+- Forgot-password: delivery-osoite luetaan `users[email]`:stä,
+  ei request-payloadista — tamper-resistant.
+
+**Käyttäjäkohtainen kielivalinta (web)**
+- `users.language`-kenttä, `PATCH /auth/profile` + `/me` palauttaa.
+- Login↔logout↔re-login -testi: User A (en) → B (sv) → A palasi en,
+  ei vuotanut B:ltä.
+
+**Paid messaging — per-event-kvootta**
+- `message_log`-laskuri (sender_id, event_id) + 429-vastaus yli
+  rajan. Admin-viestit eivät kuluta kvootaa.
+- Globaali `system_config.messaging_quota` (presetit A/B/C/D).
+- Viesteihin lisätään automaattisesti `— {nickname}` (push+email).
+- Uusi GET `/api/messages/quota/{event_id}` per-käyttäjä-kvoottatilaan.
+- Mobiili: quota-indikaattori composer-näytöllä.
