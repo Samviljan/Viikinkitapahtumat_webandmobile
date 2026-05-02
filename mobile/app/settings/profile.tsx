@@ -659,6 +659,35 @@ export default function ProfileScreen() {
               </Pressable>
 
               <Pressable
+                testID="profile-clear-push"
+                onPress={async () => {
+                  try {
+                    await api.delete("/users/me/push-tokens");
+                    Alert.alert(
+                      "Push-rekisteröinti nollattu",
+                      "Paina seuraavaksi \"Test push registration\" rekisteröidäksesi tämän laitteen uudelleen puhtaalta pöydältä.",
+                    );
+                  } catch (e: unknown) {
+                    const err = e as { message?: string };
+                    Alert.alert("Tyhjennys epäonnistui", err?.message ?? "");
+                  }
+                }}
+                style={({ pressed }) => [
+                  {
+                    alignSelf: "center",
+                    marginTop: spacing.sm,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                  },
+                  pressed && { opacity: 0.6 },
+                ]}
+              >
+                <Text style={{ color: colors.stone, fontSize: 11, textDecorationLine: "underline" }}>
+                  Tyhjennä push-rekisteröinti
+                </Text>
+              </Pressable>
+
+              <Pressable
                 testID="sign-out"
                 onPress={confirmSignOut}
                 style={({ pressed }) => [

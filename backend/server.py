@@ -1516,6 +1516,37 @@ async def unregister_push_token(
     return {"ok": True}
 
 
+@api_router.delete("/users/me/push-tokens")
+async def clear_my_push_tokens(user: dict = Depends(get_current_user)):
+    """Wipe ALL of the current user's push tokens. Self-service reset for
+    users whose device has accumulated stale tokens across reinstalls — they
+    can clear the list and re-register from the current device to get a
+    clean state. Safe to call anytime."""
+    res = await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"expo_push_tokens": [], "push_token_meta": {}}},
+    )
+    return {"ok": True, "matched": res.matched_count}
+
+
+@api_router.delete(
+    "/admin/users/{user_id}/push-tokens",
+    dependencies=[Depends(get_admin_or_moderator)],
+)
+async def admin_clear_user_push_tokens(user_id: str):
+    """Admin tool: wipe a specific user's Expo push tokens (e.g. when their
+    tokens are stale and preventing test pushes from reaching their device).
+    User needs to open the mobile app once after this to re-register."""
+    target = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1})
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"expo_push_tokens": [], "push_token_meta": {}}},
+    )
+    return {"ok": True, "user_id": user_id}
+
+
 # -----------------------------------------------------------------------------
 # Anonymous attendance stats (visible to merchants/organizers — privacy-safe)
 # -----------------------------------------------------------------------------
@@ -2136,12 +2167,15 @@ async def admin_list_users(role: Optional[str] = None):
             "paid_messaging_enabled": 1,
             "is_moderator": 1,
             "created_at": 1,
+            "expo_push_tokens": 1,
         },
     ).sort("created_at", -1).to_list(2000)
     for d in docs:
         d.setdefault("paid_messaging_enabled", False)
         d.setdefault("is_moderator", False)
         d.setdefault("user_types", [])
+        tokens = d.pop("expo_push_tokens", None) or []
+        d["push_token_count"] = len(tokens)
     return docs
 
 

@@ -508,6 +508,15 @@ See `/app/memory/test_credentials.md`.
 - Päivittäinen RSVP-muistutus ✅
 - `/admin/push/test` (debug, ei kirjoita — tarkoituksenmukaista)
 
+## Iteration — Push token admin visibility + self-service clear (2026-05-02 evening)
+- ✅ **Backend**: `GET /api/admin/users` palauttaa nyt `push_token_count: int` per käyttäjä (ei tokeneita → 0).
+- ✅ **Backend uusi endpoint** `DELETE /api/users/me/push-tokens` — käyttäjä voi itse tyhjentää kaikki vanhat Expo push -tokeninsa (reset-työkalu kun laite ei saa pushia vanhentuneiden kopioiden takia).
+- ✅ **Backend uusi endpoint** `DELETE /api/admin/users/{user_id}/push-tokens` — admin/moderator voi tyhjentää kenen tahansa käyttäjän push-tokenit (debug-työkalu). 404 jos käyttäjää ei löydy.
+- ✅ **Web admin `AdminUsersPanel.jsx`**: uusi "Push"-sarake taulukossa näyttää kullaisen badgen Bell-ikonilla + lukumäärän (esim. `🔔 3`) jos käyttäjällä on tokeneita, harmaan `—` jos ei. Tooltip kertoo tarkan merkityksen. Toimintopalkissa uusi "BellOff"-nappi joka tyhjentää tokenit yhdellä klikillä (confirm-dialogi + toast).
+- ✅ **Mobiili `settings/profile.tsx`**: Test push registration -painikkeen alle lisätty pieni "Tyhjennä push-rekisteröinti" -linkki joka kutsuu `DELETE /users/me/push-tokens` ja pyytää sitten painamaan Test-nappia uudelleen. Self-diagnose-työkalu.
+- ✅ **Curl-testattu päästä päähän**: register fake token → admin näkee push_token_count=1 → admin DELETE → count=0. 404 virheelliselle user_id:lle OK.
+- ✅ TypeScript clean, ESLint clean, ruff clean.
+
 ## Iteration — Mobile merchant detail + Viestit-tab pääpalkkiin (2026-05-02)
 - ✅ **Mobiili `/shops/[id].tsx`** (uusi näyttö): merchant-detail hakee `/api/merchants/:id` ja renderöi hero-kuvan, kuvauksen, yhteystiedot (website/puhelin/sähköposti), suosikkiheart-togglen (vain kirjautuneille) ja back-chevronin. Testid `merchant-detail`, `merchant-back`, `merchant-image`, `merchant-fav-toggle`, `merchant-website`.
 - ✅ **Mobiili `(tabs)/shops.tsx`**: premium-kauppiaskortin kuva pienennetty aspectRatio 2.2:ksi (oli full-hero), koko kortti on `Pressable` joka navigoi `router.push("/shops/:id")`. Poistettu erillinen "view_details" -linkkirivi.

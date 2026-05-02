@@ -6,7 +6,7 @@
  */
 import React, { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Trash2, UserPlus, Loader2, KeyRound, Store } from "lucide-react";
+import { Trash2, UserPlus, Loader2, KeyRound, Store, BellOff, Bell } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import {
@@ -112,6 +112,25 @@ export default function AdminUsersPanel() {
     }
   }
 
+  async function clearPushTokens(u) {
+    if (
+      !window.confirm(
+        `Tyhjennä kaikki ${u.email}-käyttäjän push-tokenit? Käyttäjän on avattava mobiili uudelleen rekisteröityäkseen.`,
+      )
+    )
+      return;
+    try {
+      await api.delete(`/admin/users/${u.id}/push-tokens`);
+      setUsers((prev) =>
+        prev.map((x) => (x.id === u.id ? { ...x, push_token_count: 0 } : x)),
+      );
+      toast.success("Push-tokenit tyhjennetty");
+    } catch (err) {
+      const detail = err?.response?.data?.detail;
+      toast.error(typeof detail === "string" ? detail : "Tyhjennys epäonnistui");
+    }
+  }
+
   async function performDelete() {
     const u = confirmDelete;
     if (!u) return;
@@ -182,6 +201,7 @@ export default function AdminUsersPanel() {
               <th className="text-left py-2 pr-3">{t("admin.users.col_role")}</th>
               <th className="text-left py-2 pr-3">{t("admin.users.col_types")}</th>
               <th className="text-right py-2 px-3">{t("admin.users.col_paid")}</th>
+              <th className="text-right py-2 px-3" title="Rekisteröityjen laitteiden määrä">Push</th>
               {currentAdmin?.role === "admin" ? (
                 <th className="text-right py-2 px-3">{t("admin.users.col_moderator")}</th>
               ) : null}
@@ -192,7 +212,7 @@ export default function AdminUsersPanel() {
             {visible.length === 0 ? (
               <tr>
                 <td
-                colSpan={currentAdmin?.role === "admin" ? 6 : 5}
+                colSpan={currentAdmin?.role === "admin" ? 7 : 6}
                   className="py-8 text-center text-viking-stone italic text-xs"
                 >
                   —
@@ -253,6 +273,26 @@ export default function AdminUsersPanel() {
                       onCheckedChange={() => toggle(u)}
                     />
                   </td>
+                  <td
+                    className="py-3 px-3 text-right"
+                    data-testid={`push-count-${u.id}`}
+                    title={
+                      u.push_token_count > 0
+                        ? `${u.push_token_count} rekisteröityä laitetta`
+                        : "Ei rekisteröityjä laitteita"
+                    }
+                  >
+                    {u.push_token_count > 0 ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-viking-gold/60 text-viking-gold text-[11px] font-semibold">
+                        <Bell className="w-3 h-3" />
+                        {u.push_token_count}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-viking-stone/60">
+                        <BellOff className="w-3 h-3" />—
+                      </span>
+                    )}
+                  </td>
                   {currentAdmin?.role === "admin" ? (
                     <td className="py-3 px-3 text-right" onClick={(e) => e.stopPropagation()}>
                       <Switch
@@ -287,6 +327,20 @@ export default function AdminUsersPanel() {
                         className="p-1.5 rounded-sm border border-viking-edge text-viking-stone hover:text-viking-gold hover:border-viking-gold/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                       >
                         <Store className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => clearPushTokens(u)}
+                        disabled={!u.push_token_count}
+                        title={
+                          u.push_token_count
+                            ? "Tyhjennä käyttäjän push-tokenit (debug)"
+                            : "Ei tokeneita tyhjennettäväksi"
+                        }
+                        data-testid={`clear-push-${u.id}`}
+                        className="p-1.5 rounded-sm border border-viking-edge text-viking-stone hover:text-viking-gold hover:border-viking-gold/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <BellOff className="w-3.5 h-3.5" />
                       </button>
                       <button
                         type="button"
