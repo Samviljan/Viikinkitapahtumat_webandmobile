@@ -2,7 +2,7 @@
   "expo": {
     "name": "Viikinkitapahtumat",
     "slug": "viikinkitapahtumat",
-    "version": "0.4.8",
+    "version": "0.4.9",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "viikinki",
