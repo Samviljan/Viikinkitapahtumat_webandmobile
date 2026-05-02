@@ -508,6 +508,13 @@ See `/app/memory/test_credentials.md`.
 - Päivittäinen RSVP-muistutus ✅
 - `/admin/push/test` (debug, ei kirjoita — tarkoituksenmukaista)
 
+## Iteration — Mobile merchant detail + Viestit-tab pääpalkkiin (2026-05-02)
+- ✅ **Mobiili `/shops/[id].tsx`** (uusi näyttö): merchant-detail hakee `/api/merchants/:id` ja renderöi hero-kuvan, kuvauksen, yhteystiedot (website/puhelin/sähköposti), suosikkiheart-togglen (vain kirjautuneille) ja back-chevronin. Testid `merchant-detail`, `merchant-back`, `merchant-image`, `merchant-fav-toggle`, `merchant-website`.
+- ✅ **Mobiili `(tabs)/shops.tsx`**: premium-kauppiaskortin kuva pienennetty aspectRatio 2.2:ksi (oli full-hero), koko kortti on `Pressable` joka navigoi `router.push("/shops/:id")`. Poistettu erillinen "view_details" -linkkirivi.
+- ✅ **Mobiili `(tabs)/_layout.tsx`**: Viestit-välilehti siirretty pää-tab-bariin (authOnly=true, näkyy vain kirjautuneille). Ember-badge lukematon-laskurille haetaan `/api/messages/inbox`-kutsulla pathname-vaihteluissa. Viestit-näyttö itse siirretty `settings/messages.tsx` → `(tabs)/messages.tsx`.
+- ✅ TypeScript puhdas (`yarn tsc --noEmit` 0 virhettä). Testing agent vahvisti Playwrightilla: anon-palkki näyttää 5 välilehteä (ei Viestit), premium-kauppias-thumbnail 380×173 (aspect 2.20), merchant-napautus → /shops/<id>, detail renderöityy.
+- ✅ **RELEASE.md päivitetty** viimeisimpien kahden buildin (v0.4.8 + v0.4.9) release notesilla.
+
 ## Iteration — Top-hero poisto duplikaattien estämiseksi (2026-05-02)
 - ✅ **Web `Shops.jsx`**: Top-hero `featured-strip`-osio poistettu kokonaan (sekä JSX, `featuredAll`-useMemo että käyttöliittymäteksti). Premium-kortit näkyvät enää vain oman kategoriansa kärjessä `Premium-kauppiaat` -alaotsikon alla, divider, ja sitten `Muut kauppiaat`. Ei duplikaatteja.
 - ✅ **Mobiili `(tabs)/shops.tsx`**: Sama puhdistus — `featured-header` ja `featured-card` -row-tyypit poistettu, `featuredAll`-useMemo poistettu, `featuredHero/featuredEyebrow/featuredSubtitle`-tyylit poistettu. Sama per-kategoria Premium/Muut-rakenne säilyy ennallaan.
