@@ -473,6 +473,20 @@ See `/app/memory/test_credentials.md`.
   - User downloads `.aab` from above URL when Expo finishes (~10-15 min) and uploads to Play Console manually.
 
 
+## Iteration — Play Store update cache fix + automaattinen version bump (2026-05-02)
+- 🐛 **Diagnoosi**: Beta-testaajien Play Store -päivitys versionCode 23:een vaati välimuistin tyhjennyksen koska **versionCode 21 ja 23 käyttivät samaa `versionName: "0.4.8"`**. Play Store -UI näytti "olet jo ajan tasalla" vaikka uusi versionCode olisi pitänyt triggeröidä päivityksen.
+- ✅ **Korjaus**: 
+  1. `app.json`:n `expo.version` nostettu `0.4.8 → 0.4.9` seuraavaa buildia varten.
+  2. Luotu `/app/mobile/scripts/bump-version.js` — automaattinen patch/minor/major bumper.
+  3. Lisätty `package.json`-scriptit: `yarn bump:patch`, `yarn build:prod` (yhdistelmä bump + EAS build), `yarn update:prod` (OTA).
+  4. Luotu `/app/mobile/RELEASE.md` — dokumentaatio jatkokehitykselle (OTA vs native build, milloin kumpaa, usein toistuvat ongelmat).
+- ✅ **`.gitignore` siivous**: 234 → 106 riviä. Poistettu 128 duplikaattiriviä ja 15 vaeltavaa `-e`-komentoartefaktia jotka olivat kertyneet aikaisemmista `echo -e ... >> .gitignore` -komennoista. Saattoi vaikuttaa Emergent-deployn tiedostojen hakuun.
+- ✅ **Best practice jatkossa**: Jokaisen uuden natiivibuildin komento on nyt `yarn build:prod` joka:
+  1. Nostaa versionName patch:n automaattisesti (0.4.9 → 0.4.10 → 0.4.11 ...)
+  2. EAS auto-bumppaa versionCode:n (23 → 24 → 25 ...)
+  3. Play Store -käyttäjät näkevät puhtaan `0.4.9 → 0.4.10` -päivityksen eivätkä joudu tyhjentämään välimuistia koskaan
+- ⚠️ **OTA-varoitus dokumentoitu RELEASE.md:ssä**: ÄLÄ nosta `expo.version` ennen OTA:ta — muuten runtimeVersion muuttuu ja päivitys menee versioon jota kukaan ei aja. OTA-päivitys julkaistaan nykyiselle versionNamelle — älä koske app.jsoniin ennen sitä.
+
 ## Iteration — Native build v22 (versionCode 23) käynnistys + RuntimeVersion-fix (2026-05-02)
 - 🐛 **Diagnoosi**: Aiemmat OTA-päivitykset eivät menneet mobiiliin perille koska Android-build versionCode 21 oli rakennettu **ilman `runtimeVersion`-asetusta** app.json:ssa. Kun ajettiin `eas update`, EAS CLI auto-lisäsi `runtimeVersion: {policy: appVersion}` ja julkaisi päivityksen tagattuna runtime-versioon 0.4.8 — mutta puhelimessa oleva binääri ei sisällä mitään runtime-versiota, joten `expo-updates` ei voinut yhdistää päivitykseen.
 - ✅ **Korjaus**: app.json sisältää nyt `runtimeVersion: {policy: appVersion}`. Käynnistetty uusi natiivibuild EAS Cloud Buildilla (Build ID `c46cc8fe-61a9-4a7b-a3e3-82f4856b04f1`, versionCode bumpattiin 21 → 23 koska 22 jäi kesken aiemmasta yrityksestä). Tämä build sisältää KAIKKI viime aikojen muutokset (kaupat-järjestys, premium-jako, hanki-CTA, viestit-inbox, top-heron poisto, RSVP-muistutukset inboxiin) JA korjaa runtimeVersionin niin että jatkossa OTA-päivitykset toimivat oikein.

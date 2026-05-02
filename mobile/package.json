@@ -8,7 +8,12 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "bump:patch": "node scripts/bump-version.js patch",
+    "bump:minor": "node scripts/bump-version.js minor",
+    "bump:major": "node scripts/bump-version.js major",
+    "build:prod": "node scripts/bump-version.js patch && eas build --platform android --profile production --non-interactive",
+    "update:prod": "eas update --branch production"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
