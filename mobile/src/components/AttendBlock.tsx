@@ -6,7 +6,7 @@
  *   (email reminder / push reminder). Backed by /api/events/{id}/attend.
  */
 import React, { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { api } from "@/src/api/client";
@@ -73,6 +73,20 @@ export function AttendBlock({ eventId }: { eventId: string }) {
     }
   }
 
+  function confirmAttend() {
+    Alert.alert(
+      "Vahvista osallistuminen",
+      'Osallistumistasi ei toistaiseksi linkitetä tapahtumanjärjestäjän omaan ilmoittautumiseen. ' +
+        'Osallistuminen on viikinkitapahtumat.fi-sovelluksen sisäinen toiminto, jolla tapahtumanjärjestäjä ' +
+        '(jos hän on kirjautunut sovellukseen) tai tapahtumaan osallistuvat kauppiaat voivat toimittaa ' +
+        'sinulle tiedotteita ja mainoksia tapahtumasta.',
+      [
+        { text: "Peruuta", style: "cancel" },
+        { text: "Kyllä, osallistun", style: "default", onPress: () => void attend() },
+      ],
+    );
+  }
+
   async function cancel() {
     setBusy(true);
     try {
@@ -81,6 +95,17 @@ export function AttendBlock({ eventId }: { eventId: string }) {
     } finally {
       setBusy(false);
     }
+  }
+
+  function confirmCancel() {
+    Alert.alert(
+      "Peru osallistuminen",
+      "Haluatko poistaa osallistumistietosi tästä tapahtumasta? Et saa enää tiedotteita tapahtumasta.",
+      [
+        { text: "Ei, jatkan osallistujana", style: "cancel" },
+        { text: "Kyllä, peru osallistuminen", style: "destructive", onPress: () => void cancel() },
+      ],
+    );
   }
 
   async function togglePref(field: "notify_email" | "notify_push") {
@@ -100,7 +125,7 @@ export function AttendBlock({ eventId }: { eventId: string }) {
     <View testID="attend-block" style={styles.block}>
       <Pressable
         testID={state.attending ? "attend-cancel" : "attend-confirm"}
-        onPress={state.attending ? cancel : attend}
+        onPress={state.attending ? confirmCancel : confirmAttend}
         disabled={busy}
         style={({ pressed }) => [
           state.attending ? styles.attendingBtn : styles.attendBtn,

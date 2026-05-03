@@ -508,6 +508,17 @@ See `/app/memory/test_credentials.md`.
 - Päivittäinen RSVP-muistutus ✅
 - `/admin/push/test` (debug, ei kirjoita — tarkoituksenmukaista)
 
+## Iteration — Suosikit pois + RSVP-vahvistusdialogi + tietosuoja-linkki (2026-05-03)
+- ✅ **Suosikkitoiminto poistettu kokonaan UI:sta** sekä webistä että mobiilista. Backend-endpointit jätetty paikalleen taaksepäin yhteensopiviksi, mutta käyttöliittymä ei kutsu niitä.
+  - **Web**: poistettu `FavoriteButton`-rendaus `EventCard.jsx`:stä, `Shops.jsx`-sydännapit, `MerchantDetail.jsx` heart-toggle. Layout.jsx:n `nav-favorites` ja `mnav-favorites` näyttävät nyt "Tapahtumani" `CalendarCheck`-ikonilla, näkyy vain kirjautuneille. `Favorites.jsx`-sivu kirjoitettu uudelleen näyttämään vain `/users/me/attending` -tapahtumat.
+  - **Mobile**: `(tabs)/_layout.tsx` poistettu `useFavorites` ja count-badge. `(tabs)/favorites.tsx` (Tapahtumani-välilehti) korvattu yksinkertaisemmalla 195-rivisellä versiolla joka näyttää vain attended-tapahtumat. `EventCard.tsx`, `(tabs)/shops.tsx`, `shops/[id].tsx` — poistettu kaikki heart/star-painikkeet ja niiden hookit.
+- ✅ **Web `AttendButton.jsx`**: korvataan suora attend/cancel kahdella `AlertDialog`-vahvistusdialogilla (data-testid `attend-confirm-dialog` ja `attend-cancel-dialog`). Vahvista-dialogi sisältää käyttäjän pyytämän infotekstin sovelluksen sisäisestä toiminnosta + "Kyllä, osallistun"/"Peruuta"-napit. Peru-dialogi vastaavasti.
+- ✅ **Mobile `AttendBlock.tsx`**: lisätty `Alert.alert`-dialogit attend/cancel-tilaa varten, sama infoteksti kuin webissä.
+- ✅ **Mobiilin asetuksiin lisätty Tietosuojakäytäntö-linkki**: `(tabs)/settings.tsx`-näkymässä uusi kortti `data-testid="nav-privacy"` shield-checkmark-ikonilla. Avaa `https://viikinkitapahtumat.fi/privacy` Linking.openURL:lla. Web-Layoutissa /privacy-linkki oli jo footerissa.
+- ✅ **Kuukausien käännökset filttereissä**: tarkistettu — sekä web (`toLocaleDateString(lang)`) että mobile (`Intl.DateTimeFormat(lang, {month:"long"})`) käyttävät selaimen/laitteen Intl-API:a, joka tukee kaikkia 7 sovelluksen kieltä natiivisti. Lang-resolveri mobiilissa (`i18n.tsx`) palauttaa fallbackiksi `"en"` jos käyttäjän kieliasetus ei ole sovelluksen tukikielten joukossa — kuten käyttäjä pyysi.
+- ✅ TypeScript clean, ESLint clean, Web home-sivu lataa puhtaasti ilman fav-painikkeita.
+- ✅ **Mobile build v0.4.17 (versionCode 31)** käynnistetty: `0a7722be-3b8f-4459-bf80-5e7c7b706dbc`. Korvaa kaikki aiemmat buildit Play Store -uploadiin.
+
 ## Iteration — Mobiilin tapahtumakortti + kauppa-kuvat + käännös (2026-05-02 ilta-11)
 - 🐛 **Bug 1 — Premium kauppias-kuva ei näy mobiilissa shops-listauksella**: juurisyy oli että `app/(tabs)/shops.tsx` käytti `process.env.EXPO_PUBLIC_BACKEND_URL`-env-muuttujaa, joka ei ole asetettu EAS-production-buildissa → `imgSrc()` tuotti rikkinäisen URLin. Korjattu käyttämään yhteistä `resolveImageUrl()`-helperia (`@/src/api/client`), joka hoitaa `apiBaseUrl`-konfiguraation oikein.
 - 🐛 **Bug 2 — "events.merchants_present" -käännös näkyi raakana**: `t()`-funktio palauttaa keyn itse jos avainta ei löydy (fallback ei laukea koska string on truthy). Korjattu kovakoodaamalla suomenkieliset tekstit "Kauppiaita paikalla" ja sen selitys komponenttiin `EventMerchantsBlock.tsx`. Poistettu `useSettings`-import.

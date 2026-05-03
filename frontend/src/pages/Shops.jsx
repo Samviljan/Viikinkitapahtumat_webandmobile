@@ -90,14 +90,6 @@ function MerchantCard({ s, isFavorite, onToggleFavorite, canFavorite, testid }) 
 
   return (
     <div className="relative h-full">
-      {canFavorite && isUserCard && (
-        <FavoriteButton
-          merchantId={s.id}
-          isFavorite={isFavorite}
-          onToggle={onToggleFavorite}
-          testid={`${testid}-fav`}
-        />
-      )}
       {detailHref ? (
         <Link to={detailHref} data-testid={testid} className={className}>
           {inner}

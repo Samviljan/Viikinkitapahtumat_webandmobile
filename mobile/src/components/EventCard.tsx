@@ -4,7 +4,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { colors, radius, spacing, text } from "@/src/lib/theme";
 import { resolveImageUrl } from "@/src/api/client";
-import { useFavorites } from "@/src/hooks/useFavorites";
 import { flagFor } from "@/src/lib/countries";
 import { countdownLabel, daysUntil, formatDateRange } from "@/src/lib/format";
 import { localized, useSettings } from "@/src/lib/i18n";
@@ -25,9 +24,7 @@ const CAT_ICON: Record<string, React.ComponentProps<typeof Ionicons>["name"]> = 
  * each event from the next.
  */
 export function EventCard({ event }: { event: VikingEvent }) {
-  const { isFavorite, toggle } = useFavorites();
   const { t, lang } = useSettings();
-  const fav = isFavorite(event.id);
   const img = resolveImageUrl(event.image_url);
   const cd = daysUntil(event.start_date, event.end_date);
   const [imgFailed, setImgFailed] = useState(false);
@@ -91,23 +88,6 @@ export function EventCard({ event }: { event: VikingEvent }) {
               </Text>
             </View>
           </View>
-
-          {/* Favorite (top-right) */}
-          <Pressable
-            testID={`fav-toggle-${event.id}`}
-            hitSlop={12}
-            onPress={(e) => {
-              e.stopPropagation?.();
-              toggle(event.id);
-            }}
-            style={styles.favBtn}
-          >
-            <Ionicons
-              name={fav ? "star" : "star-outline"}
-              size={18}
-              color={fav ? colors.gold : colors.stone}
-            />
-          </Pressable>
         </View>
 
         {/* Countdown footer strip */}

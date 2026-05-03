@@ -106,22 +106,6 @@ export default function MerchantDetail() {
                 {m.name}
               </h1>
             </div>
-            {user && user.id && (
-              <button
-                type="button"
-                onClick={toggleFavorite}
-                disabled={busy}
-                data-testid="merchant-favorite-btn"
-                className="rounded-full bg-viking-shadow/80 p-3 hover:bg-viking-shadow transition-colors disabled:opacity-50"
-                aria-pressed={isFavorite}
-                aria-label={isFavorite ? t("shops.favorite_remove") : t("shops.favorite_add")}
-              >
-                <Heart
-                  size={20}
-                  className={isFavorite ? "fill-viking-ember text-viking-ember" : "text-viking-bone"}
-                />
-              </button>
-            )}
           </div>
 
           {m.description && (

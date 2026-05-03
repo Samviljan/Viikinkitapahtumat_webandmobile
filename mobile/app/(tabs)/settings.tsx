@@ -5,7 +5,7 @@
  *   - About the app (version, share, contact)
  */
 import React from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -16,10 +16,11 @@ import { useAuth } from "@/src/lib/auth";
 
 interface NavCard {
   icon: React.ComponentProps<typeof Ionicons>["name"];
-  titleKey: string;
+  titleKey?: string;
   href: string;
   testID: string;
   subline?: string;
+  label?: string;
 }
 
 export default function SettingsHub() {
@@ -59,6 +60,12 @@ export default function SettingsHub() {
       href: "/info",
       testID: "nav-about",
     },
+    {
+      icon: "shield-checkmark-outline",
+      label: "Tietosuojakäytäntö",
+      href: "https://viikinkitapahtumat.fi/privacy",
+      testID: "nav-privacy",
+    },
   ];
 
   return (
@@ -73,7 +80,13 @@ export default function SettingsHub() {
             <Pressable
               key={card.testID}
               testID={card.testID}
-              onPress={() => router.push(card.href as never)}
+              onPress={() => {
+                if (card.href.startsWith("http")) {
+                  Linking.openURL(card.href).catch(() => {});
+                } else {
+                  router.push(card.href as never);
+                }
+              }}
               style={({ pressed }) => [
                 styles.card,
                 pressed && { opacity: 0.85 },
@@ -83,7 +96,9 @@ export default function SettingsHub() {
                 <Ionicons name={card.icon} size={20} color={colors.gold} />
               </View>
               <View style={styles.cardBody}>
-                <Text style={styles.cardTitle}>{t(card.titleKey)}</Text>
+                <Text style={styles.cardTitle}>
+                  {card.label || (card.titleKey ? t(card.titleKey) : "")}
+                </Text>
                 {card.subline ? (
                   <Text style={styles.cardSub}>{card.subline}</Text>
                 ) : null}

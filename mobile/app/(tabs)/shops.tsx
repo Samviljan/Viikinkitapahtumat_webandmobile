@@ -6,7 +6,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AppBackground } from "@/src/components/AppBackground";
 import { LinkListRow, SectionTitle } from "@/src/components/LinkListRow";
 import { useMerchants } from "@/src/hooks/useDirectory";
-import { useFavoriteMerchants } from "@/src/hooks/useFavoriteMerchants";
 import { useAuth } from "@/src/lib/auth";
 import { api, resolveImageUrl } from "@/src/api/client";
 import { colors, radius, spacing, text } from "@/src/lib/theme";
@@ -305,7 +304,6 @@ function MerchantCardCTA() {
 export default function ShopsScreen() {
   const { data, loading, error } = useMerchants();
   const { t } = useSettings();
-  const { isFavorite, toggle } = useFavoriteMerchants();
   const router = useRouter();
 
   const sortPaid = (list: typeof data) =>
@@ -432,7 +430,6 @@ export default function ShopsScreen() {
             // Per-category paid card (this is hit when the merchant appears
             // inside a category section after the "Premium" tier-header).
             if (m.is_user_card) {
-              const fav = isFavorite(m.id);
               return (
                 <Pressable
                   testID={`merchant-${m.id}`}
@@ -460,11 +457,6 @@ export default function ShopsScreen() {
                       <Text style={styles.paidTitle} numberOfLines={2}>
                         {m.name}
                       </Text>
-                      <FavoriteHeartButton
-                        testID={`fav-merchant-${m.id}`}
-                        isFav={fav}
-                        onPress={() => toggle(m.id)}
-                      />
                     </View>
                     {m.description ? (
                       <Text style={styles.paidDesc} numberOfLines={2}>

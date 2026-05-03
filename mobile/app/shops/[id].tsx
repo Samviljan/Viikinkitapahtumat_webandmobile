@@ -22,8 +22,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppBackground } from "@/src/components/AppBackground";
 import { api, resolveImageUrl } from "@/src/api/client";
-import { useAuth } from "@/src/lib/auth";
-import { useFavoriteMerchants } from "@/src/hooks/useFavoriteMerchants";
 import { useSettings } from "@/src/lib/i18n";
 import { formatDateRange } from "@/src/lib/format";
 import { colors, radius, spacing } from "@/src/lib/theme";
@@ -70,8 +68,6 @@ export default function MerchantDetailScreen() {
   const params = useLocalSearchParams<{ id: string | string[] }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const router = useRouter();
-  const { user } = useAuth();
-  const { isFavorite, toggle } = useFavoriteMerchants();
   const { lang } = useSettings();
   const [m, setM] = useState<Merchant | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -84,8 +80,12 @@ export default function MerchantDetailScreen() {
       .catch(() => setError("not_found"));
   }, [id]);
 
-  const fav = id ? isFavorite(id) : false;
-  const canFavourite = !!user?.id;
+  const fav = false;
+  const canFavourite = false;
+  // Reference unused-but-kept fav state to silence TS unused warnings in
+  // the topbar — we keep the heart-button code path inert until product
+  // re-introduces favourites.
+  void fav;
 
   if (error) {
     return (
@@ -141,22 +141,7 @@ export default function MerchantDetailScreen() {
           <Text style={styles.topBarTitle} numberOfLines={1}>
             {m.name}
           </Text>
-          {canFavourite ? (
-            <Pressable
-              testID="merchant-fav-toggle"
-              onPress={() => toggle(m.id)}
-              hitSlop={12}
-              style={({ pressed }) => [styles.topBarBtn, pressed && { opacity: 0.6 }]}
-            >
-              <Ionicons
-                name={fav ? "heart" : "heart-outline"}
-                size={22}
-                color={fav ? colors.ember : colors.bone}
-              />
-            </Pressable>
-          ) : (
-            <View style={styles.topBarBtn} />
-          )}
+          <View style={styles.topBarBtn} />
         </View>
 
         <ScrollView contentContainerStyle={styles.scroll}>

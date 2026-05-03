@@ -4,7 +4,6 @@ import { Slot, usePathname, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/src/lib/theme";
-import { useFavorites } from "@/src/hooks/useFavorites";
 import { useSettings } from "@/src/lib/i18n";
 import { useAuth } from "@/src/lib/auth";
 import { api } from "@/src/api/client";
@@ -24,14 +23,13 @@ interface TabDef {
   labelKey: string;
   icon: React.ComponentProps<typeof Ionicons>["name"];
   testID: string;
-  showBadge?: boolean;
   showMessagesBadge?: boolean;
   authOnly?: boolean;
 }
 
 const TABS: TabDef[] = [
   { href: "/", labelKey: "tab.home", icon: "home", testID: "tab-home" },
-  { href: "/favorites", labelKey: "tab.myevents", icon: "bookmarks", testID: "tab-myevents", showBadge: true },
+  { href: "/favorites", labelKey: "tab.myevents", icon: "bookmarks", testID: "tab-myevents", authOnly: true },
   { href: "/calendar", labelKey: "tab.calendar", icon: "calendar", testID: "tab-cal" },
   { href: "/shops", labelKey: "tab.shops", icon: "storefront", testID: "tab-shops" },
   { href: "/messages", labelKey: "messages.title", icon: "mail", testID: "tab-messages", authOnly: true, showMessagesBadge: true },
@@ -41,7 +39,6 @@ const TABS: TabDef[] = [
 export default function TabsLayout() {
   const pathname = usePathname() || "/";
   const router = useRouter();
-  const { count } = useFavorites();
   const insets = useSafeAreaInsets();
   const { t } = useSettings();
   const { user } = useAuth();
@@ -100,11 +97,6 @@ export default function TabsLayout() {
                   size={20}
                   color={active ? colors.gold : colors.stone}
                 />
-                {tab.showBadge && count > 0 ? (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{count}</Text>
-                  </View>
-                ) : null}
                 {tab.showMessagesBadge && unreadMessages > 0 ? (
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>{unreadMessages}</Text>

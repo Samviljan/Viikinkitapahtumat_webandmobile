@@ -24,6 +24,8 @@ export default function AttendButton({ eventId }) {
   });
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [confirmAttend, setConfirmAttend] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
   // Fetch current attendance once auth is resolved.
   useEffect(() => {
@@ -67,6 +69,7 @@ export default function AttendButton({ eventId }) {
         notify_push: state.notify_push,
       });
       setState(data);
+      setConfirmAttend(false);
     } finally {
       setBusy(false);
     }
@@ -77,6 +80,7 @@ export default function AttendButton({ eventId }) {
     try {
       await api.delete(`/events/${eventId}/attend`);
       setState((s) => ({ ...s, attending: false }));
+      setConfirmCancel(false);
     } finally {
       setBusy(false);
     }
@@ -103,7 +107,7 @@ export default function AttendButton({ eventId }) {
           <Button
             variant="outline"
             data-testid="attend-cancel"
-            onClick={cancel}
+            onClick={() => setConfirmCancel(true)}
             disabled={busy}
             className="border-viking-gold text-viking-gold hover:bg-viking-ember/15 hover:border-viking-ember hover:text-viking-ember rounded-sm font-rune text-xs"
           >
@@ -113,7 +117,7 @@ export default function AttendButton({ eventId }) {
         ) : (
           <Button
             data-testid="attend-confirm"
-            onClick={attend}
+            onClick={() => setConfirmAttend(true)}
             disabled={busy}
             className="bg-viking-ember hover:bg-viking-emberHover text-viking-bone rounded-sm font-rune text-xs ember-glow"
           >
@@ -122,6 +126,65 @@ export default function AttendButton({ eventId }) {
           </Button>
         )}
       </div>
+
+      <AlertDialog open={confirmAttend} onOpenChange={setConfirmAttend}>
+        <AlertDialogContent
+          data-testid="attend-confirm-dialog"
+          className="bg-viking-shadow border-viking-edge text-viking-bone"
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-viking-gold font-serif">
+              {t("attend.confirm_title") || "Vahvista osallistuminen"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-viking-stone leading-relaxed text-sm">
+              {t("attend.confirm_info") ||
+                "Osallistumistasi ei toistaiseksi linkitetä tapahtumanjärjestäjän omaan ilmoittautumiseen. Osallistuminen on viikinkitapahtumat.fi-sovelluksen sisäinen toiminto, jolla tapahtumanjärjestäjä (jos hän on kirjautunut sovellukseen) tai tapahtumaan osallistuvat kauppiaat voivat toimittaa sinulle tiedotteita ja mainoksia tapahtumasta."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="attend-confirm-cancel" disabled={busy}>
+              {t("common.cancel") || "Peruuta"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="attend-confirm-yes"
+              onClick={attend}
+              disabled={busy}
+              className="bg-viking-ember hover:bg-viking-emberHover"
+            >
+              {t("attend.confirm_yes") || "Kyllä, osallistun"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmCancel} onOpenChange={setConfirmCancel}>
+        <AlertDialogContent
+          data-testid="attend-cancel-dialog"
+          className="bg-viking-shadow border-viking-edge text-viking-bone"
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-viking-gold font-serif">
+              {t("attend.cancel_title") || "Peru osallistuminen"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-viking-stone text-sm">
+              {t("attend.cancel_info") ||
+                "Haluatko poistaa osallistumistietosi tästä tapahtumasta? Et saa enää tiedotteita tapahtumasta."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>
+              {t("common.no") || "Ei, jatkan osallistujana"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="attend-cancel-yes"
+              onClick={cancel}
+              disabled={busy}
+            >
+              {t("attend.cancel_yes") || "Kyllä, peru osallistuminen"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {state.attending && (
         <div

@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
-import { useFavorites } from "@/lib/favorites";
-import { Menu, X, Globe2, Shield, LogOut, Star, User, UserCircle2, Mail } from "lucide-react";
+import { Menu, X, Globe2, Shield, LogOut, CalendarCheck, User, UserCircle2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import NewsletterSignup from "@/components/NewsletterSignup";
@@ -93,13 +92,15 @@ function Brand() {
 
 function FavoritesNavLink() {
   const { t } = useI18n();
-  const { count } = useFavorites();
+  const { user } = useAuth();
+  // Hide nav link entirely for anonymous visitors — RSVPs require login.
+  if (!user) return null;
   return (
     <NavLink
       to="/favorites"
       data-testid="nav-favorites"
-      title={t("nav.favorites")}
-      aria-label={t("nav.favorites")}
+      title={t("nav.my_events") || "Tapahtumani"}
+      aria-label={t("nav.my_events") || "Tapahtumani"}
       className={({ isActive }) =>
         `relative inline-flex h-9 w-9 items-center justify-center rounded-sm border transition-colors ${
           isActive
@@ -108,15 +109,7 @@ function FavoritesNavLink() {
         }`
       }
     >
-      <Star size={16} className={count > 0 ? "fill-viking-gold text-viking-gold" : ""} />
-      {count > 0 && (
-        <span
-          data-testid="favorites-count-badge"
-          className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-viking-ember text-viking-bone text-[10px] font-rune rounded-full flex items-center justify-center border border-viking-bg"
-        >
-          {count}
-        </span>
-      )}
+      <CalendarCheck size={16} />
     </NavLink>
   );
 }
@@ -324,19 +317,21 @@ export default function Layout({ children }) {
                   {t(item.key)}
                 </NavLink>
               ))}
-              <NavLink
-                to="/favorites"
-                onClick={() => setOpen(false)}
-                data-testid="mnav-favorites"
-                className={({ isActive }) =>
-                  `font-rune text-xs px-3 py-3 rounded-sm border-b border-viking-edge/40 inline-flex items-center gap-2 ${
-                    isActive ? "text-viking-gold" : "text-viking-bone hover:text-viking-gold"
-                  }`
-                }
-              >
-                <Star size={14} />
-                {t("nav.favorites")}
-              </NavLink>
+              {user && user.role ? (
+                <NavLink
+                  to="/favorites"
+                  onClick={() => setOpen(false)}
+                  data-testid="mnav-favorites"
+                  className={({ isActive }) =>
+                    `font-rune text-xs px-3 py-3 rounded-sm border-b border-viking-edge/40 inline-flex items-center gap-2 ${
+                      isActive ? "text-viking-gold" : "text-viking-bone hover:text-viking-gold"
+                    }`
+                  }
+                >
+                  <CalendarCheck size={14} />
+                  {t("nav.my_events") || "Tapahtumani"}
+                </NavLink>
+              ) : null}
               {user && user.role ? (
                 <>
                   <NavLink

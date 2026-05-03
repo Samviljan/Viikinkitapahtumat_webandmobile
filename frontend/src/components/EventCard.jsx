@@ -2,7 +2,6 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Calendar, MapPin, ArrowUpRight, Hourglass, Clock, FileText } from "lucide-react";
 import { useI18n, pickLocalized } from "@/lib/i18n";
-import FavoriteButton from "@/components/FavoriteButton";
 import RemindMeButton from "@/components/RemindMeButton";
 import { flagFor } from "@/lib/countries";
 import { resolveImageUrl } from "@/lib/images";
@@ -40,10 +39,9 @@ export default function EventCard({ event, compact = false }) {
             <span aria-hidden="true" className="text-base leading-none">{flag}</span>
             <span>{categoryLabel}</span>
           </div>
-          {/* Action icons (favorite + remind) bottom-right of image */}
+          {/* Action icons (remind) bottom-right of image */}
           <div className="absolute bottom-3 right-3 flex items-center gap-2">
             <RemindMeButton eventId={event.id} variant="compact" />
-            <FavoriteButton eventId={event.id} />
           </div>
         </div>
       ) : null}
@@ -58,14 +56,13 @@ export default function EventCard({ event, compact = false }) {
             <span>{categoryLabel}</span>
           </div>
         )}
-        {/* Action icons (favorite + remind) — when there's no header image we
-            need to render them inside the body card so the user can still
-            favourite an event whose owner hasn't uploaded a picture. With
-            an image, these render on the image overlay above. */}
+        {/* Action icons (remind) — when there's no header image we render
+            inside the body card so the user can still get reminders even
+            when the organizer hasn't uploaded a picture. With an image,
+            these render on the image overlay above. */}
         {!compact && !event.image_url ? (
           <div className="flex items-center gap-2 absolute top-2 right-3 z-10">
             <RemindMeButton eventId={event.id} variant="compact" />
-            <FavoriteButton eventId={event.id} />
           </div>
         ) : null}
         <h3 className="font-serif text-2xl text-viking-bone leading-tight group-hover:text-viking-gold transition-colors">
