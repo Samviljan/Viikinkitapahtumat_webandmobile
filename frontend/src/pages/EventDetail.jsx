@@ -221,14 +221,6 @@ export default function EventDetail() {
           )}
 
           <div className="mt-10 flex flex-wrap items-center gap-3">
-            {event.link && (
-              <a href={event.link} target="_blank" rel="noopener noreferrer" data-testid="event-link">
-                <Button className="bg-viking-ember hover:bg-viking-emberHover text-viking-bone rounded-sm font-rune text-xs ember-glow">
-                  <Globe size={14} className="mr-2" />
-                  {t("events.website")}
-                </Button>
-              </a>
-            )}
             {event.program_pdf_url && (
               <a
                 href={
