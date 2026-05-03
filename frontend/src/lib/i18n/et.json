@@ -14,7 +14,8 @@
     "about": "Teave",
     "contact": "Kontakt",
     "admin": "Haldamine",
-    "favorites": "Lemmikud"
+    "favorites": "Lemmikud",
+    "my_events": "Minu sündmused"
   },
   "home": {
     "hero_eyebrow": "Rauaaeg · Vikingiaeg · Varakeskaja",
@@ -474,5 +475,24 @@
     "copy": "Kopeeri",
     "copied": "Kopeeritud",
     "copy_failed": "Kopeerimine ebaõnnestus"
+  },
+  "attend": {
+    "confirm_title": "Kinnita osalemine",
+    "confirm_info": "Teie osalemine ei ole veel seotud korraldaja enda registreerimisega. \"Osalen\" on viikinkitapahtumat.fi sisemine funktsioon, mis võimaldab korraldajal (kui ta on sisse logitud) või sündmusel osalevatel kauplejatel saata teile teateid ja reklaame.",
+    "confirm_yes": "Jah, osalen",
+    "cancel_title": "Tühista osalemine",
+    "cancel_info": "Eemaldada teie osalemine sellelt sündmuselt? Te ei saa enam teateid.",
+    "cancel_yes": "Jah, tühista osalemine"
+  },
+  "common": {
+    "cancel": "Tühista",
+    "no": "Ei, jätkan osalemist"
+  },
+  "myevents": {
+    "eyebrow": "Minu sündmused",
+    "title": "Sündmused, kus osalen",
+    "sub": "Kui valid 'Osalen', ilmub sündmus siia.",
+    "empty": "Te pole veel ühelegi sündmusele registreerunud.",
+    "browse": "Sirvi sündmusi"
   }
 }

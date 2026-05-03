@@ -14,7 +14,8 @@
     "about": "O nas",
     "contact": "Kontakt",
     "admin": "Administracja",
-    "favorites": "Ulubione"
+    "favorites": "Ulubione",
+    "my_events": "Moje wydarzenia"
   },
   "home": {
     "hero_eyebrow": "Epoka żelaza · Epoka wikingów · Wczesne średniowiecze",
@@ -474,5 +475,24 @@
     "copy": "Kopiuj",
     "copied": "Skopiowano",
     "copy_failed": "Kopiowanie nieudane"
+  },
+  "attend": {
+    "confirm_title": "Potwierdź uczestnictwo",
+    "confirm_info": "Twoje uczestnictwo nie jest jeszcze powiązane z rejestracją organizatora. \"Biorę udział\" to funkcja wewnętrzna viikinkitapahtumat.fi, dzięki której organizator (jeśli jest zalogowany) lub kupcy obecni na wydarzeniu mogą wysyłać Ci ogłoszenia i reklamy.",
+    "confirm_yes": "Tak, biorę udział",
+    "cancel_title": "Anuluj uczestnictwo",
+    "cancel_info": "Usunąć Twoje uczestnictwo w tym wydarzeniu? Nie będziesz już otrzymywać powiadomień.",
+    "cancel_yes": "Tak, anuluj uczestnictwo"
+  },
+  "common": {
+    "cancel": "Anuluj",
+    "no": "Nie, kontynuuj uczestnictwo"
+  },
+  "myevents": {
+    "eyebrow": "Moje wydarzenia",
+    "title": "Wydarzenia, w których biorę udział",
+    "sub": "Gdy klikniesz 'Biorę udział', wydarzenie pojawi się tutaj.",
+    "empty": "Nie zaznaczyłeś jeszcze udziału w żadnym wydarzeniu.",
+    "browse": "Przeglądaj wydarzenia"
   }
 }

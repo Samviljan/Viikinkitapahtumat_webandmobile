@@ -14,7 +14,8 @@
     "about": "Tietoa",
     "contact": "Yhteydenotto",
     "admin": "Ylläpito",
-    "favorites": "Suosikit"
+    "favorites": "Suosikit",
+    "my_events": "Tapahtumani"
   },
   "home": {
     "hero_eyebrow": "Rauta-aika · Viikinkiaika · Varhaiskeskiaika",
@@ -461,7 +462,13 @@
     "notify_title": "Muistutukset tapahtumasta",
     "notify_help": "Saat muistutuksia ennen tapahtumaa valitsemallasi tavalla. Voit vaihtaa näitä asetuksia milloin tahansa.",
     "notify_email": "Muistuta sähköpostilla",
-    "notify_push": "Muistuta push-viestillä (mobiilisovellus)"
+    "notify_push": "Muistuta push-viestillä (mobiilisovellus)",
+    "confirm_title": "Vahvista osallistuminen",
+    "confirm_info": "Osallistumistasi ei toistaiseksi linkitetä tapahtumanjärjestäjän omaan ilmoittautumiseen. Osallistuminen on viikinkitapahtumat.fi-sovelluksen sisäinen toiminto, jolla tapahtumanjärjestäjä (jos hän on kirjautunut sovellukseen) tai tapahtumaan osallistuvat kauppiaat voivat toimittaa sinulle tiedotteita ja mainoksia tapahtumasta.",
+    "confirm_yes": "Kyllä, osallistun",
+    "cancel_title": "Peru osallistuminen",
+    "cancel_info": "Haluatko poistaa osallistumistietosi tästä tapahtumasta? Et saa enää tiedotteita tapahtumasta.",
+    "cancel_yes": "Kyllä, peru osallistuminen"
   },
   "attending": {
     "title": "Tapahtumat joihin osallistut",
@@ -766,5 +773,16 @@
     "copy": "Kopioi",
     "copied": "Kopioitu leikepöydälle",
     "copy_failed": "Kopiointi epäonnistui"
+  },
+  "common": {
+    "cancel": "Peruuta",
+    "no": "Ei, jatkan osallistujana"
+  },
+  "myevents": {
+    "eyebrow": "Tapahtumani",
+    "title": "Tapahtumat joihin osallistun",
+    "sub": "Kun klikkaat \"Osallistun\" tapahtumaan, se ilmestyy tähän.",
+    "empty": "Et ole vielä merkinnyt osallistuvasi yhteenkään tapahtumaan.",
+    "browse": "Selaa tapahtumia"
   }
 }

@@ -13,7 +13,8 @@
     "shops": "Shops",
     "contact": "Contact",
     "admin": "Admin",
-    "favorites": "Favorites"
+    "favorites": "Favorites",
+    "my_events": "My events"
   },
   "home": {
     "hero_eyebrow": "Iron Age · Viking Age · Early Medieval",
@@ -460,7 +461,13 @@
     "notify_title": "Reminders about this event",
     "notify_help": "You'll receive reminders before the event using the channels you choose. You can change these any time.",
     "notify_email": "Remind me by email",
-    "notify_push": "Remind me by push (mobile app)"
+    "notify_push": "Remind me by push (mobile app)",
+    "confirm_title": "Confirm attendance",
+    "confirm_info": "Your attendance is not yet linked to the organizer's own registration. \"Attending\" is an internal viikinkitapahtumat.fi feature that lets the event organizer (if signed in) or merchants attending the event send you announcements and adverts.",
+    "confirm_yes": "Yes, I'll attend",
+    "cancel_title": "Cancel attendance",
+    "cancel_info": "Remove your attendance for this event? You'll stop receiving announcements about it.",
+    "cancel_yes": "Yes, cancel attendance"
   },
   "attending": {
     "title": "Events you are attending",
@@ -765,5 +772,16 @@
     "copy": "Copy",
     "copied": "Copied",
     "copy_failed": "Copy failed"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "no": "No, keep attending"
+  },
+  "myevents": {
+    "eyebrow": "My events",
+    "title": "Events I'm attending",
+    "sub": "When you tap \"Attend\" on an event it appears here.",
+    "empty": "You haven't marked yourself attending any event yet.",
+    "browse": "Browse events"
   }
 }

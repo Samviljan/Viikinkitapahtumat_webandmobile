@@ -13,7 +13,8 @@
     "shops": "Butikker",
     "contact": "Kontakt",
     "admin": "Admin",
-    "favorites": "Favoritter"
+    "favorites": "Favoritter",
+    "my_events": "Mine begivenheder"
   },
   "home": {
     "hero_eyebrow": "Jernalder · Vikingetid · Tidlig Middelalder",
@@ -431,7 +432,13 @@
     "notify_title": "Påmindelser om dette arrangement",
     "notify_help": "Du modtager påmindelser før arrangementet på de kanaler, du vælger. Du kan ændre disse når som helst.",
     "notify_email": "Påmind mig via e-mail",
-    "notify_push": "Påmind mig via push-besked (mobilapp)"
+    "notify_push": "Påmind mig via push-besked (mobilapp)",
+    "confirm_title": "Bekræft deltagelse",
+    "confirm_info": "Din deltagelse er endnu ikke knyttet til arrangørens egen tilmelding. \"Deltager\" er en intern viikinkitapahtumat.fi-funktion, der lader arrangøren (hvis logget ind) eller handlende på stedet sende dig meddelelser og annoncer.",
+    "confirm_yes": "Ja, jeg deltager",
+    "cancel_title": "Annuller deltagelse",
+    "cancel_info": "Vil du fjerne din deltagelse i denne begivenhed? Du modtager ikke længere meddelelser.",
+    "cancel_yes": "Ja, annuller deltagelse"
   },
   "attending": {
     "title": "Begivenheder du deltager i",
@@ -643,5 +650,16 @@
     "copy": "Kopier",
     "copied": "Kopieret",
     "copy_failed": "Kopiering fejlede"
+  },
+  "common": {
+    "cancel": "Annuller",
+    "no": "Nej, fortsæt som deltager"
+  },
+  "myevents": {
+    "eyebrow": "Mine begivenheder",
+    "title": "Begivenheder jeg deltager i",
+    "sub": "Når du trykker 'Deltag', vises begivenheden her.",
+    "empty": "Du har ikke markeret dig som deltager endnu.",
+    "browse": "Gennemse begivenheder"
   }
 }

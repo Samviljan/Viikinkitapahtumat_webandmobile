@@ -13,7 +13,8 @@
     "shops": "Shops",
     "contact": "Kontakt",
     "admin": "Admin",
-    "favorites": "Favoriten"
+    "favorites": "Favoriten",
+    "my_events": "Meine Veranstaltungen"
   },
   "home": {
     "hero_eyebrow": "Eisenzeit · Wikingerzeit · Frühmittelalter",
@@ -431,7 +432,13 @@
     "notify_title": "Erinnerungen zu dieser Veranstaltung",
     "notify_help": "Du erhältst Erinnerungen vor der Veranstaltung über die Kanäle deiner Wahl. Du kannst diese jederzeit ändern.",
     "notify_email": "Erinnere mich per E-Mail",
-    "notify_push": "Erinnere mich per Push (Mobile App)"
+    "notify_push": "Erinnere mich per Push (Mobile App)",
+    "confirm_title": "Teilnahme bestätigen",
+    "confirm_info": "Deine Teilnahme ist noch nicht mit der eigenen Anmeldung des Veranstalters verknüpft. \"Nehme teil\" ist eine interne Funktion von viikinkitapahtumat.fi, mit der der Veranstalter (sofern angemeldet) oder anwesende Händler dir Mitteilungen und Werbung zusenden können.",
+    "confirm_yes": "Ja, ich nehme teil",
+    "cancel_title": "Teilnahme stornieren",
+    "cancel_info": "Deine Teilnahme an dieser Veranstaltung entfernen? Du erhältst dann keine Mitteilungen mehr.",
+    "cancel_yes": "Ja, Teilnahme stornieren"
   },
   "attending": {
     "title": "Veranstaltungen, an denen du teilnimmst",
@@ -643,5 +650,16 @@
     "copy": "Kopieren",
     "copied": "Kopiert",
     "copy_failed": "Kopieren fehlgeschlagen"
+  },
+  "common": {
+    "cancel": "Abbrechen",
+    "no": "Nein, weiterhin teilnehmen"
+  },
+  "myevents": {
+    "eyebrow": "Meine Veranstaltungen",
+    "title": "Veranstaltungen, an denen ich teilnehme",
+    "sub": "Wenn du 'Teilnehmen' tippst, erscheint die Veranstaltung hier.",
+    "empty": "Du hast dich noch keiner Veranstaltung angemeldet.",
+    "browse": "Veranstaltungen durchsuchen"
   }
 }

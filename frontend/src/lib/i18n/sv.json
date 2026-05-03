@@ -13,7 +13,8 @@
     "shops": "Butiker",
     "contact": "Kontakt",
     "admin": "Admin",
-    "favorites": "Favoriter"
+    "favorites": "Favoriter",
+    "my_events": "Mina evenemang"
   },
   "home": {
     "hero_eyebrow": "Järnålder · Vikingatid · Tidig medeltid",
@@ -438,7 +439,13 @@
     "notify_title": "Påminnelser om evenemanget",
     "notify_help": "Du får påminnelser före evenemanget på de sätt du valt. Du kan ändra inställningarna när som helst.",
     "notify_email": "Påminn via e-post",
-    "notify_push": "Påminn via push (mobilappen)"
+    "notify_push": "Påminn via push (mobilappen)",
+    "confirm_title": "Bekräfta deltagande",
+    "confirm_info": "Ditt deltagande kopplas inte ännu till arrangörens egen anmälan. \"Deltar\" är en intern funktion på viikinkitapahtumat.fi som låter arrangören (om inloggad) eller handlare på plats skicka dig meddelanden och annonser.",
+    "confirm_yes": "Ja, jag deltar",
+    "cancel_title": "Avbryt deltagande",
+    "cancel_info": "Vill du ta bort ditt deltagande från detta evenemang? Du får inte längre meddelanden.",
+    "cancel_yes": "Ja, avbryt deltagandet"
   },
   "courses": {
     "title": "Kurser & verkstäder",
@@ -701,5 +708,16 @@
     "copy": "Kopiera",
     "copied": "Kopierat",
     "copy_failed": "Kopiering misslyckades"
+  },
+  "common": {
+    "cancel": "Avbryt",
+    "no": "Nej, fortsätt som deltagare"
+  },
+  "myevents": {
+    "eyebrow": "Mina evenemang",
+    "title": "Evenemang jag deltar i",
+    "sub": "När du klickar 'Delta' visas evenemanget här.",
+    "empty": "Du har inte markerat dig som deltagare ännu.",
+    "browse": "Bläddra evenemang"
   }
 }
