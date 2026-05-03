@@ -6,7 +6,6 @@ import { useDocumentSeo } from "@/lib/seo";
 import { Calendar, MapPin, User, Mail, Globe, ChevronLeft, Hourglass, Clock, FileText, Map } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDateRange, computeEventTiming } from "@/components/EventCard";
-import FavoriteButton from "@/components/FavoriteButton";
 import RemindMeButton from "@/components/RemindMeButton";
 import AttendButton from "@/components/AttendButton";
 import EventStats from "@/components/EventStats";
@@ -242,7 +241,6 @@ export default function EventDetail() {
               </a>
             )}
             <RemindMeButton eventId={event.id} />
-            <FavoriteButton eventId={event.id} variant="label" />
           </div>
           <div className="mt-6 pt-6 border-t border-viking-edge">
             <AttendButton eventId={event.id} />
