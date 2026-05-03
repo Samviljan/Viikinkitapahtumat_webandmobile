@@ -39,6 +39,24 @@ Modernise https://viikinkitapahtumat.fi with: visually better calendar/event lis
 - ✅ Localised admin toast/confirm messages.
 - ✅ 28/28 backend tests + frontend e2e all green.
 
+## ✅ Toteutettu 2026-02-01 — Tietosuojalauseke päivitetty
+- **Tiedosto:** `/app/frontend/src/pages/Privacy.jsx` — kaikki 5 kielimoduulia (FI/EN/SV/DA/DE; ET ja PL perivät EN:n).
+- **Päiväys:** vanha "28.4.2026" → "1.2.2026" / "1 February 2026" / "1 februari 2026" / "1. februar 2026" / "1. Februar 2026".
+- **Poistot:** "Suosikit / Favorites / Favoriter / Favoritter / Favoriten" -rivit kohtien 2 ja 5 listoista; mainita poistettu myös kohdan 3 ensimmäisestä rivistä (oikeusperuste).
+- **Lisäykset kohtaan 2 (Mitä tietoja keräämme):**
+  1. Tarkennettu RSVP-kuvaus: ilmoittautumistietoja voidaan käyttää tapahtumakohtaisten ilmoitusten lähettämiseen järjestäjältä, kauppiailta tai ylläpidolta.
+  2. Uusi rivi "Sisäiset yhteydenotot tapahtuman järjestäjälle" — selittää että järjestäjän PII (sähköposti/puhelin) ei näy julkisesti, mutta lähettäjän nimimerkki+sähköposti välitetään järjestäjälle vastausta varten; auditointiloki.
+  3. Uusi rivi "Tapahtumajärjestäjäpyynnöt" — pyynnön data, sen käyttötarkoitus ja roolin myöntämisen seuraukset.
+- **Lisäys kohtaan 3 (Oikeusperuste):** "Sisäiset viestit järjestäjälle ja järjestäjäroolihakemukset — käyttäjän aloite (sopimuksen täytäntöönpano)".
+- **Lisäykset kohtaan 5 (Säilytysaika):**
+  - RSVP-tiedot: säilytetään tapahtuman aktiivisena, poistuvat automaattisesti tapahtuman päätyttyä.
+  - Sisäisten viestien auditointiloki: 12 kk.
+  - Järjestäjäroolihakemukset: 12 kk päätöksen jälkeen, sitten poisto/anonymisointi.
+- **Mobiili:** ei erillisiä muutoksia — `mobile/app/(tabs)/settings.tsx` linkittää `https://viikinkitapahtumat.fi/privacy`-osoitteeseen, joten päivitys näkyy molemmissa.
+- **Verifiointi:** 23/23 tarkistusta läpäisty (FI/EN/SV/DA/DE päiväys, RSVP-blokit, järjestäjäviestit, järjestäjäpyynnöt, RSVP-säilytys; ei jäljellä yhtään "Suosikit/Favorites/Favoriter/Favoritter/Favoriten" -listariviä). ESLint puhdas. Smoke-screenshot websivulta OK.
+
+
+
 ## Iteration 2 — Real content imported (2026-04-25)
 - ✅ Added new pages: **Viikinkimiekkailu** (`/swordfighting`) with two long-form articles and **Yhteydenotto** (`/contact`) with mailto form + copy-email button. Both are in the main nav in all 3 languages.
 - ✅ Extended Event model with optional `audience` (Yleisö / Harrastajat) and `fight_style` (Western / Eastern / …) fields. Surfaced on EventCard + EventDetail + Admin dashboard. Added selects to the Submit form.

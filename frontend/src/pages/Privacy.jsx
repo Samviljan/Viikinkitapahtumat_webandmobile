@@ -15,7 +15,7 @@ import { useI18n } from "@/lib/i18n";
  *     user voluntarily registers an account.
  *   - Browser/device location (only after explicit user grant; never sent to
  *     a server, used only locally for "near me" sorting).
- *   - Favorites (event IDs in localStorage on the user's device).
+ *   - Favorites (event IDs in localStorage on the user's device) — REMOVED in favour of RSVP.
  *   - RSVP records (which events the user is attending + notification
  *     preferences) — server-stored.
  *   - Expo push tokens (mobile only, server-stored, used to deliver push
@@ -34,7 +34,7 @@ const SECTIONS = {
     eyebrow: "TIETOSUOJA",
     title: "Tietosuojakäytäntö",
     sub: "Selkeä yhteenveto siitä, mitä tietoja keräämme ja mihin niitä käytetään.",
-    last_updated: "Päivitetty 28.4.2026",
+    last_updated: "Päivitetty 1.2.2026",
     blocks: [
       {
         h: "1. Rekisterinpitäjä",
@@ -52,11 +52,12 @@ const SECTIONS = {
           "Käyttäjätili (vain rekisteröityessäsi) — sähköpostiosoite, bcrypt-hashattu salasana, nimimerkki, rooli (käyttäjä/admin), käyttäjätyypit (harrastaja, taistelija, kauppias, järjestäjä), valinnaisesti yhdistys/kilta, maa, kauppias-/järjestäjänimi sekä suostumusvalintasi (uutiskirje, järjestäjäviestit, kauppiastarjoukset).",
           "Profiilikuva (valinnainen) — ladattu kuva tallennetaan tietokantaan (GridFS). Voit vaihtaa tai poistaa sen profiilisivultasi milloin tahansa.",
           "SVTL-taistelijapassi ja varustepassi (valinnaiset PDF:t) — voit halutessasi ladata harrastukseesi liittyvät asiakirjat profiiliisi tunnistautumista varten tapahtumissa. Tiedostot näkyvät vain sinulle ja ylläpidolle. Tiedostot tallennetaan tietokantaan, eikä niitä jaeta kolmansille osapuolille.",
-          "Tapahtumiin ilmoittautumiset (RSVP) — tallennamme palvelimelle minkä tapahtumien osallistujaksi olet merkinnyt itsesi ja minkä ilmoituskanavien kautta haluat saada muistutuksia (sähköposti, push).",
+          "Tapahtumiin ilmoittautumiset (Osallistun / RSVP) — tallennamme palvelimelle, minkä tapahtumien osallistujaksi olet merkinnyt itsesi ja minkä ilmoituskanavien kautta haluat saada muistutuksia (sähköposti, push). Ilmoittautumistietoja voidaan käyttää tapahtuman järjestäjän, paikalla olevien kauppiaiden tai ylläpidon lähettämiin tapahtumakohtaisiin ilmoituksiin (esim. aikataulumuutokset, peruutukset, lisätiedot) valitsemiesi kanavien kautta. Voit perua ilmoittautumisen milloin tahansa Omat tapahtumat -sivulta.",
+          "Sisäiset yhteydenotot tapahtuman järjestäjälle — voit lähettää järjestäjälle viestin palvelun oman lomakkeen kautta. Järjestäjän henkilökohtainen sähköpostiosoite ja puhelinnumero eivät näy julkisesti. Viestin yhteydessä järjestäjälle välitetään kirjautuneen käyttäjän nimimerkki sekä sähköpostiosoite, jotta hän voi vastata sinulle. Lähetetyistä viesteistä jää auditointiloki (lähettäjän id, tapahtuman id, aikaleima).",
+          "Tapahtumajärjestäjäpyynnöt — jos pyydät tapahtuman järjestäjäoikeuksia, tallennamme pyynnön (käyttäjäsi id, tapahtuman id, tila ja aikaleima) ylläpidon käsittelyä varten. Hyväksytty rooli mahdollistaa viestien lähettämisen tapahtuman ilmoittautuneille (RSVP) sekä tapahtuman tietojen päivittämisen.",
           "Push-laitetunnukset (vain mobiilisovellus) — kun sallit notifikaatiot, laitteesi rekisteröi anonyymin Expo-push-tokenin palvelimellemme. Käytämme sitä vain push-viestien lähettämiseen Expon push-palvelun kautta. Voit poistaa luvan laitteesi asetuksista, jolloin tokeni mitätöityy.",
           "Viestiloki — kun ylläpitäjä, järjestäjä tai kauppias lähettää viestin tapahtuman osallistujille, tallennamme auditointia varten viestin lähettäjän id:n, kohdetapahtuman, kanavan, viestin aiheen otteen sekä vastaanottajien lukumäärän. Vastaanottajien sähköpostiosoitteita ei tallenneta lokiin.",
           "Sijainti — vain selaimessa/laitteessa. Käyttäjä antaa erillisen luvan, jolloin laite näyttää lähimmät tapahtumat. Sijaintia ei lähetetä palvelimellemme eikä tallenneta.",
-          "Suosikit — tallennetaan paikallisesti laitteen muistiin (localStorage / mobiilin oma välimuisti). Ei lähetetä palvelimelle.",
           "Uutiskirjeen tilaus — jos tilaat uutiskirjeen, tallennamme sähköpostiosoitteesi ja kielesi. Voit perua tilauksen milloin tahansa peruutuslinkillä.",
           "Yhteydenotot — jos lähetät viestin yhteydenottolomakkeen tai admin@-osoitteen kautta, viestisi sisältö ja sähköpostiosoitteesi käsitellään vastauksen antamiseksi.",
           "Tekniset lokit — palvelimemme tallentaa standardia HTTP-lokia (IP-osoite, selaintunnus, aika) väärinkäytösten estämiseksi. Lokit poistetaan 30 vuorokauden kuluttua.",
@@ -66,8 +67,9 @@ const SECTIONS = {
       {
         h: "3. Käyttötarkoitus ja oikeusperuste",
         list: [
-          "Palvelun toiminnallisuus (tapahtumalistaus, suosikit, sijainti) — käyttäjän suostumus ja oikeutettu etu (palvelun tarjoaminen).",
+          "Palvelun toiminnallisuus (tapahtumalistaus, sijainti, ilmoittautumiset) — käyttäjän suostumus ja oikeutettu etu (palvelun tarjoaminen).",
           "Käyttäjätili, profiili ja RSVP — sopimuksen täytäntöönpano (tarjoamme valitsemiasi toimintoja) ja käyttäjän suostumus.",
+          "Sisäiset viestit järjestäjälle ja järjestäjäroolihakemukset — käyttäjän aloite (sopimuksen täytäntöönpano: tarjoamme yhteydenotto- ja roolikanavan, jossa järjestäjien yhteystietoja ei paljasteta julkisesti).",
           "Push-notifikaatiot ja sähköpostimuistutukset — käyttäjän nimenomainen suostumus, jonka voi peruuttaa milloin tahansa profiilista tai laitteen asetuksista.",
           "Viestit järjestäjiltä/kauppiailta — käyttäjän erillinen suostumus (consent_organizer_messages / consent_merchant_offers).",
           "Uutiskirje — käyttäjän suostumus, joka voidaan peruuttaa milloin tahansa.",
@@ -99,7 +101,9 @@ const SECTIONS = {
           "Yhteydenottoviestit säilytetään korkeintaan 12 kuukautta.",
           "Tekniset lokit säilytetään 30 vuorokautta.",
           "Salasanan palautus-tokenit poistetaan 60 minuutin sisällä luomisesta tai välittömästi käytön jälkeen.",
-          "Suosikit ja sijaintilupa säilyvät vain käyttäjän omalla laitteella, ja käyttäjä voi tyhjentää ne milloin tahansa selaimen / sovelluksen asetuksista.",
+          "Sijaintilupa säilyy vain käyttäjän omalla laitteella, ja käyttäjä voi peruuttaa sen milloin tahansa selaimen tai sovelluksen asetuksista.",
+          "RSVP-tiedot säilytetään niin kauan kuin tapahtuma on ajankohtainen ja tilisi on aktiivinen. Voit perua ilmoittautumisen milloin tahansa, jolloin tieto poistetaan välittömästi. Vanhoihin tapahtumiin liittyvät ilmoittautumiset poistetaan automaattisesti tapahtuman päättymisen jälkeen.",
+          "Sisäisten viestien (järjestäjälle/kauppiaalle) auditointiloki säilytetään 12 kuukautta väärinkäytösten estämiseksi. Järjestäjäroolihakemukset säilytetään 12 kuukautta päätöksenteon jälkeen, jonka jälkeen ne poistetaan tai anonymisoidaan.",
         ],
       },
       {
@@ -141,7 +145,7 @@ const SECTIONS = {
     eyebrow: "PRIVACY",
     title: "Privacy Policy",
     sub: "A clear summary of what data we collect and how we use it.",
-    last_updated: "Last updated 28 April 2026",
+    last_updated: "Last updated 1 February 2026",
     blocks: [
       {
         h: "1. Controller",
@@ -159,11 +163,12 @@ const SECTIONS = {
           "Account data (only when you register) — email address, bcrypt-hashed password, nickname, role (user/admin), user types (reenactor, fighter, merchant, organizer), optionally guild/association, country, merchant/organizer name, and your consent choices (newsletter, organizer messages, merchant offers).",
           "Profile picture (optional) — uploaded image is stored in our database (GridFS). You can change or remove it from your profile page at any time.",
           "SVTL Fighter Card and Equipment Passport (optional PDFs) — you may upload hobby-related documents to your profile for identification at events. The files are visible only to you and to admins. Files are stored in our database and never shared with third parties.",
-          "Event RSVPs — we store on the server which events you have marked yourself as attending and which notification channels you have opted in to (email, push).",
+          "Event RSVPs (\"I'm attending\") — we store on the server which events you have marked yourself as attending and which notification channels you have opted in to (email, push). RSVP data may be used by the event organizer, the merchants present at the event, or admins to send event-specific updates (schedule changes, cancellations, additional information) through the channels you have chosen. You can withdraw your RSVP at any time from the My Events page.",
+          "Internal messages to event organizers — you may send a message to an event organizer through our in-app form. The organizer's personal email and phone number are not shown publicly. Your nickname and email are forwarded with the message so the organizer can reply to you. We keep an audit record of every sent message (sender id, event id, timestamp).",
+          "Event organizer requests — if you request organizer rights for an event, we store the request (your user id, the event id, status and timestamp) for admin review. An approved organizer role allows you to message the event's RSVP attendees and to update the event details.",
           "Push device tokens (mobile app only) — when you allow notifications, your device registers an anonymous Expo push token with our server. We use it only to deliver push messages via Expo's push service. Revoking permission in your device settings invalidates the token.",
           "Message log — when an admin, organizer or merchant sends a message to event attendees, we store an audit record (sender id, target event, channel, subject excerpt, recipient count) for accountability. Recipient email addresses are never stored in the log.",
           "Location — only on the device. Used locally to sort events by distance after explicit consent. Never sent to our servers.",
-          "Favorites — stored locally on your device (localStorage / app cache). Never sent to our servers.",
           "Newsletter subscription — if you subscribe, we store your email and language. You can unsubscribe at any time via the link in every newsletter.",
           "Contact messages — when you use the contact form or email admin@, your message and email are processed to reply to you.",
           "Technical logs — our server records standard HTTP access logs (IP address, user agent, timestamp) for security and abuse prevention. Logs are deleted after 30 days.",
@@ -173,8 +178,9 @@ const SECTIONS = {
       {
         h: "3. Purposes and legal bases",
         list: [
-          "Service functionality (event listing, favorites, location) — user consent and legitimate interest (providing the service).",
+          "Service functionality (event listing, location, RSVP) — user consent and legitimate interest (providing the service).",
           "Account, profile and RSVP — performance of the contract (we provide the features you opted in to) and user consent.",
+          "Internal messages to organizers and event-organizer role requests — user-initiated (performance of the contract: we provide a contact and role channel without exposing organizers' private contact details publicly).",
           "Push notifications and email reminders — explicit user consent, withdrawable at any time from your profile or device settings.",
           "Messages from organizers/merchants — separate user consent (consent_organizer_messages / consent_merchant_offers).",
           "Newsletter — user consent, withdrawable at any time.",
@@ -204,7 +210,9 @@ const SECTIONS = {
           "Contact messages are kept for at most 12 months.",
           "Technical logs are kept for 30 days.",
           "Password reset tokens are deleted within 60 minutes of issuance or immediately after use.",
-          "Favorites and location consent live only on your device; you can clear them at any time from your browser or the app settings.",
+          "Location consent lives only on your device; you can revoke it at any time from your browser or the app settings.",
+          "RSVP records are kept while the event is upcoming and your account is active. You can withdraw an RSVP at any time, in which case it is removed immediately. RSVPs for past events are deleted automatically after the event has ended.",
+          "The audit log of internal messages (to organizers/merchants) is retained for 12 months for abuse prevention. Event-organizer role requests are retained for 12 months after the decision and are then deleted or anonymised.",
         ],
       },
       {
@@ -244,7 +252,7 @@ const SECTIONS = {
     eyebrow: "INTEGRITET",
     title: "Integritetspolicy",
     sub: "En klar sammanfattning av vilka uppgifter vi samlar in och hur vi använder dem.",
-    last_updated: "Uppdaterad 28 april 2026",
+    last_updated: "Uppdaterad 1 februari 2026",
     blocks: [
       {
         h: "1. Personuppgiftsansvarig",
@@ -262,11 +270,12 @@ const SECTIONS = {
           "Kontodata (endast vid registrering) — e-postadress, bcrypt-hashat lösenord, smeknamn, roll (användare/admin), användartyper (återskapare, fightare, handlare, arrangör), eventuellt gille/förening, land, handlar-/arrangörsnamn samt dina samtycken (nyhetsbrev, arrangörsmeddelanden, handlartillbud).",
           "Profilbild (valfri) — uppladdad bild lagras i vår databas (GridFS). Du kan byta eller ta bort den från din profilsida när som helst.",
           "SVTL-fightarkort och utrustningspass (valfria PDF:er) — du kan ladda upp hobbyrelaterade dokument till din profil för identifiering vid evenemang. Filerna syns endast för dig och administratörer. Filerna lagras i vår databas och delas aldrig med tredje part.",
-          "RSVP till evenemang — vi lagrar på servern vilka evenemang du anmält dig till och vilka aviseringskanaler (e-post, push) du valt.",
+          "RSVP till evenemang (\"Jag deltar\") — vi lagrar på servern vilka evenemang du anmält dig till och vilka aviseringskanaler (e-post, push) du valt. RSVP-uppgifter kan användas av evenemangets arrangör, handlare på plats eller administratörer för att skicka evenemangsspecifika meddelanden (schemaändringar, avbokningar, tilläggsinfo) via de kanaler du valt. Du kan dra tillbaka din anmälan när som helst från Mina evenemang.",
+          "Interna meddelanden till arrangörer — du kan skicka ett meddelande till en arrangör via vårt formulär i tjänsten. Arrangörens personliga e-post och telefonnummer visas inte offentligt. Ditt smeknamn och din e-post skickas med meddelandet så att arrangören kan svara dig. Vi för ett granskningsregister över skickade meddelanden (avsändar-id, evenemangs-id, tidsstämpel).",
+          "Begäran om arrangörsrätt — om du begär arrangörsrätt för ett evenemang lagrar vi begäran (ditt användar-id, evenemangets id, status och tidsstämpel) för administratörens granskning. En godkänd arrangörsroll låter dig skicka meddelanden till evenemangets RSVP-deltagare och uppdatera evenemangets uppgifter.",
           "Push-enhets-tokens (endast mobilappen) — när du tillåter aviseringar registrerar din enhet en anonym Expo-push-token hos oss. Vi använder den endast för att skicka push-meddelanden via Expos push-tjänst. Återkallar du tillståndet i enhetsinställningarna ogiltigförklaras tokenen.",
           "Meddelandelogg — när en admin, arrangör eller handlare skickar ett meddelande till deltagare lagrar vi en granskningspost (avsändar-id, evenemang, kanal, ämnesutdrag, antal mottagare). Mottagarnas e-postadresser sparas aldrig i loggen.",
           "Plats — endast på enheten. Används lokalt för att sortera evenemang efter avstånd efter uttryckligt samtycke. Skickas aldrig till våra servrar.",
-          "Favoriter — lagras lokalt på din enhet (localStorage / appens cache). Skickas aldrig till våra servrar.",
           "Nyhetsbrevsprenumeration — om du prenumererar lagrar vi din e-postadress och språk. Du kan när som helst säga upp prenumerationen via länken i varje nyhetsbrev.",
           "Kontaktmeddelanden — när du använder kontaktformuläret eller mejlar admin@ behandlas ditt meddelande och din e-post för att svara dig.",
           "Tekniska loggar — vår server registrerar standardloggar (IP-adress, useragent, tidsstämpel) för säkerhet. Raderas efter 30 dagar.",
@@ -276,8 +285,9 @@ const SECTIONS = {
       {
         h: "3. Syften och rättsliga grunder",
         list: [
-          "Tjänstefunktioner (evenemangslistning, favoriter, plats) — användarens samtycke och berättigat intresse.",
+          "Tjänstefunktioner (evenemangslistning, plats, RSVP) — användarens samtycke och berättigat intresse.",
           "Konto, profil och RSVP — fullgörande av avtal (vi tillhandahåller funktioner du valt) och användarens samtycke.",
+          "Interna meddelanden till arrangörer och begäran om arrangörsroll — initieras av användaren (avtalsfullgörande: vi erbjuder en kontakt- och rollkanal utan att exponera arrangörens privata kontaktuppgifter offentligt).",
           "Push-aviseringar och e-postpåminnelser — uttryckligt samtycke som kan återkallas när som helst.",
           "Meddelanden från arrangörer/handlare — separat samtycke (consent_organizer_messages / consent_merchant_offers).",
           "Nyhetsbrev — användarens samtycke, kan återkallas när som helst.",
@@ -307,7 +317,9 @@ const SECTIONS = {
           "Kontaktmeddelanden behålls i högst 12 månader.",
           "Tekniska loggar behålls i 30 dagar.",
           "Återställningstokens raderas inom 60 minuter eller direkt efter användning.",
-          "Favoriter och platssamtycke finns endast på din egen enhet; du kan rensa dem när som helst.",
+          "Platssamtycke finns endast på din egen enhet; du kan återkalla det när som helst i webbläsarens eller appens inställningar.",
+          "RSVP-uppgifter behålls så länge evenemanget är aktuellt och ditt konto är aktivt. Du kan dra tillbaka anmälan när som helst, varvid uppgiften raderas omedelbart. RSVP för tidigare evenemang raderas automatiskt efter att evenemanget avslutats.",
+          "Granskningsloggen för interna meddelanden (till arrangörer/handlare) sparas i 12 månader för missbruksskydd. Begäran om arrangörsroll sparas i 12 månader efter beslut och raderas eller anonymiseras därefter.",
         ],
       },
       {
@@ -347,7 +359,7 @@ const SECTIONS = {
     eyebrow: "PRIVATLIV",
     title: "Privatlivspolitik",
     sub: "Et klart resumé af, hvilke data vi indsamler, og hvordan vi bruger dem.",
-    last_updated: "Senest opdateret 28. april 2026",
+    last_updated: "Senest opdateret 1. februar 2026",
     blocks: [
       {
         h: "1. Dataansvarlig",
@@ -365,11 +377,12 @@ const SECTIONS = {
           "Kontodata (kun ved registrering) — e-mailadresse, bcrypt-hashet adgangskode, kaldenavn, rolle, brugertyper (genskaber, fighter, handlende, arrangør), eventuelt laug/forening, land, handlende-/arrangørnavn samt dine samtykker.",
           "Profilbillede (valgfrit) — uploadet billede gemmes i vores database (GridFS). Du kan udskifte eller fjerne det når som helst.",
           "SVTL-fighterkort og udstyrspas (valgfri PDF'er) — du kan uploade hobbyrelaterede dokumenter til din profil til identifikation. Filerne er kun synlige for dig og administratorer.",
-          "RSVP til begivenheder — vi gemmer hvilke begivenheder du har tilmeldt dig, og hvilke notifikationskanaler (e-mail, push) du har valgt.",
+          "RSVP til begivenheder (\"Jeg deltager\") — vi gemmer på serveren hvilke begivenheder du har tilmeldt dig, og hvilke notifikationskanaler (e-mail, push) du har valgt. RSVP-data kan bruges af begivenhedens arrangør, de tilstedeværende handlende eller administratorer til at sende begivenhedsspecifikke beskeder (skemaændringer, aflysninger, ekstra info) via de kanaler du har valgt. Du kan trække din tilmelding tilbage når som helst fra Mine begivenheder.",
+          "Interne beskeder til arrangører — du kan sende en besked til en arrangør via vores formular i appen. Arrangørens personlige e-mail og telefonnummer vises ikke offentligt. Dit kaldenavn og din e-mail sendes med beskeden, så arrangøren kan svare dig. Vi fører en revisionslog over sendte beskeder (afsender-id, begivenheds-id, tidsstempel).",
+          "Anmodninger om arrangørrettigheder — hvis du anmoder om arrangørrettigheder til en begivenhed, gemmer vi anmodningen (dit bruger-id, begivenhedens id, status og tidsstempel) til administratorgennemgang. En godkendt arrangørrolle lader dig sende beskeder til begivenhedens RSVP-deltagere og opdatere begivenhedens oplysninger.",
           "Push-enheds-tokens (kun mobilapp) — når du tillader notifikationer, registrerer din enhed et anonymt Expo-push-token. Vi bruger det kun til at levere push-beskeder via Expos push-tjeneste.",
           "Meddelelseslog — når en admin, arrangør eller handlende sender en besked, gemmer vi en revisionspost (afsender-id, begivenhed, kanal, emneuddrag, modtagerantal). Modtagernes e-mails gemmes aldrig i loggen.",
           "Lokation — kun på enheden. Bruges lokalt til at sortere begivenheder efter afstand efter udtrykkeligt samtykke. Sendes aldrig til vores servere.",
-          "Favoritter — gemmes lokalt på din enhed. Sendes aldrig til vores servere.",
           "Nyhedsbrevsabonnement — hvis du tilmelder dig, gemmer vi din e-mail og dit sprog. Du kan afmelde dig når som helst.",
           "Kontaktmeddelelser — behandles for at besvare dig.",
           "Tekniske logs — IP-adresse, browseragent, tidsstempel. Slettes efter 30 dage.",
@@ -379,8 +392,9 @@ const SECTIONS = {
       {
         h: "3. Formål og retsgrundlag",
         list: [
-          "Tjenestefunktionalitet — brugerens samtykke og legitim interesse.",
+          "Tjenestefunktionalitet (begivenhedsliste, lokation, RSVP) — brugerens samtykke og legitim interesse.",
           "Konto, profil og RSVP — opfyldelse af kontrakt og samtykke.",
+          "Interne beskeder til arrangører og anmodninger om arrangørrolle — initieret af brugeren (kontraktopfyldelse: vi tilbyder en kontakt- og rollekanal uden at afsløre arrangørens private kontaktoplysninger offentligt).",
           "Push og e-mail-påmindelser — udtrykkeligt samtykke, kan tilbagekaldes til enhver tid.",
           "Beskeder fra arrangører/handlende — separat samtykke.",
           "Nyhedsbrev — samtykke, kan tilbagekaldes til enhver tid.",
@@ -410,7 +424,9 @@ const SECTIONS = {
           "Kontaktmeddelelser opbevares højst 12 måneder.",
           "Tekniske logs opbevares i 30 dage.",
           "Nulstillingstokens slettes inden for 60 minutter eller umiddelbart efter brug.",
-          "Favoritter og lokationssamtykke findes kun på din enhed.",
+          "Lokationssamtykke findes kun på din enhed; du kan tilbagekalde det når som helst i browseren eller appens indstillinger.",
+          "RSVP-data opbevares så længe begivenheden er aktuel og din konto er aktiv. Du kan trække tilmeldingen tilbage når som helst, hvorved data slettes straks. RSVP for tidligere begivenheder slettes automatisk efter begivenhedens afslutning.",
+          "Revisionsloggen for interne beskeder (til arrangører/handlende) gemmes i 12 måneder af hensyn til misbrugsforebyggelse. Anmodninger om arrangørrolle gemmes i 12 måneder efter beslutningen og slettes eller anonymiseres derefter.",
         ],
       },
       {
@@ -450,7 +466,7 @@ const SECTIONS = {
     eyebrow: "DATENSCHUTZ",
     title: "Datenschutzerklärung",
     sub: "Eine klare Zusammenfassung darüber, welche Daten wir erheben und wie wir sie verwenden.",
-    last_updated: "Zuletzt aktualisiert am 28. April 2026",
+    last_updated: "Zuletzt aktualisiert am 1. Februar 2026",
     blocks: [
       {
         h: "1. Verantwortlicher",
@@ -468,11 +484,12 @@ const SECTIONS = {
           "Kontodaten (nur bei Registrierung) — E-Mail-Adresse, bcrypt-gehashtes Passwort, Spitzname, Rolle, Benutzertypen (Reenactor, Kämpfer, Händler, Veranstalter), optional Gilde/Verein, Land, Händler-/Veranstaltername sowie Ihre Einwilligungen.",
           "Profilbild (optional) — hochgeladenes Bild wird in unserer Datenbank (GridFS) gespeichert. Sie können es jederzeit ändern oder entfernen.",
           "SVTL-Kämpferkarte und Ausrüstungspass (optionale PDFs) — Sie können hobbybezogene Dokumente zur Identifikation hochladen. Die Dateien sind nur für Sie und Administratoren sichtbar.",
-          "Veranstaltungs-RSVPs — wir speichern, welche Veranstaltungen Sie besuchen und welche Benachrichtigungskanäle (E-Mail, Push) Sie gewählt haben.",
+          "Veranstaltungs-RSVPs („Ich nehme teil\") — wir speichern auf dem Server, an welchen Veranstaltungen Sie teilnehmen möchten und welche Benachrichtigungskanäle (E-Mail, Push) Sie gewählt haben. RSVP-Daten können vom Veranstalter, den anwesenden Händlern oder Administratoren genutzt werden, um veranstaltungsspezifische Mitteilungen (Programmänderungen, Absagen, Zusatzinformationen) über die von Ihnen gewählten Kanäle zu senden. Sie können Ihre Anmeldung jederzeit unter „Meine Veranstaltungen\" zurücknehmen.",
+          "Interne Nachrichten an Veranstalter — Sie können einer Veranstalterin oder einem Veranstalter über unser In-App-Formular eine Nachricht senden. Die persönliche E-Mail-Adresse und Telefonnummer der/des Veranstaltenden werden nicht öffentlich angezeigt. Ihr Spitzname und Ihre E-Mail-Adresse werden mit der Nachricht weitergeleitet, damit eine Antwort möglich ist. Wir führen ein Auditprotokoll über gesendete Nachrichten (Absender-ID, Veranstaltungs-ID, Zeitstempel).",
+          "Anträge auf Veranstalterrechte — wenn Sie Veranstalterrechte für eine Veranstaltung beantragen, speichern wir den Antrag (Ihre Benutzer-ID, Veranstaltungs-ID, Status und Zeitstempel) zur administrativen Prüfung. Eine genehmigte Veranstalterrolle ermöglicht es Ihnen, RSVP-Teilnehmenden Nachrichten zu senden und Veranstaltungsdaten zu aktualisieren.",
           "Push-Geräte-Tokens (nur mobile App) — wenn Sie Benachrichtigungen erlauben, registriert Ihr Gerät ein anonymes Expo-Push-Token bei uns. Wir verwenden es nur zur Zustellung von Push-Nachrichten über den Expo-Push-Dienst.",
           "Nachrichtenprotokoll — wenn ein Admin, Veranstalter oder Händler eine Nachricht sendet, speichern wir einen Auditeintrag (Absender-ID, Veranstaltung, Kanal, Betreff-Auszug, Empfängeranzahl). E-Mail-Adressen der Empfänger werden nie im Protokoll gespeichert.",
           "Standort — nur auf dem Gerät. Wird nach ausdrücklicher Einwilligung lokal zur Sortierung nach Entfernung verwendet. Wird nie an unsere Server gesendet.",
-          "Favoriten — lokal auf Ihrem Gerät gespeichert. Wird nie an unsere Server gesendet.",
           "Newsletter-Abonnement — wenn Sie abonnieren, speichern wir Ihre E-Mail-Adresse und Sprache. Sie können sich jederzeit abmelden.",
           "Kontaktnachrichten — werden zur Beantwortung verarbeitet.",
           "Technische Logs — IP-Adresse, Useragent, Zeitstempel. Werden nach 30 Tagen gelöscht.",
@@ -482,8 +499,9 @@ const SECTIONS = {
       {
         h: "3. Zwecke und Rechtsgrundlagen",
         list: [
-          "Dienstfunktionalität — Einwilligung des Nutzers und berechtigtes Interesse.",
+          "Dienstfunktionalität (Veranstaltungsliste, Standort, RSVP) — Einwilligung des Nutzers und berechtigtes Interesse.",
           "Konto, Profil und RSVP — Vertragserfüllung und Einwilligung.",
+          "Interne Nachrichten an Veranstalter und Anträge auf Veranstalterrolle — vom Nutzer initiiert (Vertragserfüllung: wir bieten einen Kontakt- und Rollenkanal, ohne private Kontaktdaten der Veranstalter öffentlich preiszugeben).",
           "Push-Benachrichtigungen und E-Mail-Erinnerungen — ausdrückliche Einwilligung, jederzeit widerruflich.",
           "Nachrichten von Veranstaltern/Händlern — separate Einwilligung.",
           "Newsletter — Einwilligung, jederzeit widerruflich.",
@@ -513,7 +531,9 @@ const SECTIONS = {
           "Kontaktnachrichten werden höchstens 12 Monate aufbewahrt.",
           "Technische Logs werden 30 Tage aufbewahrt.",
           "Reset-Tokens werden innerhalb von 60 Minuten oder unmittelbar nach Verwendung gelöscht.",
-          "Favoriten und Standort-Einwilligung verbleiben nur auf Ihrem Gerät.",
+          "Standort-Einwilligung verbleibt nur auf Ihrem Gerät; Sie können sie jederzeit über die Browser- oder App-Einstellungen widerrufen.",
+          "RSVP-Daten werden gespeichert, solange die Veranstaltung aktuell und Ihr Konto aktiv ist. Sie können eine Anmeldung jederzeit zurücknehmen, dann wird sie sofort entfernt. RSVPs vergangener Veranstaltungen werden nach deren Ende automatisch gelöscht.",
+          "Das Auditprotokoll interner Nachrichten (an Veranstalter/Händler) wird zur Missbrauchsprävention 12 Monate aufbewahrt. Anträge auf Veranstalterrolle werden nach der Entscheidung 12 Monate aufbewahrt und anschließend gelöscht oder anonymisiert.",
         ],
       },
       {
